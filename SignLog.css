@@ -5,8 +5,8 @@
         }
 
         :root {
-            --linear-grad: linear-gradient(to right, #0f520c, #0f5810);
-            --grad-clr1: #dada18;
+            --linear-grad: linear-gradient(to right, #181922, #181922);
+            --grad-clr1: #484841;
             --grad-clr2: #dada18;
         }
 
@@ -24,8 +24,14 @@
             height: 600px;
             background-color: #FFF;
             box-shadow: 25px 30px 55px rgba(0, 0, 0, 0.1);
-            border-radius: 13px;
-            overflow: hidden; /* Important for the sliding effect */
+            border-radius: 25px;
+            overflow: hidden;
+             /* Important for the sliding effect */
+
+        }
+        .container h1 {
+            font-weight: bold;
+            margin: 0;
         }
 
         .form-container {
@@ -232,9 +238,9 @@
             z-index: 1000; 
             padding: 5px 5px;
             background: #fff;
-            border-radius: 15px;
+            border-radius: 25px;
             box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
+            border: 1px solid #393838;
             /* Added transition for smooth positional change */
             transition: all 0.6s ease-in-out; 
         }
@@ -248,8 +254,9 @@
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 100px;
-            height: 34px;
+            width: 62px;
+            height: 37px;
+            border-radius: 25px;
         }
 
         .toggle-switch input {
@@ -265,16 +272,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #dada18; /* Log In default color (yellow) */
+            background-color: #232834; /* Log In default color (yellow) */
             transition: .4s;
-            border-radius: 34px;
+            border-radius: 37px;
         }
 
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 26px;
-            width: 26px;
+            height: 29px;
+            width: 29px;
             left: 4px;
             bottom: 4px;
             background-color: white;
@@ -284,9 +291,9 @@
 
         /* When checked (Sign Up), change color and slider position */
         input:checked + .toggle-slider {
-            background-color: #0f520c; /* Sign Up color (green) */
+            background-color: #232834; /* Sign Up color (green) */
         }
 
         input:checked + .toggle-slider:before {
-            transform: translateX(66px); 
+            transform: translateX(25px); 
         }
