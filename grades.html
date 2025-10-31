@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grades — Elegant View</title>
+  <link rel="stylesheet" href="css/student_v2.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- TOP NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-logo">GGF</div>
+      <div class="navbar-text">
+        <div class="navbar-title">Glorious God's Family</div>
+        <div class="navbar-subtitle">Christian School</div>
+      </div>
+    </div>
+    <div class="navbar-actions">
+      <div class="user-menu">
+        <span>Student</span>
+        <button class="btn-icon">⋮</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN PAGE CONTAINER -->
+  <div class="page-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="side">
+      <nav class="nav">
+        <a href="student.html">Profile</a>
+        <a href="schedule.html">Schedule</a>
+        <a class="active" href="grades.html">Grades</a>
+        <a href="account.html">Account Balance</a>
+        <a href="announcements.html">Announcements</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <div class="side-foot">Logged in as <strong>Student</strong></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <header class="header">
+        <h1>Academic Grades</h1>
+      </header>
+
+      <section class="profile-grid" style="grid-template-columns: 1fr;">
+        <section class="content">
+          <div class="card small-grid">
+            <div class="mini-card">
+              <div class="mini-head">Overall GPA</div>
+              <div class="mini-val">3.87</div>
+              <p class="muted">Excellent</p>
+            </div>
+            <div class="mini-card">
+              <div class="mini-head">Best Subject</div>
+              <div class="mini-val">Science</div>
+              <p class="muted">92 Average</p>
+            </div>
+            <div class="mini-card">
+              <div class="mini-head">Total Credits</div>
+              <div class="mini-val">120</div>
+              <p class="muted">On track</p>
+            </div>
+            <div class="mini-card">
+              <div class="mini-head">Class Rank</div>
+              <div class="mini-val">5th</div>
+              <p class="muted">Top 10%</p>
+            </div>
+          </div>
+
+          <div class="card large">
+            <div class="card-head">
+              <h3>Subject Breakdown</h3>
+            </div>
+            <div class="card-body">
+              <table class="grades-table">
+                <thead>
+                  <tr>
+                    <th>Subject</th>
+                    <th>Q1</th>
+                    <th>Q2</th>
+                    <th>Q3</th>
+                    <th>Q4</th>
+                    <th>Final</th>
+                    <th>Credits</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Mathematics</td>
+                    <td>88</td>
+                    <td>90</td>
+                    <td>85</td>
+                    <td>87</td>
+                    <td>88</td>
+                    <td>3.0</td>
+                  </tr>
+                  <tr>
+                    <td>Science</td>
+                    <td>92</td>
+                    <td>91</td>
+                    <td>93</td>
+                    <td>90</td>
+                    <td>92</td>
+                    <td>4.0</td>
+                  </tr>
+                  <tr>
+                    <td>English</td>
+                    <td>84</td>
+                    <td>86</td>
+                    <td>85</td>
+                    <td>88</td>
+                    <td>86</td>
+                    <td>3.5</td>
+                  </tr>
+                  <tr>
+                    <td>History</td>
+                    <td>89</td>
+                    <td>87</td>
+                    <td>90</td>
+                    <td>91</td>
+                    <td>89</td>
+                    <td>3.0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      const year = document.getElementById('year');
+      if(year) year.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

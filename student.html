@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Profile — Elegant View</title>
+  <link rel="stylesheet" href="css/student_v2.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- TOP NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-logo">GGF</div>
+      <div class="navbar-text">
+        <div class="navbar-title">Glorious God's Family</div>
+        <div class="navbar-subtitle">Christian School</div>
+      </div>
+    </div>
+    <div class="navbar-actions">
+      <div class="user-menu">
+        <span>Student</span>
+        <button class="btn-icon">⋮</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN PAGE CONTAINER -->
+  <div class="page-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="side">
+      <nav class="nav">
+        <a class="active" href="student.html">Profile</a>
+        <a href="schedule.html">Schedule</a>
+        <a href="grades.html">Grades</a>
+        <a href="account.html">Account Balance</a>
+        <a href="announcements.html">Announcements</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <div class="side-foot">Logged in as <strong>Student</strong></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <header class="header">
+        <h1>Student Profile</h1>
+      </header>
+
+      <section class="profile-grid">
+        <!-- LEFT: hero -->
+        <aside class="hero">
+          <div class="avatar-wrap">
+            <!-- Avatar with upload overlay -->
+            <div class="avatar-container">
+              <img id="avatarImage" class="avatar" src="https://placehold.co/240x240/0f520c/dada18?text=Photo" alt="Student photo">
+              <div class="avatar-overlay">
+                <label for="avatarInput" class="upload-label">
+                  <span class="upload-icon">📤</span>
+                  <span class="upload-text">Upload Photo</span>
+                </label>
+                <input id="avatarInput" type="file" class="avatar-input" accept="image/*" />
+              </div>
+            </div>
+            <div class="badge">Grade 3</div>
+          </div>
+
+          <h2 class="name">Sampol</h2>
+          <p class="role">Section A • Student ID: <strong>2024-001</strong></p>
+
+          <div class="card info">
+            <div class="row">
+              <div class="label">Email</div>
+              <div class="value">1@gmail.com</div>
+            </div>
+            <div class="row">
+              <div class="label">Status</div>
+              <div class="value status">Not Enrolled</div>
+            </div>
+            <div class="row">
+              <div class="label">Member Since</div>
+              <div class="value">Sep 13, 2025</div>
+            </div>
+          </div>
+
+          <div class="quick-buttons">
+            <a class="btn ghost" href="#">Edit Profile</a>
+            <a class="btn" href="account.html">Account Balance</a>
+          </div>
+
+          <div class="small-card">
+            <h4>Schedule (Today)</h4>
+            <ul class="schedule">
+              <li><span class="time">08:00</span> • Mathematics</li>
+              <li><span class="time">09:00</span> • Science</li>
+              <li><span class="time">10:00</span> • English</li>
+            </ul>
+            <a href="schedule.html" class="link-more">View full schedule →</a>
+          </div>
+        </aside>
+
+        <!-- RIGHT: details, tiles -->
+        <section class="content">
+          <div class="cards">
+            <div class="card large">
+              <div class="card-head">
+                <h3>Grades</h3>
+                <div class="card-actions">
+                  <button class="tab-btn active" data-tab="grades">Quarter View</button>
+                  <button class="tab-btn" data-tab="avg">Average</button>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <div class="tab-pane" id="grades">
+                  <table class="grades-table">
+                    <thead><tr><th>Subject</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Final</th></tr></thead>
+                    <tbody>
+                      <tr><td>Mathematics</td><td>88</td><td>90</td><td>85</td><td>87</td><td>88</td></tr>
+                      <tr><td>Science</td><td>92</td><td>91</td><td>93</td><td>90</td><td>92</td></tr>
+                      <tr><td>English</td><td>84</td><td>86</td><td>85</td><td>88</td><td>86</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="tab-pane hidden" id="avg">
+                  <div class="big-metric">Overall Average: <strong>89.3%</strong></div>
+                  <p class="muted">Great work — keep it up!</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card small-grid">
+              <div class="mini-card">
+                <div class="mini-head">Account Balance</div>
+                <div class="mini-val">₱1,250.00</div>
+                <a class="mini-link" href="account.html">Pay Now</a>
+              </div>
+
+              <div class="mini-card">
+                <div class="mini-head">Status</div>
+                <div class="mini-val status">Not Enrolled</div>
+                <a class="mini-link" href="#">Contact Admin</a>
+              </div>
+
+              <div class="mini-card">
+                <div class="mini-head">Announcements</div>
+                <div class="mini-val small">2 new</div>
+                <a class="mini-link" href="announcements.html">See announcements</a>
+              </div>
+
+              <div class="mini-card">
+                <div class="mini-head">Profile</div>
+                <div class="mini-val small">Complete</div>
+                <a class="mini-link" href="#">View details</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card announcements">
+            <h3>Latest Announcements</h3>
+            <ul class="ann-list">
+              <li><strong>Oct 15</strong> — Parent-Teacher Conference on Oct 20.</li>
+              <li><strong>Oct 10</strong> — School fee due date extended.</li>
+            </ul>
+            <a href="announcements.html" class="link-more">All announcements →</a>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
+    </main>
+  </div>
+
+  <script>
+    // small interactions: year, print, tabs
+    (function(){
+      const year = document.getElementById('year');
+      if(year) year.textContent = new Date().getFullYear();
+
+      const printBtn = document.getElementById('printBtn');
+      if(printBtn) printBtn.addEventListener('click', ()=> window.print());
+
+      document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.dataset.tab;
+          document.querySelectorAll('.tab-pane').forEach(p=> p.classList.add('hidden'));
+          const el = document.getElementById(target);
+          if(el) el.classList.remove('hidden');
+        });
+      });
+
+      const search = document.getElementById('search');
+      if(search) search.addEventListener('input', ()=>{
+        const q = search.value.trim().toLowerCase();
+        document.querySelectorAll('.link-more, .mini-card, .nav a').forEach(el=>{
+          el.style.opacity = q === '' ? '' : (el.textContent.toLowerCase().includes(q) ? '1' : '0.3');
+        });
+      });
+
+      // ===== AVATAR UPLOAD =====
+      const avatarInput = document.getElementById('avatarInput');
+      const avatarImage = document.getElementById('avatarImage');
+
+      // Load saved avatar from localStorage on page load
+      const savedAvatar = localStorage.getItem('studentAvatar');
+      if (savedAvatar) {
+        avatarImage.src = savedAvatar;
+      }
+
+      // Handle file selection
+      if (avatarInput) {
+        avatarInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const imageData = event.target.result;
+              avatarImage.src = imageData;
+              // Save to localStorage
+              localStorage.setItem('studentAvatar', imageData);
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
