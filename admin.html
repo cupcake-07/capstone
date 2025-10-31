@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Admin Page</title>
+		<link rel="stylesheet" href="admin.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<div class="app">
+			<aside class="sidebar">
+				<div class="brand">Glorious God's Family<span>Christian School</span></div>
+				<nav>
+					<a class="active" href="#dashboard">Dashboard</a>
+					<a href="#students">Students</a>
+					<a href="#teachers">Teachers</a>
+					<a href="#classes">Classes</a>
+					<a href="#reports">Reports</a>
+					<a href="#settings">Settings</a>
+				</nav>
+				<div class="sidebar-foot">Logged in as <strong>admin</strong></div>
+			</aside>
+
+			<main class="main">
+				<header class="topbar">
+					<h1>Dashboard</h1>
+					<div class="top-actions">
+						<input id="globalSearch" placeholder="Search students or teachers..." />
+						<button id="exportCsv">Export CSV</button>
+					</div>
+				</header>
+
+				<section class="cards" id="dashboard">
+					<div class="card">
+						<div class="card-title">Total Students</div>
+						<div class="card-value" id="totalStudents">—</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Total Teachers</div>
+						<div class="card-value" id="totalTeachers">—</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Average GPA</div>
+						<div class="card-value" id="avgGpa">—</div>
+					</div>
+					<div class="card">
+						<div class="card-title">Attendance Rate</div>
+						<div class="card-value" id="attendanceRate">—</div>
+					</div>
+				</section>
+
+				<section class="charts">
+					<div class="chart-card">
+						<h3>Attendance (last 7 days)</h3>
+						<canvas id="attendanceChart"></canvas>
+					</div>
+					<div class="chart-card">
+						<h3>Grade Distribution</h3>
+						<canvas id="gradeChart"></canvas>
+					</div>
+				</section>
+
+				<section class="data-table" id="students">
+					<h2>Students</h2>
+					<div class="table-actions">
+						<label>Show <select id="pageSize"><option>10</option><option>25</option><option>50</option></select> rows</label>
+					</div>
+					<table id="studentsTable">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Name</th>
+								<th>Class</th>
+								<th>GPA</th>
+								<th>Attendance %</th>
+							</tr>
+						</thead>
+						<tbody>
+							
+						</tbody>
+					</table>
+				</section>
+
+				<footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
+			</main>
+		</div>
+
+		
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="admin.js" defer></script>
+	</body>
+</html>
