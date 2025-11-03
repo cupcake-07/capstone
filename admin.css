@@ -3,8 +3,11 @@
   --card:#ffffff;
   --muted:#6b7280;
   --accent:#3b82f6;
-  --sidebar:#0f1724;
+  --sidebar:#000000;
   --text:#0f1724;
+  --hover-yellow: #e6e017;
+  --hover-text: #111217;
+  --hover-border: rgba(0,0,0,0.12);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -22,9 +25,23 @@ body{
 .brand{font-size:20px;font-weight:700}
 .brand span{color:var(--accent);margin-left:6px}
 .sidebar nav{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.sidebar a{color:rgba(255,255,255,0.8);text-decoration:none;padding:8px;border-radius:6px}
-.sidebar a.active,.sidebar a:hover{background:rgba(255,255,255,0.06);color:#fff}
+.sidebar a{color:rgba(255,255,255,0.9);text-decoration:none;padding:10px 14px;border-radius:8px;display:inline-block;transition:background .18s ease,color .15s ease,border .12s ease,box-shadow .12s ease}
+.sidebar a.active{background:rgba(255,255,255,0.06);color:#fff}
 .sidebar-foot{margin-top:auto;font-size:13px;opacity:0.9}
+
+
+.sidebar nav a[href="#students"]:hover,
+.sidebar nav a[href="#teachers"]:hover,
+.sidebar nav a[href="#classes"]:hover,
+.sidebar nav a[href="#reports"]:hover,
+.sidebar nav a[href="#settings"]:hover {
+  background: var(--hover-yellow);
+  color: var(--hover-text);
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+
 
 .main{flex:1;padding:20px;display:flex;flex-direction:column;gap:20px}
 .topbar{display:flex;align-items:center;justify-content:space-between}
