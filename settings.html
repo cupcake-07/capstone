@@ -1,94 +1,90 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Settings — Elegant View</title>
-  <link rel="stylesheet" href="css/student_v2.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body>
-  <!-- TOP NAVBAR -->
-  <nav class="navbar">
-    <div class="navbar-brand">
-      <div class="navbar-logo">GGF</div>
-      <div class="navbar-text">
-        <div class="navbar-title">Glorious God's Family</div>
-        <div class="navbar-subtitle">Christian School</div>
-      </div>
-    </div>
-    <div class="navbar-actions">
-      <div class="user-menu">
-        <span>Student</span>
-        <button class="btn-icon">⋮</button>
-      </div>
-    </div>
-  </nav>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Settings - Admin Panel</title>
+		<link rel="stylesheet" href="css/admin.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<div class="app">
+			<aside class="sidebar">
+				<div class="brand">Glorious God's Family<span>Christian School</span></div>
+				<nav>
+					<a href="admin.html">Dashboard</a>
+					<a href="student_admin.html">Students</a>
+					<a href="teachers.html">Teachers</a>
+					<a href="classes.html">Classes</a>
+					<a href="reports.html">Reports</a>
+					<a class="active" href="settings.html">Settings</a>
+				</nav>
+				<div class="sidebar-foot">Logged in as <strong>admin</strong></div>
+			</aside>
 
-  <!-- MAIN PAGE CONTAINER -->
-  <div class="page-wrapper">
-    <!-- SIDEBAR -->
-    <aside class="side">
-      <nav class="nav">
-        <a href="student.html">Profile</a>
-        <a href="schedule.html">Schedule</a>
-        <a href="grades.html">Grades</a>
-        <a href="account.html">Account Balance</a>
-        <a href="announcements.html">Announcements</a>
-        <a class="active" href="settings.html">Settings</a>
-      </nav>
-      <div class="side-foot">Logged in as <strong>Student</strong></div>
-    </aside>
+			<main class="main">
+				<header class="topbar">
+					<h1>Settings</h1>
+				</header>
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
-      <header class="header">
-        <h1>Settings</h1>
-      </header>
+				<section class="settings-container">
+					<div class="settings-card">
+						<h2>General Settings</h2>
+						<form>
+							<div class="form-group">
+								<label>School Name</label>
+								<input type="text" value="Glorious God's Family Christian School" />
+							</div>
+							<div class="form-group">
+								<label>School Email</label>
+								<input type="email" value="info@gloriousgod.edu" />
+							</div>
+							<div class="form-group">
+								<label>Phone Number</label>
+								<input type="tel" value="(555) 123-4567" />
+							</div>
+							<button type="submit" class="btn-save">Save Changes</button>
+						</form>
+					</div>
 
-      <section class="profile-grid" style="grid-template-columns: 1fr;">
-        <section class="content">
-          <div class="card large">
-            <div class="card-head">
-              <h3>Account Settings</h3>
-            </div>
-            <div class="card-body">
-              <div class="settings-group">
-                <label>Email Address</label>
-                <input type="email" class="settings-input" value="sampol@ggfschool.edu" />
-              </div>
-              <div class="settings-group">
-                <label>Phone Number</label>
-                <input type="tel" class="settings-input" value="+63 921 234 5678" />
-              </div>
-              <div class="settings-group">
-                <label>Current Password</label>
-                <input type="password" class="settings-input" placeholder="Enter current password" />
-              </div>
-              <div class="settings-group">
-                <label>New Password</label>
-                <input type="password" class="settings-input" placeholder="Enter new password" />
-              </div>
-              <div class="settings-group">
-                <label>Confirm Password</label>
-                <input type="password" class="settings-input" placeholder="Confirm new password" />
-              </div>
-              <button class="btn" style="margin-top: 16px;">Save Changes</button>
-            </div>
-          </div>
-        </section>
-      </section>
+					<div class="settings-card">
+						<h2>System Settings</h2>
+						<form>
+							<div class="form-group">
+								<label>Academic Year</label>
+								<input type="text" value="2024-2025" />
+							</div>
+							<div class="form-group">
+								<label>Grading Scale</label>
+								<select>
+									<option>A-F (100-0)</option>
+									<option>1-10</option>
+									<option>Pass/Fail</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label>Attendance Threshold (%)</label>
+								<input type="number" value="75" min="0" max="100" />
+							</div>
+							<button type="submit" class="btn-save">Save Changes</button>
+						</form>
+					</div>
 
-      <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
-    </main>
-  </div>
+					<div class="settings-card">
+						<h2>User Management</h2>
+						<div class="form-group">
+							<button id="manageUsers" class="btn-secondary">Manage Users</button>
+							<button id="changePassword" class="btn-secondary">Change Password</button>
+						</div>
+					</div>
+				</section>
 
-  <script>
-    (function(){
-      const year = document.getElementById('year');
-      if(year) year.textContent = new Date().getFullYear();
-    })();
-  </script>
-</body>
+				<footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
+			</main>
+		</div>
+
+		<script src="admin.js" defer></script>
+	</body>
 </html>

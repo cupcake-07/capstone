@@ -420,6 +420,7 @@ body {
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 2px 0 10px rgba(2,6,23,0.08);
+    
 }
 
 /* move the content to the right without creating horizontal overflow */

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>Teachers - Admin Panel</title>
+		<link rel="stylesheet" href="css/admin.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<div class="app">
+			<aside class="sidebar">
+				<div class="brand">Glorious God's Family<span>Christian School</span></div>
+				<nav>
+					<a href="admin.html">Dashboard</a>
+					<a href="student_admin.html">Students</a>
+					<a class="active" href="teachers.html">Teachers</a>
+					<a href="classes.html">Classes</a>
+					<a href="reports.html">Reports</a>
+					<a href="settings.html">Settings</a>
+				</nav>
+				<div class="sidebar-foot">Logged in as <strong>admin</strong></div>
+			</aside>
+
+			<main class="main">
+				<header class="topbar">
+					<h1>Teachers</h1>
+					<div class="top-actions">
+						<input id="globalSearch" placeholder="Search teachers..." />
+						<button id="addTeacher">+ Add Teacher</button>
+					</div>
+				</header>
+
+				<section class="charts">
+					<div class="chart-card">
+						<h3>Teachers by Department</h3>
+						<canvas id="departmentChart"></canvas>
+					</div>
+					<div class="chart-card">
+						<h3>Class Load Distribution</h3>
+						<canvas id="classLoadChart"></canvas>
+					</div>
+				</section>
+
+				<section class="data-table">
+					<div class="table-actions">
+						<label>Show <select id="pageSize"><option>10</option><option>25</option><option>50</option></select> rows</label>
+					</div>
+					<table id="teachersTable">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Name</th>
+								<th>Subject</th>
+								<th>Department</th>
+								<th>Email</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							
+						</tbody>
+					</table>
+				</section>
+
+				<footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
+			</main>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="admin.js" defer></script>
+		<script>
+			// Teachers by Department Chart
+			const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+			new Chart(departmentCtx, {
+				type: 'bar',
+				data: {
+					labels: ['Science', 'Math', 'English', 'History', 'Arts', 'PE'],
+					datasets: [{
+						label: 'Number of Teachers',
+						data: [5, 6, 4, 3, 3, 2],
+						backgroundColor: '#3b82f6'
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false }
+					},
+					scales: {
+						y: { beginAtZero: true }
+					}
+				}
+			});
+
+			// Class Load Distribution
+			const classLoadCtx = document.getElementById('classLoadChart').getContext('2d');
+			new Chart(classLoadCtx, {
+				type: 'radar',
+				data: {
+					labels: ['Teacher A', 'Teacher B', 'Teacher C', 'Teacher D', 'Teacher E'],
+					datasets: [{
+						label: 'Classes Taught',
+						data: [5, 4, 6, 5, 3],
+						borderColor: '#3b82f6',
+						backgroundColor: 'rgba(59, 130, 246, 0.1)',
+						pointBackgroundColor: '#3b82f6'
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: true }
+					}
+				}
+			});
+
+			document.getElementById('year').textContent = new Date().getFullYear();
+		</script>
+	</body>
+</html>
