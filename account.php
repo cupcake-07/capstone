@@ -1,6 +1,13 @@
+<?php
+require_once 'config/database.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['user_id'])) { header('Location: login.php'); exit; }
+$name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
+?>
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- ...existing head... -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Account Balance — Elegant View</title>
@@ -20,7 +27,7 @@
     </div>
     <div class="navbar-actions">
       <div class="user-menu">
-        <span>Student</span>
+        <span><?php echo $name; ?></span>
         <button class="btn-icon">⋮</button>
       </div>
     </div>
@@ -31,12 +38,12 @@
     <!-- SIDEBAR -->
     <aside class="side">
       <nav class="nav">
-        <a href="student.html">Profile</a>
-        <a href="schedule.html">Schedule</a>
-        <a href="grades.html">Grades</a>
-        <a class="active" href="account.html">Account Balance</a>
-        <a href="announcements.html">Announcements</a>
-        <a href="student_settings.html">Settings</a>
+        <a href="student.php">Profile</a>
+        <a href="schedule.php">Schedule</a>
+        <a href="grades.php">Grades</a>
+        <a class="active" href="account.php">Account Balance</a>
+        <a href="announcements.php">Announcements</a>
+        <a href="student_settings.php">Settings</a>
       </nav>
       <div class="side-foot">Logged in as <strong>Student</strong></div>
     </aside>
@@ -49,6 +56,7 @@
 
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">
+          <!-- ...existing content from account.html... -->
           <div class="card small-grid">
             <div class="mini-card" style="background: linear-gradient(180deg, #0b1220 0%, #0d1114 100%); color: #ffffff; border: 1px solid rgba(218, 218, 24, 0.2);">
               <div class="mini-head" style="color: #ffffff;">Current Balance</div>
@@ -112,7 +120,7 @@
         </section>
       </section>
 
-      <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
+      <footer class="footer">© <span id="year"><?php echo date('Y'); ?></span> Schoolwide Management System</footer>
     </main>
   </div>
 

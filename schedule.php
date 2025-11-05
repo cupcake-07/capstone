@@ -1,3 +1,9 @@
+<?php
+require_once 'config/database.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['user_id'])) { header('Location: login.php'); exit; }
+$name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -20,7 +26,7 @@
     </div>
     <div class="navbar-actions">
       <div class="user-menu">
-        <span>Student</span>
+        <span><?php echo $name; ?></span>
         <button class="btn-icon">⋮</button>
       </div>
     </div>
@@ -31,21 +37,19 @@
     <!-- SIDEBAR -->
     <aside class="side">
       <nav class="nav">
-        <a href="student.html">Profile</a>
-        <a class="active" href="schedule.html">Schedule</a>
-        <a href="grades.html">Grades</a>
-        <a href="account.html">Account Balance</a>
-        <a href="announcements.html">Announcements</a>
-        <a href="student_settings.html">Settings</a>
+        <a href="student.php">Profile</a>
+        <a class="active" href="schedule.php">Schedule</a>
+        <a href="grades.php">Grades</a>
+        <a href="account.php">Account Balance</a>
+        <a href="announcements.php">Announcements</a>
+        <a href="student_settings.php">Settings</a>
       </nav>
       <div class="side-foot">Logged in as <strong>Student</strong></div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main">
-      <header class="header">
-        <h1>Class Schedule</h1>
-      </header>
+      <header class="header"><h1>Class Schedule</h1></header>
 
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">
@@ -109,36 +113,14 @@
                       <p>Room 101 • Mr. Johnson</p>
                     </div>
                   </div>
-                  <div class="schedule-item">
-                    <div class="item-time">Monday, 09:00</div>
-                    <div class="item-detail">
-                      <strong>Science</strong>
-                      <p>Lab A • Ms. Smith</p>
-                    </div>
-                  </div>
-                  <div class="schedule-item">
-                    <div class="item-time">Monday, 10:00</div>
-                    <div class="item-detail">
-                      <strong>English</strong>
-                      <p>Room 205 • Mr. Brown</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <div class="card announcements">
-            <h3>Upcoming Events</h3>
-            <ul class="ann-list">
-              <li><strong>Oct 20</strong> — Parent-Teacher Conference</li>
-              <li><strong>Oct 28</strong> — Mid-term Exams Begin</li>
-            </ul>
-          </div>
         </section>
       </section>
 
-      <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
+      <footer class="footer">© <span id="year"><?php echo date('Y'); ?></span> Schoolwide Management System</footer>
     </main>
   </div>
 
@@ -146,7 +128,6 @@
     (function(){
       const year = document.getElementById('year');
       if(year) year.textContent = new Date().getFullYear();
-
       document.querySelectorAll('.tab-btn').forEach(btn=>{
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));

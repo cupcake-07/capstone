@@ -1,3 +1,49 @@
+<?php
+require_once 'config/database.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Redirect to login if not logged in
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$userId = intval($_SESSION['user_id']);
+
+// Fetch user info
+$user = null;
+if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level FROM students WHERE id = ? LIMIT 1")) {
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    // get_result may not be available; use fallback
+    if (method_exists($stmt, 'get_result')) {
+        $res = $stmt->get_result();
+        if ($res && $res->num_rows === 1) $user = $res->fetch_assoc();
+    } else {
+        $stmt->store_result();
+        if ($stmt->num_rows === 1) {
+            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade);
+            if ($stmt->fetch()) {
+                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade];
+            }
+        }
+    }
+    $stmt->close();
+}
+if (!$user) {
+    session_unset();
+    session_destroy();
+    header('Location: login.php');
+    exit;
+}
+
+// sanitize for output
+$name = htmlspecialchars($user['name'] ?? 'Student');
+$email = htmlspecialchars($user['email'] ?? '');
+$grade = htmlspecialchars($user['grade_level'] ?? 'Not Set');
+$studentIdDisplay = htmlspecialchars($user['id'] ?? '');
+$statusText = ($grade === 'Not Set' || $grade === '') ? 'Not Enrolled' : 'Enrolled';
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -20,7 +66,7 @@
     </div>
     <div class="navbar-actions">
       <div class="user-menu">
-        <span>Student</span>
+        <span><?php echo $name; ?></span>
         <button class="btn-icon">⋮</button>
       </div>
     </div>
@@ -31,12 +77,12 @@
     <!-- SIDEBAR -->
     <aside class="side">
       <nav class="nav">
-        <a class="active" href="student.html">Profile</a>
-        <a href="schedule.html">Schedule</a>
-        <a href="grades.html">Grades</a>
-        <a href="account.html">Account Balance</a>
-        <a href="announcements.html">Announcements</a>
-        <a href="settings.html">Settings</a>
+        <a class="active" href="student.php">Profile</a>
+        <a href="schedule.php">Schedule</a>
+        <a href="grades.php">Grades</a>
+        <a href="account.php">Account Balance</a>
+        <a href="announcements.php">Announcements</a>
+        <a href="student_settings.php">Settings</a>
       </nav>
       <div class="side-foot">Logged in as <strong>Student</strong></div>
     </aside>
@@ -51,7 +97,6 @@
         <!-- LEFT: hero -->
         <aside class="hero">
           <div class="avatar-wrap">
-            <!-- Avatar with upload overlay -->
             <div class="avatar-container">
               <img id="avatarImage" class="avatar" src="https://placehold.co/240x240/0f520c/dada18?text=Photo" alt="Student photo">
               <div class="avatar-overlay">
@@ -62,30 +107,30 @@
                 <input id="avatarInput" type="file" class="avatar-input" accept="image/*" />
               </div>
             </div>
-            <div class="badge">Grade 3</div>
+            <div class="badge">Grade <?php echo $grade; ?></div>
           </div>
 
-          <h2 class="name">Sampol</h2>
-          <p class="role">Section A • Student ID: <strong>2024-001</strong></p>
+          <h2 class="name"><?php echo $name; ?></h2>
+          <p class="role">Section A • Student ID: <strong><?php echo $studentIdDisplay; ?></strong></p>
 
           <div class="card info">
             <div class="row">
               <div class="label">Email</div>
-              <div class="value">1@gmail.com</div>
+              <div class="value"><?php echo $email; ?></div>
             </div>
             <div class="row">
               <div class="label">Status</div>
-              <div class="value status">Not Enrolled</div>
+              <div class="value status"><?php echo $statusText; ?></div>
             </div>
             <div class="row">
               <div class="label">Member Since</div>
-              <div class="value">Sep 13, 2025</div>
+              <div class="value">-</div>
             </div>
           </div>
 
           <div class="quick-buttons">
-            <a class="btn ghost" href="#">Edit Profile</a>
-            <a class="btn" href="account.html">Account Balance</a>
+            <a class="btn ghost" href="student_settings.php">Edit Profile</a>
+            <a class="btn" href="account.php">Account Balance</a>
           </div>
 
           <div class="small-card">
@@ -95,7 +140,7 @@
               <li><span class="time">09:00</span> • Science</li>
               <li><span class="time">10:00</span> • English</li>
             </ul>
-            <a href="schedule.html" class="link-more">View full schedule →</a>
+            <a href="schedule.php" class="link-more">View full schedule →</a>
           </div>
         </aside>
 
@@ -134,19 +179,19 @@
               <div class="mini-card">
                 <div class="mini-head">Account Balance</div>
                 <div class="mini-val">₱1,250.00</div>
-                <a class="mini-link" href="account.html">Pay Now</a>
+                <a class="mini-link" href="account.php">Pay Now</a>
               </div>
 
               <div class="mini-card">
                 <div class="mini-head">Status</div>
-                <div class="mini-val status">Not Enrolled</div>
+                <div class="mini-val status"><?php echo $statusText; ?></div>
                 <a class="mini-link" href="#">Contact Admin</a>
               </div>
 
               <div class="mini-card">
                 <div class="mini-head">Announcements</div>
                 <div class="mini-val small">2 new</div>
-                <a class="mini-link" href="announcements.html">See announcements</a>
+                <a class="mini-link" href="announcements.php">See announcements</a>
               </div>
 
               <div class="mini-card">
@@ -163,7 +208,7 @@
               <li><strong>Oct 15</strong> — Parent-Teacher Conference on Oct 20.</li>
               <li><strong>Oct 10</strong> — School fee due date extended.</li>
             </ul>
-            <a href="announcements.html" class="link-more">All announcements →</a>
+            <a href="announcements.php" class="link-more">All announcements →</a>
           </div>
         </section>
       </section>
@@ -173,13 +218,9 @@
   </div>
 
   <script>
-    // small interactions: year, print, tabs
     (function(){
       const year = document.getElementById('year');
       if(year) year.textContent = new Date().getFullYear();
-
-      const printBtn = document.getElementById('printBtn');
-      if(printBtn) printBtn.addEventListener('click', ()=> window.print());
 
       document.querySelectorAll('.tab-btn').forEach(btn=>{
         btn.addEventListener('click', () => {
@@ -192,25 +233,10 @@
         });
       });
 
-      const search = document.getElementById('search');
-      if(search) search.addEventListener('input', ()=>{
-        const q = search.value.trim().toLowerCase();
-        document.querySelectorAll('.link-more, .mini-card, .nav a').forEach(el=>{
-          el.style.opacity = q === '' ? '' : (el.textContent.toLowerCase().includes(q) ? '1' : '0.3');
-        });
-      });
-
-      // ===== AVATAR UPLOAD =====
       const avatarInput = document.getElementById('avatarInput');
       const avatarImage = document.getElementById('avatarImage');
-
-      // Load saved avatar from localStorage on page load
       const savedAvatar = localStorage.getItem('studentAvatar');
-      if (savedAvatar) {
-        avatarImage.src = savedAvatar;
-      }
-
-      // Handle file selection
+      if (savedAvatar) avatarImage.src = savedAvatar;
       if (avatarInput) {
         avatarInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
@@ -219,7 +245,6 @@
             reader.onload = (event) => {
               const imageData = event.target.result;
               avatarImage.src = imageData;
-              // Save to localStorage
               localStorage.setItem('studentAvatar', imageData);
             };
             reader.readAsDataURL(file);
