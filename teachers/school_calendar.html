@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Calendar Elegant View</title>
+  <link rel="stylesheet" href="teacher.css" />
+  <link rel="stylesheet" href="calendar.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- TOP NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-logo">GGF</div>
+      <div class="navbar-text">
+        <div class="navbar-title">Glorious God's Family</div>
+        <div class="navbar-subtitle">Christian School</div>
+      </div>
+    </div>
+    <div class="navbar-actions">
+      <div class="user-menu">
+        <span>Teacher</span>
+        <a href="login.html">
+        <img src="loginswitch.png" id="loginswitch"></img></a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN PAGE CONTAINER -->
+    <div class="page-wrapper">
+    <!-- SIDEBAR -->
+        <aside class="side">
+            <nav class="nav">
+                <a href="profile.html">Profile</a>
+                <a href="student_schedule.html">Schedule</a>        <a href="attendance.html">Attendance</a>
+                <a href="listofstudents.html">Lists of students</a>
+                <a href="grades.html">Grades</a>
+                <a href="school_calendar.html">School Calendar</a>
+                <a href="announcements.html">Announcements</a>
+                <a href="teacherslist.html">Teachers</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+        </aside>
+
+    <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="header">
+                <h1>School Calendar</h1>
+            </header>
+        
+            <section class="calendar-container">
+                <div class="calendar-header">
+                    <button id="prev-month" class="nav-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left">
+                            <path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <h2 id="current-month-year">Month Year</h2>
+                    <button id="next-month" class="nav-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right">
+                            <path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="day-name">Sun</div>
+                    <div class="day-name">Mon</div>
+                    <div class="day-name">Tue</div>
+                    <div class="day-name">Wed</div>
+                    <div class="day-name">Thu</div>
+                    <div class="day-name">Fri</div>
+                    <div class="day-name">Sat</div>
+                </div>
+                <div class="events-management-card card">
+                    <div class="card-title" style="color: var(--green);">Add New School Event</div>
+                    <form id="add-event-form">
+                        <input type="date" id="event-date" required>
+                        <input type="text" id="event-title" placeholder="Event Title" required>
+                        <button type="submit">Add Event</button>
+                    </form>
+                    <div id="message-box"></div>
+                </div>
+                <div class="events-list-card card">
+                    <div class="card-title">School Events for 
+                        <span id="select-date-display">Today</span>
+                    </div>
+                    <ul id="events-lists">
+                        <li>Loading events...</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>123 Faith Avenue</p>
+                    <p>Your City, ST 12345</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Email: info@gloriousgod.edu</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Connect With Us</h3>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook">
+                            <svg xlmns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram">
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Twitter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-twitter">
+                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>System Info</h3>
+                    <p>Schoolwide Management System</p>
+                    <p>Version 1.0.0</p>
+                </div>
+            <div class="footer-bottom">
+                    <p>&copy; 2025 Glorious God Family Christian School. All rights reserved.</p>
+                    <div class="footer-links">
+                        <a href="privacy.html">Privacy Policy</a> |
+                        <a href="terms.html">Terms of Service</a>
+                    </div>
+                <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
+            </div>
+        </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Enable Firestore Debug logging
+        setLogLevel('Debug');
+
+        // --- GLOBAL SETUP ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // --- STATE & UTILS ---
+        let currentUserId = null;
+        let isAuthReady = false;
+        // Format: "YYYY-MM-DD": [{ id: docId, title: "Event Title" }]
+        let schoolEvents = {}; 
+        let selectedDateKey = null; // Key of the currently selected day (e.g., "2025-10-31")
+
+        const calendarGrid = document.querySelector('.calendar-grid');
+        const monthYearDisplay = document.getElementById('current-month-year');
+        const eventsList = document.getElementById('events-list');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const messageBox = document.getElementById('message-box');
+        
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        const dayNameCount = 7; // Constant for the number of day name header elements
+        
+        const zeroPad = (num) => num < 10 ? `0${num}` : num;
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+
+        // --- FIREBASE FUNCTIONS ---
+
+        // 1. Authentication
+        async function authenticateAndSubscribe() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUserId = auth.currentUser?.uid || crypto.randomUUID();
+                isAuthReady = true;
+                console.log("Firebase Authenticated. User ID:", currentUserId);
+                subscribeToEvents();
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+                showTemporaryMessage("Failed to connect to the database.", 'error');
+            }
+        }
+
+        // 2. Real-Time Subscription to Events
+        function subscribeToEvents() {
+            if (!isAuthReady) return;
+            
+            // Public path for school-wide calendar
+            const eventsCollectionPath = `artifacts/${appId}/public/data/school_calendar_events`;
+            const q = query(collection(db, eventsCollectionPath));
+
+            onSnapshot(q, (snapshot) => {
+                const newEvents = {};
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const { date, title } = data; // date is expected to be "YYYY-MM-DD"
+                    
+                    if (date && title) {
+                        if (!newEvents[date]) {
+                            newEvents[date] = [];
+                        }
+                        // Store the event object
+                        newEvents[date].push({ id: doc.id, title: title });
+                    }
+                });
+
+                schoolEvents = newEvents;
+                console.log("Events updated from Firestore:", schoolEvents);
+                
+                // Re-render the calendar grid to show new event markers
+                renderCalendar();
+                // If a day is selected, refresh the events list for that day
+                if (selectedDateKey) {
+                    const date = new Date(selectedDateKey);
+                    displayEvents(selectedDateKey, date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                } else {
+                     // Fallback in case initial selection failed
+                    selectToday();
+                }
+            }, (error) => {
+                console.error("Firestore Error (onSnapshot):", error);
+                showTemporaryMessage("Error loading events. Check console.", 'error');
+            });
+        }
+
+        // 3. Add Event
+        async function addSchoolEvent(date, title) {
+            if (!isAuthReady) {
+                showTemporaryMessage("Error: Database connection not ready.", 'error');
+                return;
+            }
+
+            const eventsCollectionPath = `artifacts/${appId}/public/data/school_calendar_events`;
+            try {
+                await addDoc(collection(db, eventsCollectionPath), {
+                    date: date, 
+                    title: title,
+                    createdBy: currentUserId,
+                    timestamp: new Date().toISOString()
+                });
+                showTemporaryMessage("Event added successfully!", 'success');
+                // The onSnapshot listener handles the re-render automatically
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showTemporaryMessage("Error adding event. See console for details.", 'error');
+            }
+        }
+
+        // --- CALENDAR RENDERING & LOGIC ---
+
+        function renderCalendar() {
+            // Remove all previously rendered day elements (keeping the 7 day names)
+            while (calendarGrid.children.length > dayNameCount) {
+                calendarGrid.removeChild(calendarGrid.lastChild);
+            }
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDayOfMonth.getDate();
+            const firstDayOfWeek = firstDayOfMonth.getDay(); 
+            
+            monthYearDisplay.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+            
+            // 1. Add filler days (cells from previous month)
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.classList.add('calendar-day', 'empty');
+                emptyDay.textContent = ''; // Ensure content is explicitly empty
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // 2. Add actual days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                dayElement.textContent = day;
+                // Store the date key in the element for easy access via event delegation
+                const dateKey = `${currentYear}-${zeroPad(currentMonth + 1)}-${zeroPad(day)}`;
+                dayElement.dataset.datekey = dateKey;
+
+                // Check for Today
+                const today = new Date();
+                if (date.toDateString() === today.toDateString()) {
+                    dayElement.classList.add('today');
+                }
+
+                // Check for Events
+                if (schoolEvents[dateKey] && schoolEvents[dateKey].length > 0) {
+                    dayElement.classList.add('has-event');
+                    const eventMarker = document.createElement('div');
+                    eventMarker.classList.add('event-marker');
+                    dayElement.appendChild(eventMarker);
+                }
+
+                calendarGrid.appendChild(dayElement);
+            }
+            
+            // Re-apply selection if necessary
+            if (selectedDateKey) {
+                 highlightSelectedDay(selectedDateKey);
+            }
+        }
+        
+        function selectDay(dateKey, element) {
+            // 1. Remove 'selected' class from all other days
+            document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
+            
+            // 2. Apply 'selected' class to the clicked element
+            element.classList.add('selected');
+
+            // 3. Update global state
+            selectedDateKey = dateKey; 
+            
+            // 4. Update the events list
+            const date = new Date(dateKey);
+            displayEvents(dateKey, date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+        }
+        
+        function selectToday() {
+            // Calculate today's date key
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${zeroPad(today.getMonth() + 1)}-${zeroPad(today.getDate())}`;
+
+            // Only proceed if viewing the current month/year
+            if (currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+                // Find today's element
+                const todayElement = calendarGrid.querySelector(`[data-datekey="${todayKey}"]`);
+                if (todayElement) {
+                    selectDay(todayKey, todayElement);
+                }
+            } else {
+                // If viewing a different month, just show month name
+                displayEvents(null, monthNames[currentMonth]);
+            }
+        }
+        
+        function highlightSelectedDay(dateKey) {
+            document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
+            const element = calendarGrid.querySelector(`[data-datekey="${dateKey}"]`);
+             if (element) {
+                element.classList.add('selected');
+            }
+        }
+
+        function displayEvents(dateKey, dateString) {
+            selectedDateDisplay.textContent = dateString;
+            eventsList.innerHTML = ''; // Clear existing events
+
+            const events = dateKey ? schoolEvents[dateKey] : null;
+
+            if (events && events.length > 0) {
+                events.forEach(event => {
+                    const li = document.createElement('li');
+                    li.textContent = event.title; 
+                    eventsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = `No scheduled school events for ${dateString}.`;
+                eventsList.appendChild(li);
+            }
+        }
+
+        function showTemporaryMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = ''; // Clear existing classes
+            messageBox.classList.add('message-box', `message-${type}`);
+            messageBox.style.display = 'block';
+
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // 1. Navigation Handlers
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            selectedDateKey = null; // Clear selection on month change
+            renderCalendar();
+            selectToday(); // Re-select today if in the current month, or select nothing
+        });
+
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            selectedDateKey = null; // Clear selection on month change
+            renderCalendar();
+            selectToday(); // Re-select today if in the current month, or select nothing
+        });
+
+        // 2. Event Delegation for Day Selection (The main fix)
+        calendarGrid.addEventListener('click', (e) => {
+            const dayElement = e.target.closest('.calendar-day');
+            // Ensure the clicked element is a valid, non-empty day cell
+            if (dayElement && !dayElement.classList.contains('empty') && dayElement.dataset.datekey) {
+                selectDay(dayElement.dataset.datekey, dayElement);
+            }
+        });
+
+        // 3. Add Event Form Handler
+        document.getElementById('add-event-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dateInput = document.getElementById('event-date');
+            const titleInput = document.getElementById('event-title');
+            
+            const dateValue = dateInput.value;
+            const titleValue = titleInput.value.trim();
+
+            if (dateValue && titleValue) {
+                addSchoolEvent(dateValue, titleValue);
+                // Clear inputs after successful submission attempt
+                dateInput.value = '';
+                titleInput.value = '';
+            } else {
+                showTemporaryMessage("Please fill in both the date and the event title.", 'error');
+            }
+        });
+
+        // Initial calls on page load
+        window.onload = () => {
+            document.getElementById('year').textContent = new Date().getFullYear();
+            
+            // 1. Render the calendar structure immediately (days show up now)
+            renderCalendar(); 
+            
+            // 2. Select and highlight today's date
+            selectToday();
+
+            // 3. Start Auth and Data Fetching
+            authenticateAndSubscribe();
+        };
+    </script>
+    </div> 
+</body>
+</html>
