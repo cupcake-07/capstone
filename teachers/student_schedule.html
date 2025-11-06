@@ -348,7 +348,34 @@
             const sel = document.getElementById('gradeSelect');
             currentGrade = sel.value || '1';
             loadSchedule();
+
+            // Store the current page in session storage
+            sessionStorage.setItem('lastPage', 'schedule.html');
         };
+
+        // Handle back navigation
+        function goBack() {
+            window.location.href = 'teacher.html';
+        }
+
+        // Handle keyboard navigation for accessibility
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                goBack();
+            }
+        });
+
+        // Store the schedule page in browser history
+        if (!window.location.hash) {
+            window.location.hash = '#schedule';
+        }
+
+        // Listen for popstate (browser back/forward buttons)
+        window.addEventListener('popstate', function() {
+            if (!window.location.hash) {
+                goBack();
+            }
+        });
     </script>
 </body>
 </html>
