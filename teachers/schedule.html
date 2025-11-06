@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Schedule - GGF Christian School</title>
+    <link rel="stylesheet" href="teacher.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="navbar-logo">GGF</div>
+            <div class="navbar-text">
+                <div class="navbar-title">Glorious God's Family</div>
+                <div class="navbar-subtitle">Christian School</div>
+            </div>
+        </div>
+        <div class="navbar-actions">
+            <div class="user-menu">
+                <span>Teacher</span>
+                <a href="login.html">
+                    <img src="loginswitch.png" id="loginswitch" alt="Login Switch">
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    
+    <div class="page-wrapper">
+        
+        <aside class="side">
+            <nav class="nav">
+                <a href="teacher.html">Dashboard</a>
+                <a href="profile.html">Profile</a>
+                <a href="student_schedule.html" class="active">Schedule</a>   
+                <a href="attendance.html">Attendance</a>
+                <a href="listofstudents.html">Lists of students</a>
+                <a href="grades.html">Grades</a>
+                <a href="school_calendar.html">School Calendar</a>
+                <a href="announcements.html">Announcements</a>
+                <a href="teacherslist.html">Teachers</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+        </aside>
+
+        
+        <main class="main">
+            <div class="schedule-container">
+                <div class="schedule-actions">
+                        <h2>Class Schedule</h2>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <label for="gradeSelect" style="color:var(--card);font-weight:600;margin-right:6px;">Grade:</label>
+                            <select id="gradeSelect" class="cell-input" style="max-width:160px;background:var(--card);padding:6px;border-radius:8px;border:1px solid var(--border);">
+                               
+                            </select>
+                            <div class="schedule-controls">
+                                <button class="btn" onclick="exportSchedule()">Export to CSV</button>
+                                <button class="btn" onclick="printSchedule()">Print Schedule</button>
+                            </div>
+                        </div>
+                    </div>
+                <div class="schedule-controls">
+                    <button class="btn" onclick="addRow()">Add New Period</button>
+                    <button class="btn" onclick="saveSchedule()">Save Changes</button>
+                </div>
+                <div id="scheduleTable"></div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .schedule-container {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            margin: 20px;
+        }
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+        .schedule-table th, 
+        .schedule-table td {
+            padding: 12px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .schedule-table th {
+            background: var(--panel);
+            color: white;
+            font-weight: 600;
+        }
+        .schedule-table tr:nth-child(even) {
+            background-color: var(--bg);
+        }
+        .schedule-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .schedule-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: var(--panel);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .cell-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            font-family: inherit;
+        }
+        .cell-input:focus {
+            border-color: var(--yellow);
+            outline: none;
+        }
+    </style>
+
+    <script>
+       
+        const GRADES = ['1','2','3','4','5','6'];
+
+        
+        function createBaseSchedule() {
+            return [
+                { period: '1', time: '8:00 - 8:45', monday: '', tuesday: '', wednesday: '', thursday: '', friday: '' },
+                { period: '2', time: '8:50 - 9:35', monday: '', tuesday: '', wednesday: '', thursday: '', friday: '' },
+                { period: '3', time: '9:40 - 10:25', monday: '', tuesday: '', wednesday: '', thursday: '', friday: '' },
+                { period: '4', time: '10:30 - 11:15', monday: '', tuesday: '', wednesday: '', thursday: '', friday: '' },
+                { period: '5', time: '11:20 - 12:05', monday: '', tuesday: '', wednesday: '', thursday: '', friday: '' }
+            ];
+        }
+
+       
+        const defaultSchedules = {};
+        GRADES.forEach(g => { defaultSchedules[g] = createBaseSchedule(); });
+
+        let currentGrade = '1';
+        let schedule = [];
+
+        function populateGradeSelect() {
+            const sel = document.getElementById('gradeSelect');
+            sel.innerHTML = '';
+            const optAll = document.createElement('option');
+            optAll.value = 'all';
+            optAll.textContent = 'All Grades';
+            sel.appendChild(optAll);
+            GRADES.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = 'Grade ' + g;
+                sel.appendChild(opt);
+            });
+            sel.value = currentGrade;
+            sel.addEventListener('change', (e) => {
+                currentGrade = e.target.value;
+                loadSchedule();
+            });
+        }
+
+        
+        function loadSchedule() {
+            if (currentGrade === 'all') {
+                renderAllSchedules();
+                return;
+            }
+            const key = 'schoolSchedule_grade' + currentGrade;
+            const saved = localStorage.getItem(key);
+            schedule = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultSchedules[currentGrade]));
+            renderSchedule();
+        }
+
+       
+        function renderSchedule() {
+            const container = document.getElementById('scheduleTable');
+            container.innerHTML = '';
+
+            const title = document.createElement('h3');
+            title.textContent = 'Grade ' + currentGrade + ' Schedule';
+            container.appendChild(title);
+
+            const table = createTableForSchedule(schedule, true);
+            container.appendChild(table);
+        }
+
+      
+        function renderAllSchedules() {
+            const container = document.getElementById('scheduleTable');
+            container.innerHTML = '';
+            GRADES.forEach(g => {
+                const title = document.createElement('h3');
+                title.textContent = 'Grade ' + g;
+                container.appendChild(title);
+
+                const key = 'schoolSchedule_grade' + g;
+                const saved = localStorage.getItem(key);
+                const s = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultSchedules[g]));
+                const table = createTableForSchedule(s, false);
+                container.appendChild(table);
+            });
+        }
+
+        
+        function createTableForSchedule(sched, editable) {
+            const table = document.createElement('table');
+            table.className = 'schedule-table';
+
+            const header = table.createTHead();
+            const headerRow = header.insertRow();
+            ['Period', 'Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+
+            const tbody = table.createTBody();
+            sched.forEach((row, rowIndex) => {
+                const tr = tbody.insertRow();
+                Object.values(row).forEach((value, colIndex) => {
+                    const td = tr.insertCell();
+                    if (editable) {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = value;
+                        input.className = 'cell-input';
+                        input.addEventListener('change', () => {
+                            if (colIndex === 0) sched[rowIndex].period = input.value;
+                            else if (colIndex === 1) sched[rowIndex].time = input.value;
+                            else {
+                                const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                                sched[rowIndex][days[colIndex - 2]] = input.value;
+                            }
+                        });
+                        td.appendChild(input);
+                    } else {
+                        td.textContent = value;
+                    }
+                });
+            });
+            return table;
+        }
+
+      
+        function addRow() {
+            if (currentGrade === 'all') {
+                alert('Cannot add a row when viewing All Grades. Select a specific grade first.');
+                return;
+            }
+            schedule.push({
+                period: String(schedule.length + 1),
+                time: '',
+                monday: '',
+                tuesday: '',
+                wednesday: '',
+                thursday: '',
+                friday: ''
+            });
+            renderSchedule();
+        }
+
+       
+        function saveSchedule() {
+            if (currentGrade === 'all') {
+                alert('Select a specific grade to save changes.');
+                return;
+            }
+            const key = 'schoolSchedule_grade' + currentGrade;
+            localStorage.setItem(key, JSON.stringify(schedule));
+            alert('Schedule for Grade ' + currentGrade + ' saved successfully!');
+        }
+
+      
+        function escapeCSV(value) {
+            if (value == null) return '';
+            const s = String(value);
+            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        }
+
+       
+        function exportSchedule() {
+            if (currentGrade === 'all') {
+                const headers = ['Grade','Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'];
+                const rows = [];
+                GRADES.forEach(g => {
+                    const key = 'schoolSchedule_grade' + g;
+                    const saved = localStorage.getItem(key);
+                    const s = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultSchedules[g]));
+                    s.forEach(r => {
+                        rows.push([g, r.period, r.time, r.monday, r.tuesday, r.wednesday, r.thursday, r.friday]);
+                    });
+                });
+                const csvContent = [headers.join(','), ...rows.map(r => r.map(escapeCSV).join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'school_schedule_all_grades.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+                return;
+            }
+
+        
+            const headers = ['Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'];
+            const rows = schedule.map(r => [r.period, r.time, r.monday, r.tuesday, r.wednesday, r.thursday, r.friday]);
+            const csvContent = [headers.join(','), ...rows.map(r => r.map(escapeCSV).join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'school_schedule_grade_' + currentGrade + '.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function printSchedule() {
+            window.print();
+        }
+
+     
+        window.onload = function() {
+            populateGradeSelect();
+           
+            const sel = document.getElementById('gradeSelect');
+            currentGrade = sel.value || '1';
+            loadSchedule();
+        };
+    </script>
+</body>
+</html>
