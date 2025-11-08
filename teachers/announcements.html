@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements</title>
+
+    <link rel="stylesheet" href="announcement.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+        
+</head>
+<body>
+    <!--Top Navar-->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="navbar-logo">GGF</div>
+            <div class="navbar-text">
+                <div class="navbar-title">Glorious God's Family</div>
+                <div class="navbar-subtitle">Christian School</div>
+            </div>
+        </div>
+        <div class="navbar-actions">
+            <div class="user-menu">
+                <span>Teacher</span>
+                <a href="login.html">
+                    <img src="loginswitch.png" id="loginswitch"></img>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!--Main Page Container-->
+    <div class="page-wrapper">
+        <!--Side Bar-->
+        <aside class="side">
+            <nav class="nav">
+                <a href="teacher.html">Dashboard</a>
+                <a href="tprofile.html">Profile</a>
+                <a href="student_schedule.html">Schedule</a>        
+                <a href="attendance.html">Attendance</a>
+                <a href="listofstudents.html">Lists of students</a>
+                <a href="grades.html">Grades</a>
+                <a href="school_calendar.html">School Calendar</a>
+                <a href="announcements.html" class="active">Announcements</a>
+                <a href="teacherslist.html">Teachers</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+        </aside>
+        
+        <!--Main Content-->
+        <main class="main">
+            <header class="header">
+                <h1>School Announcements</h1>
+            </header>
+
+            <!--Announcement content-->
+            <section class="announcement-container">
+                <h2 class="page-title">Latest Updates (Real-Time)</h2>
+
+                <!-- Filter bar -->
+                <div class="filter-bar">
+                    <button type="button" id="filter-toggle" class="filter-toggle">Filter</button>
+                </div>
+                <div id="filter-panel" class="filter-panel" hidden>
+                    <div class="filter-row">
+                        <label for="filter-text">Search</label>
+                        <input id="filter-text" type="text" placeholder="Search title or content" />
+                    </div>
+                    <div class="filter-row">
+                        <label for="filter-tag">Tag</label>
+                        <select id="filter-tag">
+                            <option value="">All</option>
+                            <option value="important">Important</option>
+                            <option value="new">New</option>
+                            <option value="info">Info</option>
+                        </select>
+                    </div>
+                    <div class="filter-row">
+                        <label for="filter-from">From</label>
+                        <input id="filter-from" type="date" />
+                    </div>
+                    <div class="filter-row">
+                        <label for="filter-to">To</label>
+                        <input id="filter-to" type="date" />
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" id="filter-apply">Apply</button>
+                        <button type="button" id="filter-reset">Reset</button>
+                    </div>
+                </div>
+
+                <ul id="announcement-list" class="announcement-list">
+                    <!--announcement item 1 (new feature)-->
+                    <li class="loading-message">Loading announcements...</li>
+                </ul>
+            </section>
+
+            <button type="button" id="add-announcement-btn" class="announcement-button" onclick="showModal()">+</button>
+        </main>
+        <div id="announcement-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="hideModal()">&times;</span>
+                <h2>Create New Announcement</h2>
+                <form id="new-announcement-form">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tag">Tag/Category</label>
+                        <select id="tag" required>
+                            <option value="info">General Info</option>
+                            <option value="important">Important</option>
+                            <option value="new">New/Update</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Display Date (optional)</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content</label>
+                        <textarea id="content" required></textarea>
+                    </div>
+                    <div class="form-actions"></div>
+                        <button type="button" onclick="hideModal()">Cancel</button>
+                        <button type="submit" id="submit-btn">Post Announcement</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+
+
+        <!--Footer-->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>123 Faith Avenue</p>
+                    <p>Your City, ST 12345</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Email: info@gloriousgod.edu</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Connect With Us</h3>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook">
+                            <svg xlmns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram">
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Twitter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-twitter">
+                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>System Info</h3>
+                    <p>Schoolwide Management System</p>
+                    <p>Version 1.0.0</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                    <p>&copy; 2025 Glorious God Family Christian School. All rights reserved.</p>
+                    <div class="footer-links">
+                        <a href="privacy.html">Privacy Policy</a> |
+                        <a href="terms.html">Terms of Service</a>
+                    </div>
+                <div class="copyright">© <span id="year">2025</span> Schoolwide Management System</div>
+            </div>
+        </footer>
+    </div>
+    <script>
+            // Modal handling functions
+            function showModal() {
+                document.getElementById('announcement-modal').style.display = 'flex';
+            }
+        
+            function hideModal() {
+                document.getElementById('announcement-modal').style.display = 'none';
+            }
+        
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('announcement-modal');
+                if (event.target === modal) {
+                    hideModal();
+                }
+            }
+
+            // Form submission handling
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('new-announcement-form');
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    // TODO: Add announcement submission logic here
+                    const data = {
+                        title: document.getElementById('title').value,
+                        content: document.getElementById('content').value,
+                        tag: document.getElementById('tag').value,
+                        date: document.getElementById('date').value
+                    };
+                    console.log('Announcement data:', data);
+                    hideModal();
+                    form.reset();
+                };
+
+                // ===== Filters =====
+                const toggleBtn = document.getElementById('filter-toggle');
+                const panel = document.getElementById('filter-panel');
+                const applyBtn = document.getElementById('filter-apply');
+                const resetBtn = document.getElementById('filter-reset');
+                const textInput = document.getElementById('filter-text');
+                const tagSelect = document.getElementById('filter-tag');
+                const fromInput = document.getElementById('filter-from');
+                const toInput = document.getElementById('filter-to');
+
+                function normalize(str){ return (str || '').toString().toLowerCase(); }
+
+                function parseItemDate(li){
+                    // Prefer data-date attribute if available
+                    const dataAttr = li.getAttribute('data-date');
+                    if (dataAttr) {
+                        const d = new Date(dataAttr);
+                        if (!isNaN(d)) return d;
+                    }
+                    // Fallback to visible date text
+                    const dateEl = li.querySelector('.announcement-date, .item-meta time, .item-meta .date');
+                    if (dateEl) {
+                        const d = new Date(dateEl.textContent.trim());
+                        if (!isNaN(d)) return d;
+                    }
+                    return null;
+                }
+
+                function getItemTag(li){
+                    const tagEl = li.querySelector('.announcement-tag, .item-tag');
+                    if (!tagEl) return '';
+                    return normalize(tagEl.textContent);
+                }
+
+                function getItemText(li){
+                    const titleEl = li.querySelector('.item-title, .announcement-title');
+                    const contentEl = li.querySelector('.item-content, .announcement-content');
+                    return normalize((titleEl ? titleEl.textContent : '') + ' ' + (contentEl ? contentEl.textContent : ''));
+                }
+
+                function applyFilters(){
+                    const query = normalize(textInput.value);
+                    const tag = normalize(tagSelect.value);
+                    const fromVal = fromInput.value ? new Date(fromInput.value) : null;
+                    const toVal = toInput.value ? new Date(toInput.value) : null;
+
+                    const items = document.querySelectorAll('#announcement-list .announcement-item');
+                    items.forEach(li => {
+                        let visible = true;
+                        // Text filter
+                        if (query && !getItemText(li).includes(query)) visible = false;
+                        // Tag filter
+                        if (visible && tag) {
+                            const itemTag = getItemTag(li);
+                            // Accept tag match in text (e.g., "important") or class
+                            const classMatch = li.classList.contains(tag) || li.classList.contains('tag-' + tag);
+                            if (!(itemTag.includes(tag) || classMatch)) visible = false;
+                        }
+                        // Date filter
+                        if (visible && (fromVal || toVal)) {
+                            const d = parseItemDate(li);
+                            if (!d) {
+                                visible = false; // If we filter by date and item has none, hide it
+                            } else {
+                                if (fromVal && d < fromVal) visible = false;
+                                if (toVal) {
+                                    const toEnd = new Date(toVal);
+                                    toEnd.setHours(23,59,59,999);
+                                    if (d > toEnd) visible = false;
+                                }
+                            }
+                        }
+                        li.style.display = visible ? '' : 'none';
+                    });
+                }
+
+                toggleBtn?.addEventListener('click', () => {
+                    const isOpen = panel.classList.toggle('open');
+                    if (isOpen) {
+                        panel.removeAttribute('hidden');
+                        textInput?.focus();
+                    } else {
+                        panel.setAttribute('hidden','');
+                    }
+                });
+                applyBtn?.addEventListener('click', applyFilters);
+                resetBtn?.addEventListener('click', () => {
+                    textInput.value = '';
+                    tagSelect.value = '';
+                    fromInput.value = '';
+                    toInput.value = '';
+                    applyFilters();
+                });
+                textInput?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); applyFilters(); }
+                });
+            });
+    </script>
+</body>
+</html>
