@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>List of Students - GGF Christian School</title>
+  <link rel="stylesheet" href="teacher.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-logo">GGF</div>
+      <div class="navbar-text">
+        <div class="navbar-title">Glorious God's Family</div>
+        <div class="navbar-subtitle">Christian School</div>
+      </div>
+    </div>
+    <div class="navbar-actions">
+      <div class="user-menu">
+        <span>Teacher</span>
+        <a href="login.html">
+          <img src="loginswitch.png" id="loginswitch" alt="login switch"/>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <aside class="side">
+      <nav class="nav">
+        <a href="teacher.html">Dashboard</a>
+        <a href="profile.html">Profile</a>
+        <a href="schedule.html">Schedule</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="listofstudents.html" class="active">Lists of students</a>
+        <a href="grades.html">Grades</a>
+        <a href="school_calendar.html">School Calendar</a>
+        <a href="announcements.html">Announcements</a>
+        <a href="teacherslist.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <h1>Students</h1>
+      </header>
+
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="searchInput" class="cell-input" placeholder="Search by name, grade or section" style="min-width:260px;padding:8px;border-radius:8px;border:1px solid var(--border)">
+            <button class="nav-button" id="clearSearch">Clear</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="nav-button" id="exportBtn">Export CSV</button>
+            <button class="nav-button" id="importBtn">Import CSV</button>
+            <button class="nav-button" id="addStudentBtn">Add Student</button>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; overflow:auto">
+          <table id="studentsTable" class="schedule-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Grade</th>
+                <th>Section</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+            
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;padding:20px;z-index:2000">
+    <div style="background:var(--card);padding:20px;border-radius:12px;max-width:600px;width:100%;box-shadow:var(--shadow-md)">
+      <h3 id="modalTitle">Add Student</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <input id="studentId" placeholder="Student ID (auto or custom)" class="cell-input"/>
+        <input id="firstName" placeholder="First Name" class="cell-input"/>
+        <input id="lastName" placeholder="Last Name" class="cell-input"/>
+        <input id="grade" placeholder="Grade" class="cell-input"/>
+        <input id="section" placeholder="Section" class="cell-input"/>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button class="nav-button" id="cancelBtn">Cancel</button>
+          <button class="nav-button" id="saveBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="text/csv" style="display:none"/>
+
+  <script>
+    
+    const STORAGE_KEY = 'ggf_students_v1';
+
+    function getStudents() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error('Failed to parse students from storage', e);
+        return [];
+      }
+    }
+
+    function saveStudents(students) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    }
+
+    function generateId() {
+      return 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    }
+
+    function renderTable(filter='') {
+      const tbody = document.querySelector('#studentsTable tbody');
+      const students = getStudents();
+      tbody.innerHTML = '';
+      const q = filter.trim().toLowerCase();
+      students.forEach(s => {
+        const combined = `${s.firstName} ${s.lastName} ${s.grade} ${s.section}`.toLowerCase();
+        if (q && !combined.includes(q)) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.id}</td>
+          <td>${s.firstName}</td>
+          <td>${s.lastName}</td>
+          <td>${s.grade}</td>
+          <td>${s.section}</td>
+          <td>
+            <button class="nav-button" data-action="edit" data-id="${s.id}">Edit</button>
+            <button class="nav-button" data-action="delete" data-id="${s.id}">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openModal(student) {
+      document.getElementById('modal').style.display = 'flex';
+      document.getElementById('modalTitle').innerText = student ? 'Edit Student' : 'Add Student';
+      document.getElementById('studentId').value = (student && student.id) || '';
+      document.getElementById('firstName').value = (student && student.firstName) || '';
+      document.getElementById('lastName').value = (student && student.lastName) || '';
+      document.getElementById('grade').value = (student && student.grade) || '';
+      document.getElementById('section').value = (student && student.section) || '';
+      document.getElementById('studentId').disabled = !!(student && student.id);
+      document.getElementById('saveBtn').dataset.editing = student ? student.id : '';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+
+    function addOrUpdateStudent() {
+      const idField = document.getElementById('studentId');
+      const id = idField.value || generateId();
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const grade = document.getElementById('grade').value.trim();
+      const section = document.getElementById('section').value.trim();
+      if (!firstName || !lastName) {
+        alert('Please enter first and last name.');
+        return;
+      }
+      const students = getStudents();
+      const existingIndex = students.findIndex(s => s.id === id);
+      const record = { id, firstName, lastName, grade, section };
+      if (existingIndex >= 0) {
+        students[existingIndex] = record;
+      } else {
+        students.push(record);
+      }
+      saveStudents(students);
+      renderTable(document.getElementById('searchInput').value);
+      closeModal();
+    }
+
+    function deleteStudent(id) {
+      if (!confirm('Delete this student?')) return;
+      const students = getStudents().filter(s => s.id !== id);
+      saveStudents(students);
+      renderTable(document.getElementById('searchInput').value);
+    }
+
+   
+    function exportCSV() {
+      const students = getStudents();
+      if (!students.length) { alert('No students to export'); return; }
+      const rows = [ ['ID','First Name','Last Name','Grade','Section'] ];
+      students.forEach(s => rows.push([s.id, s.firstName, s.lastName, s.grade, s.section]));
+      const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'students.csv';
+      a.click();
+    }
+
+   
+    function importCSV(text) {
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if (!lines.length) return;
+      const data = lines.slice(1).map(line => {
+        const parts = line.split(',').map(p => p.replace(/^"|"$/g,'').trim());
+        return { id: parts[0] || generateId(), firstName: parts[1]||'', lastName: parts[2]||'', grade: parts[3]||'', section: parts[4]||'' };
+      });
+      const students = getStudents().concat(data);
+      saveStudents(students);
+      renderTable();
+    }
+
+ 
+    document.addEventListener('click', function(e) {
+      const el = e.target;
+      if (el.id === 'addStudentBtn') openModal();
+      if (el.id === 'cancelBtn') closeModal();
+      if (el.id === 'saveBtn') addOrUpdateStudent();
+      if (el.id === 'clearSearch') { document.getElementById('searchInput').value=''; renderTable(); }
+      if (el.id === 'exportBtn') exportCSV();
+      if (el.id === 'importBtn') document.getElementById('fileInput').click();
+
+      if (el.dataset && el.dataset.action === 'edit') {
+        const id = el.dataset.id;
+        const student = getStudents().find(s => s.id === id);
+        if (student) openModal(student);
+      }
+      if (el.dataset && el.dataset.action === 'delete') {
+        deleteStudent(el.dataset.id);
+      }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function(e){
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){ importCSV(ev.target.result); };
+      reader.readAsText(f);
+      e.target.value = '';
+    });
+
+    document.getElementById('searchInput').addEventListener('input', function(e){ renderTable(e.target.value); });
+
+   
+    function ensureSampleData() {
+      const s = getStudents();
+      if (!s.length) {
+        const sample = [
+          { id: 'S01', firstName: 'Juan', lastName: 'Dela Cruz', grade: '1', section: 'A' },
+          { id: 'S02', firstName: 'Maria', lastName: 'Santos', grade: '2', section: 'B' }
+        ];
+        saveStudents(sample);
+      }
+    }
+
+    ensureSampleData();
+    renderTable();
+  </script>
+</body>
+</html>

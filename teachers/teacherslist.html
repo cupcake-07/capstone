@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachers List - GGF Christian School</title>
+    <link rel="stylesheet" href="teacher.css">
+    <style>
+        .content-wrapper {
+            padding: 20px;
+        }
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .teachers-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .teacher-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .search-section {
+            margin-bottom: 20px;
+        }
+        .search-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .import-export {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="navbar-logo">GGF</div>
+            <div class="navbar-text">
+                <div class="navbar-title">Glorious God's Family</div>
+                <div class="navbar-subtitle">Christian School</div>
+            </div>
+        </div>
+        <div class="navbar-actions">
+            <div class="user-menu">
+                <span>Teacher</span>
+                <a href="login.html">
+                    <img src="loginswitch.png" id="loginswitch" alt="Switch user">
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrapper">
+       
+        <aside class="side">
+            <nav class="nav">
+                <a href="teacher.html">Dashboard</a>
+                <a href="profile.html">Profile</a>
+                <a href="student_schedule.html">Schedule</a>      
+                <a href="attendance.html">Attendance</a>
+                <a href="listofstudents.html">Lists of students</a>
+                <a href="grades.html">Grades</a>
+                <a href="school_calendar.html">School Calendar</a>
+                <a href="announcements.html">Announcements</a>
+                <a href="teacherslist.html" class="active">Teachers</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+        </aside>
+
+      
+        <main class="main">
+            <div class="content-wrapper">
+                <h1>Teachers List Management</h1>
+
+                <div class="search-section">
+                    <input type="text" id="searchInput" placeholder="Search teachers...">
+                </div>
+
+                <div class="form-section">
+                    <h2>Add/Edit Teacher</h2>
+                    <form id="teacherForm">
+                        <input type="hidden" id="teacherId">
+                        <div class="form-group">
+                            <label for="name">Full Name:</label>
+                            <input type="text" id="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address:</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject:</label>
+                            <input type="text" id="subject" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number:</label>
+                            <input type="tel" id="phone" required>
+                        </div>
+                        <button type="submit" class="btn">Save Teacher</button>
+                    </form>
+                </div>
+
+                <div class="teachers-grid" id="teachersList">
+                 
+                </div>
+
+                <div class="import-export">
+                    <h3>Import/Export Data</h3>
+                    <input type="file" id="csvFile" accept=".csv">
+                    <div class="btn-group">
+                        <button onclick="importCSV()" class="btn">Import CSV</button>
+                        <button onclick="exportCSV()" class="btn">Export to CSV</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+       
+        let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+        const teacherForm = document.getElementById('teacherForm');
+        const teachersList = document.getElementById('teachersList');
+        const searchInput = document.getElementById('searchInput');
+
+      
+        teacherForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const teacherId = document.getElementById('teacherId').value;
+            const teacher = {
+                id: teacherId || Date.now().toString(),
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                subject: document.getElementById('subject').value,
+                phone: document.getElementById('phone').value
+            };
+
+            if (teacherId) {
+                const index = teachers.findIndex(t => t.id === teacherId);
+                if (index !== -1) {
+                    teachers[index] = teacher;
+                }
+            } else {
+                teachers.push(teacher);
+            }
+
+            localStorage.setItem('teachers', JSON.stringify(teachers));
+            teacherForm.reset();
+            document.getElementById('teacherId').value = '';
+            displayTeachers();
+        });
+
+   
+        function displayTeachers(searchTerm = '') {
+            const filteredTeachers = teachers.filter(teacher => 
+                teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                teacher.subject.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            teachersList.innerHTML = filteredTeachers.map(teacher => `
+                <div class="teacher-card">
+                    <h3>${teacher.name}</h3>
+                    <p><strong>Email:</strong> ${teacher.email}</p>
+                    <p><strong>Subject:</strong> ${teacher.subject}</p>
+                    <p><strong>Phone:</strong> ${teacher.phone}</p>
+                    <div class="btn-group">
+                        <button onclick="editTeacher('${teacher.id}')" class="btn">Edit</button>
+                        <button onclick="deleteTeacher('${teacher.id}')" class="btn">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        
+        function editTeacher(id) {
+            const teacher = teachers.find(t => t.id === id);
+            if (teacher) {
+                document.getElementById('teacherId').value = teacher.id;
+                document.getElementById('name').value = teacher.name;
+                document.getElementById('email').value = teacher.email;
+                document.getElementById('subject').value = teacher.subject;
+                document.getElementById('phone').value = teacher.phone;
+            }
+        }
+
+      
+        function deleteTeacher(id) {
+            if (confirm('Are you sure you want to delete this teacher?')) {
+                teachers = teachers.filter(t => t.id !== id);
+                localStorage.setItem('teachers', JSON.stringify(teachers));
+                displayTeachers();
+            }
+        }
+
+  
+        searchInput.addEventListener('input', (e) => {
+            displayTeachers(e.target.value);
+        });
+
+      
+        function importCSV() {
+            const file = document.getElementById('csvFile').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const rows = text.split('\n');
+                    const headers = rows[0].split(',');
+                    
+                    for(let i = 1; i < rows.length; i++) {
+                        if (rows[i].trim() === '') continue; 
+                        const cells = rows[i].split(',');
+                        if(cells.length === headers.length) {
+                            const teacher = {
+                                id: Date.now().toString() + i,
+                                name: cells[0].trim(),
+                                email: cells[1].trim(),
+                                subject: cells[2].trim(),
+                                phone: cells[3].trim()
+                            };
+                            teachers.push(teacher);
+                        }
+                    }
+                    
+                    localStorage.setItem('teachers', JSON.stringify(teachers));
+                    displayTeachers();
+                    document.getElementById('csvFile').value = '';
+                };
+                reader.readAsText(file);
+            }
+        }
+
+      
+        function exportCSV() {
+            const headers = ['Name', 'Email', 'Subject', 'Phone'];
+            const csvContent = [
+                headers.join(','),
+                ...teachers.map(teacher => 
+                    [teacher.name, teacher.email, teacher.subject, teacher.phone].join(',')
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'teachers.csv');
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+       
+        displayTeachers();
+    </script>
+</body>
+</html>
