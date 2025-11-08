@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Profile</title>
+    <link rel="stylesheet" href="tprofile.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- TOP NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="navbar-logo">GGF</div>
+            <div class="navbar-text">
+                <div class="navbar-title">Glorious God's Family</div>
+                <div class="navbar-subtitle">Christian School</div>
+            </div>
+        </div>
+        <div class="navbar-actions">
+            <div class="user-menu">
+                <span>Teacher</span>
+                <a href="login.html">
+                <img src="loginswitch.png" id="loginswitch"></img></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN PAGE CONTAINER -->
+    <div class="page-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="side">
+            <nav class="nav">
+                <a href="teacher.html">Dashboard</a>
+                <a href="tprofile.html" class="active">Profile</a>
+                <a href="student_schedule.html">Schedule</a>        <a href="attendance.html">Attendance</a>
+                <a href="listofstudents.html">Lists of students</a>
+                <a href="grades.html">Grades</a>
+                <a href="school_calendar.html">School Calendar</a>
+                <a href="announcements.html">Announcements</a>
+                <a href="teacherslist.html">Teachers</a>
+                <a href="settings.html">Settings</a>
+            </nav>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="header">
+                <h1>Teacher Profile</h1>
+            </header>
+
+            <section class="profile-grid">
+                <!-- LEFT: hero -->
+                <aside class="hero">
+                    <div class="avatar-wrap">
+                        <!-- Avatar with upload overlay -->
+                        <div class="avatar-container">
+                            <img id="avatarImage" class="avatar" src="https://placehold.co/240x240/0f520c/dada18?text=Photo" alt="Teacher photo">
+                            <div class="avatar-overlay">
+                                <label for="avatarInput" class="upload-label">
+                                    <span class="upload-icon">📤</span>
+                                    <span class="upload-text">Upload Photo</span>
+                                </label>
+                                <input id="avatarInput" type="file" class="avatar-input" accept="image/*" />
+                            </div>
+                        </div>
+                        <div class="badge">Teacher</div>
+                        </div>
+                        <h2 class="name">Juan Dela Cruz</h2>
+                        <p class="role">Math Teacher • Employee ID: <strong>EMP-2024-001</strong></p>
+
+                        <div class="card-info">
+                            <div class="row">
+                                <div class="label">Email:</div>
+                                <div class="value">1.@gmail.com</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Status:</div>
+                                <div class="value">Active</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Subjects Assigned:</div>
+                                <div class="value">Mathematics, Science</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Grade Level:</div>
+                                <div class="value">Grade 3, Grade 4</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Contact Number:</div>
+                                <div class="value">09123456789</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Address:</div>
+                                <div class="value">123 Faith Avenue, Cityville</div>
+                            </div>
+                            <div class="row">
+                                <div class="label">Date Hired:</div>
+                                <div class="value">June 1, 2020</div>
+                            </div>
+                        </div>
+                        <div class="edit-profile">
+                            <button id="editProfileBtn">Edit Profile</button>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contact Us</h3>
+                    <p>123 Faith Avenue</p>
+                    <p>Your City, ST 12345</p>
+                    <p>Phone: (555) 123-4567</p>
+                    <p>Email: info@gloriousgod.edu</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Connect With Us</h3>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook">
+                            <svg xlmns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram">
+                                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"/>
+                            </svg>
+                        </a>
+                        <a href="#" aria-label="Twitter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-twitter">
+                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>System Info</h3>
+                    <p>Schoolwide Management System</p>
+                    <p>Version 1.0.0</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="privacy.html">Privacy Policy</a> |
+                    <a href="terms.html">Terms of Service</a>
+                </div>
+            </div>
+        </footer>
+        <script>
+            // Update the year in the footer
+            document.getElementById('year').textContent = new Date().getFullYear();
+        </script>     
+</body>
+</html>
