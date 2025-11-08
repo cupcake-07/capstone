@@ -278,7 +278,14 @@ if ($db_ready && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])
                 }
 
                 if ($user) {
-                    if (password_verify($password, $user['password'])) {
+                    $pwMatch = password_verify($password, $user['password']);
+                    // Debug log: whether user found and whether password matches (DO NOT log the password/hash)
+                    error_log("[login.php] Login attempt: email={$email}, user_id={$user['id']}, password_match=" . ($pwMatch ? '1' : '0'));
+                    // Add this right after "$user = [...]"
+                    error_log("[login.php] DEBUG - Stored hash: " . substr($user['password'], 0, 20) . "...");
+                    error_log("[login.php] DEBUG - Hash length: " . strlen($user['password']));
+                    if ($pwMatch) {
+                        session_regenerate_id(true);
                         $_SESSION['user_id'] = $user['id'];
                         $_SESSION['user_type'] = 'student';
                         $_SESSION['user_name'] = $user['name'];
@@ -287,13 +294,12 @@ if ($db_ready && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])
                         exit;
                     } else {
                         $error_message = 'Invalid email or password.';
-                        error_log('[login.php] Wrong password for email=' . $email);
                     }
-                } else {
-                    $error_message = 'Invalid email or password.';
-                    error_log('[login.php] No user found for email=' . $email);
-                }
-                $stmt->close();
+                 } else {
+                     $error_message = 'Invalid email or password.';
+                     error_log('[login.php] No user found for email=' . $email);
+                 }
+                 $stmt->close();
             }
         }
     }
