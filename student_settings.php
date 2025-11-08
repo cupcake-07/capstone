@@ -265,7 +265,23 @@ $studentId = esc($user['id'] ?? '');
   </div>
 
   <script>
-    (function(){ const year = document.getElementById('year'); if(year) year.textContent = new Date().getFullYear(); })();
+    (function(){
+      const year = document.getElementById('year');
+      if(year) year.textContent = new Date().getFullYear();
+
+      const settingsAvatar = document.getElementById('settingsAvatar');
+      const userId = <?php echo $userId; ?>;
+
+      // Load avatar from database
+      fetch('api/get-avatar.php?user_id=' + userId)
+        .then(response => response.json())
+        .then(data => {
+          if (data.avatar) {
+            settingsAvatar.src = data.avatar;
+          }
+        })
+        .catch(err => console.log('No avatar found'));
+    })();
   </script>
 </body>
 </html>

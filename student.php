@@ -252,8 +252,18 @@ $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
 
       const avatarInput = document.getElementById('avatarInput');
       const avatarImage = document.getElementById('avatarImage');
-      const savedAvatar = localStorage.getItem('studentAvatar');
-      if (savedAvatar) avatarImage.src = savedAvatar;
+      const userId = <?php echo $userId; ?>;
+
+      // Load avatar from database
+      fetch('api/get-avatar.php?user_id=' + userId)
+        .then(response => response.json())
+        .then(data => {
+          if (data.avatar) {
+            avatarImage.src = data.avatar;
+          }
+        })
+        .catch(err => console.log('No avatar found'));
+
       if (avatarInput) {
         avatarInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
@@ -262,7 +272,20 @@ $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
             reader.onload = (event) => {
               const imageData = event.target.result;
               avatarImage.src = imageData;
-              localStorage.setItem('studentAvatar', imageData);
+              
+              // Save to database
+              fetch('api/upload-avatar.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, avatar: imageData })
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  console.log('Avatar saved successfully');
+                }
+              })
+              .catch(err => console.error('Error saving avatar:', err));
             };
             reader.readAsDataURL(file);
           }

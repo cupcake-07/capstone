@@ -1,14 +1,27 @@
 <?php
 require_once 'config/database.php';
 
-// Get current user type before destroying
-$currentUserType = $_SESSION['user_type'] ?? 'student';
+// Check which session is active
+$adminSessionName = 'ADMIN_SESSION';
+$defaultSessionName = session_name();
 
-// Destroy full session
+// Check if admin session is active
+session_name($adminSessionName);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$isAdmin = isset($_SESSION['admin_id']) && isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'admin';
+
+// Destroy the current session
 $_SESSION = [];
 session_destroy();
 
-// Always redirect to login page
-header('Location: login.php');
+// Redirect based on which session was active
+if ($isAdmin) {
+    header('Location: admin-login.php');
+} else {
+    header('Location: login.php');
+}
 exit;
 ?>

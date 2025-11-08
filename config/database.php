@@ -38,6 +38,7 @@ $conn->query("DROP TABLE IF EXISTS grades");
 // Add missing columns to students table if they don't exist
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS section VARCHAR(50)");
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS is_enrolled BOOLEAN DEFAULT 1");
+$conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar LONGBLOB");
 
 // Create tables if they don't exist
 $tables_sql = "
@@ -71,7 +72,8 @@ CREATE TABLE IF NOT EXISTS students (
     is_enrolled BOOLEAN DEFAULT 1,
     enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     parent_email VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    avatar LONGBLOB
 );
 
 CREATE TABLE IF NOT EXISTS announcements (
