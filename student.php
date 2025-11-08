@@ -1,6 +1,10 @@
 <?php
+// Start session FIRST
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'config/database.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
 
 // Redirect to login if not logged in
 if (empty($_SESSION['user_id'])) {
@@ -10,26 +14,28 @@ if (empty($_SESSION['user_id'])) {
 
 $userId = intval($_SESSION['user_id']);
 
-// Fetch user info
+// Fetch user info - query should always use the session user ID
 $user = null;
-if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level FROM students WHERE id = ? LIMIT 1")) {
+if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, section, is_enrolled FROM students WHERE id = ? LIMIT 1")) {
     $stmt->bind_param('i', $userId);
     $stmt->execute();
-    // get_result may not be available; use fallback
     if (method_exists($stmt, 'get_result')) {
         $res = $stmt->get_result();
-        if ($res && $res->num_rows === 1) $user = $res->fetch_assoc();
+        if ($res && $res->num_rows === 1) {
+            $user = $res->fetch_assoc();
+        }
     } else {
         $stmt->store_result();
         if ($stmt->num_rows === 1) {
-            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade);
+            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled);
             if ($stmt->fetch()) {
-                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade];
+                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled];
             }
         }
     }
     $stmt->close();
 }
+
 if (!$user) {
     session_unset();
     session_destroy();
@@ -41,8 +47,10 @@ if (!$user) {
 $name = htmlspecialchars($user['name'] ?? 'Student');
 $email = htmlspecialchars($user['email'] ?? '');
 $grade = htmlspecialchars($user['grade_level'] ?? 'Not Set');
+$section = htmlspecialchars($user['section'] ?? 'N/A');
 $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
-$statusText = ($grade === 'Not Set' || $grade === '') ? 'Not Enrolled' : 'Enrolled';
+$isEnrolled = $user['is_enrolled'] ?? 1;
+$statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
 ?>
 <!doctype html>
 <html lang="en">
@@ -91,6 +99,11 @@ $statusText = ($grade === 'Not Set' || $grade === '') ? 'Not Enrolled' : 'Enroll
     <main class="main">
       <header class="header">
         <h1>Student Profile</h1>
+        <?php if (!$isEnrolled): ?>
+          <div style="background-color: #fee; color: #c33; padding: 15px; border-radius: 4px; margin-top: 10px;">
+            <strong>⚠️ Notice:</strong> Your enrollment status is currently <strong>Not Enrolled</strong>. Please contact the administration office.
+          </div>
+        <?php endif; ?>
       </header>
 
       <section class="profile-grid">
@@ -117,6 +130,10 @@ $statusText = ($grade === 'Not Set' || $grade === '') ? 'Not Enrolled' : 'Enroll
             <div class="row">
               <div class="label">Email</div>
               <div class="value"><?php echo $email; ?></div>
+            </div>
+            <div class="row">
+              <div class="label">Section</div>
+              <div class="value"><?php echo $section; ?></div>
             </div>
             <div class="row">
               <div class="label">Status</div>

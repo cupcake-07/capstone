@@ -1,5 +1,5 @@
 <?php
-session_start();
+// Don't start session here - let each page handle it properly
 
 // Database Configuration
 $host = 'localhost';
@@ -17,7 +17,6 @@ if ($conn->connect_error) {
 // Create database if it doesn't exist
 $sql_create_db = "CREATE DATABASE IF NOT EXISTS $db_name";
 if ($conn->query($sql_create_db) === TRUE) {
-    // Select the database
     $conn->select_db($db_name);
 } else {
     die("Error creating database: " . $conn->error);
@@ -32,6 +31,13 @@ if ($conn->connect_error) {
 
 // Set charset to UTF-8
 $conn->set_charset("utf8mb4");
+
+// Drop old grades table if it exists with wrong schema
+$conn->query("DROP TABLE IF EXISTS grades");
+
+// Add missing columns to students table if they don't exist
+$conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS section VARCHAR(50)");
+$conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS is_enrolled BOOLEAN DEFAULT 1");
 
 // Create tables if they don't exist
 $tables_sql = "
@@ -61,6 +67,8 @@ CREATE TABLE IF NOT EXISTS students (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     grade_level VARCHAR(50),
+    section VARCHAR(50),
+    is_enrolled BOOLEAN DEFAULT 1,
     enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     parent_email VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -103,7 +111,8 @@ CREATE TABLE IF NOT EXISTS grades (
     assignment VARCHAR(100),
     score DECIMAL(5, 2),
     max_score DECIMAL(5, 2) DEFAULT 100,
-    graded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    graded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 );
@@ -125,6 +134,41 @@ CREATE TABLE IF NOT EXISTS reports (
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS attendance (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    class_id INT NOT NULL,
+    attendance_date DATE NOT NULL,
+    status ENUM('present', 'absent', 'late') DEFAULT 'absent',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method VARCHAR(50),
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS events (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    event_date DATE NOT NULL,
+    event_time TIME,
+    location VARCHAR(200),
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES admins(id) ON DELETE CASCADE
 );
 
 ";
