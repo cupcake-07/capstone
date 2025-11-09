@@ -45,12 +45,27 @@
   margin-bottom: 20px;
   padding-bottom: 12px;
   border-bottom: 2px solid #f0f0f0;
+  cursor: pointer;
 }
 
 .section-header h3 {
   margin: 0;
   font-size: 18px;
   color: #000;
+  flex: 1;
+}
+
+.toggle-icon {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-icon.collapsed {
+  transform: rotate(-90deg);
 }
 
 .section-stats {
@@ -73,6 +88,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
+  max-height: 2000px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.students-cards-grid.collapsed {
+  max-height: 0;
+  gap: 0;
 }
 
 .student-grade-card {

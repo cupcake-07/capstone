@@ -611,7 +611,7 @@ body {
 }
 
 .big-metric strong {
-  background: linear-gradient(90deg, var(--green), var(--yellow));
+  background: linear-gradient(90deg, var(--black), var(--yellow));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
