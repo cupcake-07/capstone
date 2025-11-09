@@ -526,6 +526,34 @@
   border-color: #000;
 }
 
+/* Average Display */
+.average-display {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #000;
+}
+
+.average-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.average-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 15px;
+}
+
+.average-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+}
+
 @media (max-width: 768px) {
   .students-cards-grid {
     grid-template-columns: 1fr;

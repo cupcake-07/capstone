@@ -16,7 +16,7 @@ $userId = intval($_SESSION['user_id']);
 
 // Fetch user info - query should always use the session user ID
 $user = null;
-if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, section, is_enrolled FROM students WHERE id = ? LIMIT 1")) {
+if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, section, is_enrolled, avg_score FROM students WHERE id = ? LIMIT 1")) {
     $stmt->bind_param('i', $userId);
     $stmt->execute();
     if (method_exists($stmt, 'get_result')) {
@@ -27,9 +27,9 @@ if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, secti
     } else {
         $stmt->store_result();
         if ($stmt->num_rows === 1) {
-            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled);
+            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled, $favg_score);
             if ($stmt->fetch()) {
-                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled];
+                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled, 'avg_score' => $favg_score];
             }
         }
     }
@@ -51,6 +51,91 @@ $section = htmlspecialchars($user['section'] ?? 'N/A');
 $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
 $isEnrolled = $user['is_enrolled'] ?? 1;
 $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
+
+// After verifying session and loading $user from students table (ensure avg_score is selected)
+$userId = intval($_SESSION['user_id']);
+
+// Fetch saved grades for this student and prepare structured data for display
+$gradesStmt = $conn->prepare("SELECT assignment, score, created_at FROM grades WHERE student_id = ? ORDER BY created_at ASC");
+$gradesBySubject = []; // [subject][quarter] => [scores...]
+$gradesEntries = [];   // subject => [ ['quarter'=>n,'score'=>x,'date'=>d,'assignment'=>s], ... ]
+$subjectsOrder = []; // keep subjects order
+if ($gradesStmt) {
+    $gradesStmt->bind_param('i', $userId);
+    $gradesStmt->execute();
+    $res = $gradesStmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $assignment = $row['assignment'];
+        $score = floatval($row['score']);
+        $date = $row['created_at'];
+        // parse "Q{n} - Subject" pattern
+        if (preg_match('/Q\s*([1-4])\s*-\s*(.+)$/i', $assignment, $m)) {
+            $quarter = intval($m[1]);
+            $subject = trim($m[2]);
+        } else {
+            // fallback: no quarter in assignment, treat as quarter 0 (other)
+            $quarter = 0;
+            $subject = trim($assignment);
+        }
+        if ($subject === '') $subject = 'General';
+        if (!isset($gradesBySubject[$subject])) {
+            $gradesBySubject[$subject] = [];
+            $subjectsOrder[] = $subject;
+        }
+        if (!isset($gradesBySubject[$subject][$quarter])) {
+            $gradesBySubject[$subject][$quarter] = [];
+        }
+        $gradesBySubject[$subject][$quarter][] = $score;
+
+        // collect detailed entries (preserve date and assignment)
+        if (!isset($gradesEntries[$subject])) $gradesEntries[$subject] = [];
+        $gradesEntries[$subject][] = [
+            'quarter' => $quarter,
+            'score' => $score,
+            'date' => $date,
+            'assignment' => $assignment
+        ];
+    }
+    $gradesStmt->close();
+}
+
+// helper average
+function avgArray($arr) {
+	$arr = array_filter($arr, function($v){ return is_numeric($v); });
+	if (count($arr) === 0) return null;
+	return array_sum($arr) / count($arr);
+}
+
+// compute per-subject quarter averages and final averages
+$displayGrades = [];
+$allScores = [];
+foreach ($subjectsOrder as $subj) {
+	$subjectData = $gradesBySubject[$subj];
+	$row = [];
+	$quarterTotals = [];
+	for ($q = 1; $q <= 4; $q++) {
+		if (isset($subjectData[$q]) && count($subjectData[$q])>0) {
+			$qavg = avgArray($subjectData[$q]);
+			$row['q'.$q] = round($qavg,1);
+			$quarterTotals[] = $qavg;
+			foreach ($subjectData[$q] as $sval) $allScores[] = $sval;
+		} else {
+			$row['q'.$q] = null;
+		}
+	}
+	$final = null;
+	if (count($quarterTotals) > 0) $final = round(array_sum($quarterTotals)/count($quarterTotals),1);
+	$row['final'] = $final;
+	$displayGrades[$subj] = $row;
+}
+
+// overall average: prefer persisted students.avg_score
+$overallAvgDisplay = '-';
+if (isset($user['avg_score']) && $user['avg_score'] !== null) {
+	$overallAvgDisplay = number_format(floatval($user['avg_score']),1) . '%';
+} else {
+	if (count($allScores) > 0) $overallAvgDisplay = round(array_sum($allScores)/count($allScores),1) . '%';
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -176,21 +261,65 @@ $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
               <div class="card-body">
                 <div class="tab-pane" id="grades">
                   <table class="grades-table">
-                    <thead><tr><th>Subject</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Final</th></tr></thead>
+                    <thead>
+                      <tr><th>Subject</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Final</th></tr>
+                    </thead>
                     <tbody>
-                      <tr><td>Mathematics</td><td>88</td><td>90</td><td>85</td><td>87</td><td>88</td></tr>
-                      <tr><td>Science</td><td>92</td><td>91</td><td>93</td><td>90</td><td>92</td></tr>
-                      <tr><td>English</td><td>84</td><td>86</td><td>85</td><td>88</td><td>86</td></tr>
+                      <?php if (!empty($displayGrades)): ?>
+                        <?php foreach ($displayGrades as $subject => $vals): ?>
+                          <tr class="subject-row" data-subject="<?php echo htmlspecialchars($subject); ?>">
+                            <td style="cursor:pointer;"><?php echo htmlspecialchars($subject); ?></td>
+                            <td><?php echo isset($vals['q1']) ? htmlspecialchars($vals['q1']) . '%' : '-'; ?></td>
+                            <td><?php echo isset($vals['q2']) ? htmlspecialchars($vals['q2']) . '%' : '-'; ?></td>
+                            <td><?php echo isset($vals['q3']) ? htmlspecialchars($vals['q3']) . '%' : '-'; ?></td>
+                            <td><?php echo isset($vals['q4']) ? htmlspecialchars($vals['q4']) . '%' : '-'; ?></td>
+                            <td><?php echo isset($vals['final']) ? htmlspecialchars($vals['final']) . '%' : '-'; ?></td>
+                          </tr>
+
+                          <!-- details row: all inputted grades for this subject -->
+                          <tr class="subject-details hidden" data-subject="<?php echo htmlspecialchars($subject); ?>">
+                            <td colspan="6" style="padding:6px 24px;">
+                              <?php if (!empty($gradesEntries[$subject])): ?>
+                                <div style="font-size:13px;color:#666;margin-bottom:6px;">All recorded grades for <strong><?php echo htmlspecialchars($subject); ?></strong>:</div>
+                                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                                  <thead>
+                                    <tr style="color:#666;">
+                                      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #eee;">Quarter</th>
+                                      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #eee;">Assignment</th>
+                                      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #eee;">Score</th>
+                                      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid #eee;">Date</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <?php foreach ($gradesEntries[$subject] as $entry): ?>
+                                      <tr>
+                                        <td style="padding:6px 8px;"><?php echo $entry['quarter'] > 0 ? 'Q'.$entry['quarter'] : '-'; ?></td>
+                                        <td style="padding:6px 8px;"><?php echo htmlspecialchars($entry['assignment']); ?></td>
+                                        <td style="padding:6px 8px;text-align:right;"><?php echo number_format(floatval($entry['score']),1); ?>%</td>
+                                        <td style="padding:6px 8px;text-align:right;"><?php echo date('M d, Y', strtotime($entry['date'])); ?></td>
+                                      </tr>
+                                    <?php endforeach; ?>
+                                  </tbody>
+                                </table>
+                              <?php else: ?>
+                                <div style="color:#999;">No individual grades recorded for this subject.</div>
+                              <?php endif; ?>
+                            </td>
+                          </tr>
+                        <?php endforeach; ?>
+                      <?php else: ?>
+                        <tr><td colspan="6">No grades available</td></tr>
+                      <?php endif; ?>
                     </tbody>
                   </table>
                 </div>
 
                 <div class="tab-pane hidden" id="avg">
-                  <div class="big-metric">Overall Average: <strong>89.3%</strong></div>
-                  <p class="muted">Great work — keep it up!</p>
-                </div>
-              </div>
-            </div>
+                  <div class="big-metric">Overall Average: <strong><?php echo htmlspecialchars($overallAvgDisplay); ?></strong></div>
+                   <p class="muted">Great work — keep it up!</p>
+                 </div>
+               </div>
+             </div>
 
             <div class="card small-grid">
               <div class="mini-card">
@@ -292,6 +421,26 @@ $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
         });
       }
     })();
+
+    // Toggle subject details when subject row clicked
+    document.addEventListener('click', function (e) {
+      const row = e.target.closest('.subject-row');
+      if (row) {
+        const subject = row.dataset.subject;
+        const details = document.querySelectorAll('.subject-details[data-subject="' + CSS.escape(subject) + '"]');
+        details.forEach(d => d.classList.toggle('hidden'));
+      }
+    });
+
+    // small helper to ensure CSS.escape exists in older browsers
+    if (typeof CSS === 'undefined' || typeof CSS.escape === 'undefined') {
+      // basic polyfill
+      (function(global){
+        var s = /[^\w-]/g;
+        if (!global.CSS) global.CSS = {};
+        global.CSS.escape = function(value){ return String(value).replace(s, '\\$&'); };
+      })(window);
+    }
   </script>
 </body>
 </html>

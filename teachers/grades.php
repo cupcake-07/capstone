@@ -11,8 +11,64 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
-// Fetch all students grouped by grade and section
-$studentsResult = $conn->query("SELECT id, name, email, grade_level, section FROM students ORDER BY grade_level ASC, section ASC, name ASC");
+// Handle grade submission (single, robust block)
+$message = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_id'])) {
+	$student_id = intval($_POST['student_id']);
+	$subjects = $_POST['subjects'] ?? [];
+	$scores = $_POST['scores'] ?? [];
+	$quarter = intval($_POST['quarter'] ?? 1);
+
+	if ($student_id > 0 && !empty($subjects)) {
+		$savedAny = false;
+		$stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+		foreach ($subjects as $index => $subject) {
+			$score = floatval($scores[$index] ?? '');
+			if ($subject === '' || $subject === null) continue;
+			// only save provided numeric scores
+			if ($score !== '' && is_numeric($score)) {
+				$assignment = "Q" . $quarter . " - " . $subject;
+				if ($stmt) {
+					$stmt->bind_param('isd', $student_id, $assignment, $score);
+					$stmt->execute();
+					$savedAny = true;
+				}
+			}
+		}
+		if ($stmt) $stmt->close();
+
+		if ($savedAny) {
+			// recompute average from DB and persist to students.avg_score
+			$avgRes = $conn->query("SELECT AVG(score) as avg_score FROM grades WHERE student_id = " . intval($student_id));
+			$avgRow = $avgRes ? $avgRes->fetch_assoc() : null;
+			$avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : null;
+			if ($avgValue !== null) {
+				$up = $conn->prepare("UPDATE students SET avg_score = ? WHERE id = ?");
+				if ($up) {
+					$up->bind_param('di', $avgValue, $student_id);
+					$up->execute();
+					$up->close();
+				}
+			}
+
+			// respond for AJAX or redirect for normal form submit
+			$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+			if ($isAjax) {
+				header('Content-Type: application/json');
+				echo json_encode(['success' => true, 'avg' => $avgValue]);
+				exit;
+			} else {
+				header('Location: ' . $_SERVER['PHP_SELF'] . '?student=' . $student_id);
+				exit;
+			}
+		} else {
+			$message = '<div style="background: #fff3f3; color: #7a1414; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #f3caca;">✗ No valid grades to save</div>';
+		}
+	}
+}
+
+// Fetch all students grouped by grade and section (after processing POST so averages reflect newest data)
+$studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students ORDER BY grade_level ASC, section ASC, name ASC");
 $studentsBySection = [];
 if ($studentsResult) {
     while ($row = $studentsResult->fetch_assoc()) {
@@ -33,17 +89,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_grade'])) {
     $quarter = intval($_POST['quarter'] ?? 1);
     
     if ($student_id > 0 && !empty($subjects)) {
+        $savedAny = false;
         foreach ($subjects as $index => $subject) {
             $score = floatval($scores[$index] ?? 0);
             if (!empty($subject) && $score >= 0 && $score <= 100) {
                 $assignment = "Q" . $quarter . " - " . $subject;
-                $stmt = $conn->prepare("INSERT INTO grades (student_id, class_id, assignment, score, max_score) VALUES (?, 1, ?, ?, 100)");
-                $stmt->bind_param('isd', $student_id, $assignment, $score);
-                $stmt->execute();
-                $stmt->close();
+                // insert without class_id (nullable in schema)
+                $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+                if ($stmt) {
+                    $stmt->bind_param('isd', $student_id, $assignment, $score);
+                    $stmt->execute();
+                    $stmt->close();
+                    $savedAny = true;
+                }
             }
         }
-        $message = '<div style="background: #e9fff0; color: #0b6b2f; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #c9efcf;">✓ Grades added successfully for Quarter ' . $quarter . '!</div>';
+        if ($savedAny) {
+            // compute average from saved grades and persist in students.avg_score
+            $avgRes = $conn->query("SELECT AVG(score) as avg_score FROM grades WHERE student_id = " . intval($student_id));
+            $avgRow = $avgRes ? $avgRes->fetch_assoc() : null;
+            $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : null;
+            if ($avgValue !== null) {
+                $up = $conn->prepare("UPDATE students SET avg_score = ? WHERE id = ?");
+                if ($up) {
+                    $up->bind_param('di', $avgValue, $student_id);
+                    $up->execute();
+                    $up->close();
+                }
+            }
+            // redirect to avoid duplicate POST and show saved grades for that student
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?student=' . $student_id);
+            exit;
+        } else {
+            $message = '<div style="background: #fff3f3; color: #7a1414; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #f3caca;">✗ No valid grades to save</div>';
+        }
     }
 }
 
@@ -165,17 +244,11 @@ $quarters = [1, 2, 3, 4];
 
             <div class="students-cards-grid">
               <?php foreach ($students as $student): 
-                $studentGradesResult = $conn->query("SELECT COUNT(*) as count, AVG(score) as avg_score FROM grades WHERE student_id = " . intval($student['id']));
-                $studentStats = $studentGradesResult->fetch_assoc();
-                
-                $recentGradesResult = $conn->query("SELECT id, assignment, score, created_at FROM grades 
-                  WHERE student_id = " . intval($student['id']) . " ORDER BY created_at DESC LIMIT 5");
-                $recentGrades = [];
-                if ($recentGradesResult) {
-                  while ($g = $recentGradesResult->fetch_assoc()) {
-                    $recentGrades[] = $g;
-                  }
-                }
+                // Use stored avg_score if present (already fetched in studentsBySection row)
+                $studentAvg = isset($student['avg_score']) && $student['avg_score'] !== null ? number_format(floatval($student['avg_score']), 1) : '-';
+                // Get count of grades for the student
+                $studentCountRes = $conn->query("SELECT COUNT(*) as count FROM grades WHERE student_id = " . intval($student['id']));
+                $studentCountRow = $studentCountRes ? $studentCountRes->fetch_assoc() : ['count' => 0];
               ?>
                 <div class="student-grade-card" onclick="openGradeModal(<?php echo $student['id']; ?>, '<?php echo htmlspecialchars($student['name']); ?>')">
                   <div class="student-grade-header">
@@ -183,24 +256,24 @@ $quarters = [1, 2, 3, 4];
                       <div class="student-name"><?php echo htmlspecialchars($student['name']); ?></div>
                       <div class="student-email"><?php echo htmlspecialchars($student['email']); ?></div>
                     </div>
-                    <div class="grade-count-badge"><?php echo $studentStats['count']; ?> grades</div>
+                    <div class="grade-count-badge"><?php echo intval($studentCountRow['count']); ?> grades</div>
                   </div>
 
                   <div class="grade-stats-row">
                     <div class="grade-stat">
                       <span class="stat-label">Average</span>
-                      <span class="stat-value"><?php echo number_format($studentStats['avg_score'] ?? 0, 1); ?>%</span>
+                      <span class="stat-value"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></span>
                     </div>
                   </div>
 
                   <div class="recent-grades">
-                    <?php if (!empty($recentGrades)): ?>
+                    <?php if (!empty($quarterGrades)): ?>
                       <div class="recent-label">Recent Grades:</div>
                       <div class="grades-list">
-                        <?php foreach ($recentGrades as $grade): ?>
+                        <?php foreach ($quarterGrades as $grade): ?>
                           <div class="grade-item">
                             <span class="grade-name"><?php echo htmlspecialchars($grade['assignment']); ?></span>
-                            <span class="grade-score"><?php echo number_format($grade['score'], 1); ?>%</span>
+                            <span class="grade-score"><?php echo number_format(floatval($grade['score']), 1); ?>%</span>
                             <span class="grade-date"><?php echo date('M d', strtotime($grade['created_at'])); ?></span>
                           </div>
                         <?php endforeach; ?>
@@ -225,7 +298,7 @@ $quarters = [1, 2, 3, 4];
             <h2>Add Grades for <span id="modalStudentName"></span></h2>
             <button class="modal-close" id="closeGradeModal">&times;</button>
           </div>
-          <form method="POST" class="grade-modal-form">
+          <form id="gradeForm" method="POST" class="grade-modal-form">
             <input type="hidden" name="student_id" id="modalStudentId">
             
             <div class="quarter-selector">
@@ -248,6 +321,13 @@ $quarters = [1, 2, 3, 4];
               <?php endforeach; ?>
             </div>
 
+            <div class="average-display">
+              <div class="average-box">
+                <span class="average-label">Average Score:</span>
+                <span class="average-value" id="averageScore">-</span>
+              </div>
+            </div>
+
             <div class="form-actions">
               <button type="submit" name="add_grade" class="submit-btn">Save Grades</button>
               <button type="button" class="cancel-btn" id="cancelGradeModal">Cancel</button>
@@ -259,24 +339,85 @@ $quarters = [1, 2, 3, 4];
   </div>
 
   <script>
+    const subjects = <?php echo json_encode($subjects); ?>; // exposes PHP subjects list to JS
+
     const gradeModal = document.getElementById('gradeModal');
+    const gradeForm = document.getElementById('gradeForm');
     const closeGradeModal = document.getElementById('closeGradeModal');
     const cancelGradeModal = document.getElementById('cancelGradeModal');
     const quarterTabs = document.querySelectorAll('.quarter-tab');
     const selectedQuarterInput = document.getElementById('selectedQuarter');
+    const scoreInputs = document.querySelectorAll('.subject-score-input');
+    const averageScore = document.getElementById('averageScore');
     
-    // Quarter tab selection
-    quarterTabs.forEach(tab => {
-      tab.addEventListener('click', function(e) {
-        e.preventDefault();
-        quarterTabs.forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        selectedQuarterInput.value = this.dataset.quarter;
-      });
-    });
+    // Load saved scores for a student and quarter, populate inputs
+    function loadStudentQuarterGrades(studentId, quarter) {
+      // reset inputs first
+      scoreInputs.forEach(input => input.value = '');
+      fetch('get-student-grades.php?student_id=' + encodeURIComponent(studentId) + '&quarter=' + encodeURIComponent(quarter))
+        .then(res => res.json())
+        .then(json => {
+          if (!json.success) return;
+          const data = json.data || {};
+          // populate by subjects order (subject list matches inputs order)
+          for (let i = 0; i < subjects.length; i++) {
+            const subj = subjects[i];
+            const input = scoreInputs[i];
+            if (data.hasOwnProperty(subj) && data[subj] !== null) {
+              input.value = data[subj];
+            } else {
+              // try fallback: different stored subject naming (case/whitespace)
+              // attempt to find a matching key ignoring case
+              const key = Object.keys(data).find(k => k.toLowerCase() === subj.toLowerCase());
+              if (key && data[key] !== null) input.value = data[key];
+            }
+          }
+          calculateAverage(); // update modal average display
+        })
+        .catch(err => {
+          console.error('Failed to load student grades:', err);
+        });
+    }
 
-    // Set default quarter
-    quarterTabs[0].classList.add('active');
+    // Quarter tab selection - update to fetch existing scores when switching quarters
+    quarterTabs.forEach(tab => {
+	  tab.addEventListener('click', function(e) {
+		e.preventDefault();
+		quarterTabs.forEach(t => t.classList.remove('active'));
+		this.classList.add('active');
+		selectedQuarterInput.value = this.dataset.quarter;
+
+		// if modal open and student selected, reload scores for new quarter
+		const sid = document.getElementById('modalStudentId').value;
+		if (sid) {
+		  loadStudentQuarterGrades(sid, this.dataset.quarter);
+		}
+	  });
+	});
+
+	// Set default quarter
+	quarterTabs[0].classList.add('active');
+    
+    // Calculate average when scores change
+    function calculateAverage() {
+      const scores = Array.from(scoreInputs)
+        .map(input => parseFloat(input.value))
+        .filter(val => !isNaN(val) && val > 0);
+      
+      if (scores.length === 0) {
+        averageScore.textContent = '-';
+        return;
+      }
+      
+      const sum = scores.reduce((a, b) => a + b, 0);
+      const avg = (sum / scores.length).toFixed(1);
+      averageScore.textContent = avg + '%';
+    }
+    
+    // Add event listeners to all score inputs
+    scoreInputs.forEach(input => {
+      input.addEventListener('input', calculateAverage);
+    });
     
     function openGradeModal(studentId, studentName) {
       document.getElementById('modalStudentId').value = studentId;
@@ -285,9 +426,36 @@ $quarters = [1, 2, 3, 4];
       
       // Reset form
       document.querySelectorAll('.subject-score-input').forEach(input => input.value = '');
+      quarterTabs.forEach(t => t.classList.remove('active'));
       quarterTabs[0].classList.add('active');
       selectedQuarterInput.value = 1;
+      averageScore.textContent = '-';
+
+      // Load saved scores for student for quarter 1 (default)
+      loadStudentQuarterGrades(studentId, 1);
     }
+
+    // Handle form submission
+    gradeForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      
+      fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(html => {
+        // Close modal and reload page to show saved grades
+        gradeModal.style.display = 'none';
+        location.reload();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving grades');
+      });
+    });
 
     closeGradeModal.addEventListener('click', () => gradeModal.style.display = 'none');
     cancelGradeModal.addEventListener('click', () => gradeModal.style.display = 'none');

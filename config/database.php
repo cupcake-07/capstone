@@ -33,12 +33,14 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 
 // Drop old grades table if it exists with wrong schema
-$conn->query("DROP TABLE IF EXISTS grades");
+// $conn->query("DROP TABLE IF EXISTS grades");   // REMOVED — dropping the table each run deleted saved grades
 
 // Add missing columns to students table if they don't exist
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS section VARCHAR(50)");
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS is_enrolled BOOLEAN DEFAULT 1");
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar LONGBLOB");
+// Add avg_score to persist per-student average
+$conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS avg_score DECIMAL(5,2) NULL");
 
 // Create tables if they don't exist
 $tables_sql = "
@@ -73,7 +75,8 @@ CREATE TABLE IF NOT EXISTS students (
     enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     parent_email VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    avatar LONGBLOB
+    avatar LONGBLOB,
+    avg_score DECIMAL(5,2) NULL
 );
 
 CREATE TABLE IF NOT EXISTS announcements (
@@ -109,7 +112,7 @@ CREATE TABLE IF NOT EXISTS class_students (
 CREATE TABLE IF NOT EXISTS grades (
     id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
-    class_id INT NOT NULL,
+    class_id INT NULL,
     assignment VARCHAR(100),
     score DECIMAL(5, 2),
     max_score DECIMAL(5, 2) DEFAULT 100,
