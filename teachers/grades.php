@@ -94,17 +94,21 @@ function handleGradeSubmission($conn) {
 function getStudentsByGradeLevel($conn) {
     $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students ORDER BY grade_level ASC, section ASC, name ASC");
     $studentsByGradeLevel = [];
-    
+
     if ($studentsResult) {
         while ($row = $studentsResult->fetch_assoc()) {
-            $gradeLevel = $row['grade_level'] ?? 'N/A';
-            if (!isset($studentsByGradeLevel[$gradeLevel])) {
-                $studentsByGradeLevel[$gradeLevel] = [];
-            }
-            $studentsByGradeLevel[$gradeLevel][] = $row;
+            // Normalize grade_level: treat empty / N/A / "Not Set" / null as '1'
+            $raw = trim((string)($row['grade_level'] ?? ''));
+            $rawLower = strtolower($raw);
+            $unsetMarkers = ['', 'n/a', 'not set', 'not_set', 'null'];
+            $gradeLevel = in_array($rawLower, $unsetMarkers, true) ? '1' : $raw;
+             if (!isset($studentsByGradeLevel[$gradeLevel])) {
+                 $studentsByGradeLevel[$gradeLevel] = [];
+             }
+             $studentsByGradeLevel[$gradeLevel][] = $row;
         }
     }
-    
+
     return $studentsByGradeLevel;
 }
 
@@ -135,7 +139,6 @@ function getStudentsBySection($conn) {
 
 function getGradeStatistics($conn) {
     $statsResult = $conn->query("SELECT 
-        COUNT(*) as total_grades,
         AVG(score) as avg_score,
         MAX(score) as max_score,
         MIN(score) as min_score
@@ -234,10 +237,6 @@ $quarters = [1, 2, 3, 4];
         <h2 class="section-title">Overall Statistics</h2>
         <div class="stats-cards">
           <div class="stat-card">
-            <div class="stat-label">Total Grades</div>
-            <div class="stat-value"><?php echo htmlspecialchars($stats['total_grades'] ?? 0); ?></div>
-          </div>
-          <div class="stat-card">
             <div class="stat-label">Average Score</div>
             <div class="stat-value"><?php echo htmlspecialchars(number_format($stats['avg_score'] ?? 0, 1)); ?>%</div>
           </div>
@@ -271,19 +270,37 @@ $quarters = [1, 2, 3, 4];
               }
               $studentsBySection[$section][] = $student;
             }
+
+            // Ensure at least two section cards for visualization (adds an empty section if only one present)
+            if (count($studentsBySection) < 2) {
+              if (empty($studentsBySection)) {
+                $studentsBySection['A'] = [];
+                $studentsBySection['B'] = [];
+              } else {
+                // pick a new section name that's not already used (prefer 'B')
+                $existingKeys = array_keys($studentsBySection);
+                $newKey = 'B';
+                $i = 1;
+                while (isset($studentsBySection[$newKey])) {
+                  $newKey = 'Extra' . $i;
+                  $i++;
+                }
+                $studentsBySection[$newKey] = [];
+              }
+            }
           ?>
             <div class="grade-level-card" data-grade-level-id="<?php echo $gradeLevelKey; ?>" data-grade-level="<?php echo htmlspecialchars($gradeLevel); ?>" data-is-grade-one="<?php echo ($gradeLevel === '1') ? 'true' : 'false'; ?>">
-              <div class="grade-level-header" data-toggle="grade-level">
-                <div class="grade-level-info">
-                  <h3>Grade 1</h3>
-                  <div class="grade-level-stats">
-                    <span class="stat-badge">Students: <?php echo count($allStudents); ?></span>
-                    <span class="stat-badge">Grades: <?php echo $gradeLevelStats['count']; ?></span>
-                    <span class="stat-badge">Avg: <?php echo number_format($gradeLevelStats['avg'] ?? 0, 1); ?>%</span>
-                  </div>
-                </div>
-                <span class="toggle-icon">▼</span>
-              </div>
+               <div class="grade-level-header" data-toggle="grade-level">
+                 <div class="grade-level-info">
+                  <h3>Grade <?php echo htmlspecialchars($gradeLevel); ?></h3>
+                   <div class="grade-level-stats">
+                     <span class="stat-badge">Students: <?php echo count($allStudents); ?></span>
+                     <span class="stat-badge">Grades: <?php echo $gradeLevelStats['count']; ?></span>
+                     <span class="stat-badge">Avg: <?php echo number_format($gradeLevelStats['avg'] ?? 0, 1); ?>%</span>
+                   </div>
+                 </div>
+                 <span class="toggle-icon">▼</span>
+               </div>
 
               <div class="grade-level-content">
                 <div class="sections-container">
@@ -304,34 +321,29 @@ $quarters = [1, 2, 3, 4];
                         <span class="toggle-icon">▼</span>
                       </div>
 
-                      <div class="students-cards-grid">
+                      <div class="students-cards-grid" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
                         <?php foreach ($sectionStudents as $student): 
                           $studentAvg = isset($student['avg_score']) && $student['avg_score'] !== null 
                             ? number_format(floatval($student['avg_score']), 1) 
                             : '-';
-                          $gradeCount = getStudentGradeCount($conn, $student['id']);
                         ?>
                           <div class="student-grade-card" 
                                data-student-id="<?php echo $student['id']; ?>"
                                data-student-name="<?php echo htmlspecialchars($student['name']); ?>"
                                role="button"
-                               tabindex="0">
-                            <div class="student-grade-header">
-                              <div class="student-info">
-                                <div class="student-name"><?php echo htmlspecialchars($student['name']); ?></div>
-                                <div class="student-email"><?php echo htmlspecialchars($student['email']); ?></div>
-                              </div>
-                              <div class="grade-count-badge"><?php echo $gradeCount; ?> grades</div>
+                               tabindex="0"
+                               style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
+                            <div class="student-info" style="flex: 1;">
+                              <div class="student-name" style="font-weight: 600; color: #2c3e50; font-size: 14px;"><?php echo htmlspecialchars($student['name']); ?></div>
+                              <div class="student-email" style="font-size: 12px; color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($student['email']); ?></div>
                             </div>
 
-                            <div class="grade-stats-row">
-                              <div class="grade-stat">
-                                <span class="stat-label">Average</span>
-                                <span class="stat-value"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></span>
+                            <div style="display: flex; align-items: center; gap: 20px; margin-left: 16px;">
+                              <div style="text-align: center;">
+                                <div style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Average</div>
+                                <div style="font-size: 18px; font-weight: 700; color: var(--muted);"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
                               </div>
                             </div>
-
-                            <div class="add-grade-link">+ Add Grades</div>
                           </div>
                         <?php endforeach; ?>
                       </div>
@@ -341,6 +353,107 @@ $quarters = [1, 2, 3, 4];
               </div>
             </div>
           <?php endforeach; ?>
+        </div>
+      </section>
+
+      <!-- TEMPORARY SECTION - GRADE 2-6 BACKUP -->
+      <section class="grades-backup-section" data-section="grades-backup" style="margin-top: 40px;">
+        <div class="grade-levels-container">
+          <?php 
+            // Display Grade 2-6 as backup section
+            for ($grade = 2; $grade <= 6; $grade++):
+              $gradeStr = (string)$grade;
+              $gradeLevelKey = md5($gradeStr);
+              
+              // Get students for this grade if they exist
+              $allStudents = isset($studentsByGradeLevel[$gradeStr]) ? $studentsByGradeLevel[$gradeStr] : [];
+              $gradeLevelStats = getGradeLevelStats($conn, $gradeStr);
+              
+              // Group students by section within this grade level
+              $studentsBySection = [];
+              if (!empty($allStudents)) {
+                foreach ($allStudents as $student) {
+                  $section = $student['section'] ?? 'N/A';
+                  if (!isset($studentsBySection[$section])) {
+                    $studentsBySection[$section] = [];
+                  }
+                  $studentsBySection[$section][] = $student;
+                }
+              } else {
+                // If no students, create empty sections A and B
+                $studentsBySection = ['A' => [], 'B' => []];
+              }
+            ?>
+              <div class="grade-level-card" data-grade-level-id="<?php echo $gradeLevelKey; ?>" data-grade-level="<?php echo htmlspecialchars($gradeStr); ?>" data-is-backup="true">
+                <div class="grade-level-header" data-toggle="grade-level">
+                  <div class="grade-level-info">
+                    <h3>Grade <?php echo htmlspecialchars($gradeStr); ?></h3>
+                    <div class="grade-level-stats">
+                      <span class="stat-badge">Students: <?php echo count($allStudents); ?></span>
+                      <span class="stat-badge">Grades: <?php echo $gradeLevelStats['count']; ?></span>
+                      <span class="stat-badge">Avg: <?php echo number_format($gradeLevelStats['avg'] ?? 0, 1); ?>%</span>
+                    </div>
+                  </div>
+                  <span class="toggle-icon">▼</span>
+                </div>
+
+                <div class="grade-level-content collapsed">
+                  <div class="sections-container">
+                    <?php foreach ($studentsBySection as $section => $sectionStudents): 
+                      $sectionKey = md5($gradeStr . '-' . $section);
+                      $sectionStats = getSectionStats($conn, $gradeStr, $section);
+                    ?>
+                      <div class="section-card" data-section-id="<?php echo $sectionKey; ?>" data-section-name="<?php echo htmlspecialchars($section); ?>">
+                        <div class="section-header" data-toggle="section">
+                          <div class="section-info">
+                            <h4>Section <?php echo htmlspecialchars($section); ?></h4>
+                            <div class="section-stats">
+                              <span class="stat-badge">Students: <?php echo count($sectionStudents); ?></span>
+                              <span class="stat-badge">Grades: <?php echo $sectionStats['count']; ?></span>
+                              <span class="stat-badge">Avg: <?php echo number_format($sectionStats['avg'] ?? 0, 1); ?>%</span>
+                            </div>
+                          </div>
+                          <span class="toggle-icon">▼</span>
+                        </div>
+
+                        <div class="students-cards-grid" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+                          <?php if (empty($sectionStudents)): ?>
+                            <div style="text-align: center; padding: 40px 20px; color: #999;">
+                              <p style="font-size: 14px; margin: 0;">No students in this section yet</p>
+                            </div>
+                          <?php else: ?>
+                            <?php foreach ($sectionStudents as $student): 
+                              $studentAvg = isset($student['avg_score']) && $student['avg_score'] !== null 
+                                ? number_format(floatval($student['avg_score']), 1) 
+                                : '-';
+                            ?>
+                              <div class="student-grade-card" 
+                                   data-student-id="<?php echo $student['id']; ?>"
+                                   data-student-name="<?php echo htmlspecialchars($student['name']); ?>"
+                                   role="button"
+                                   tabindex="0"
+                                   style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
+                                <div class="student-info" style="flex: 1;">
+                                  <div class="student-name" style="font-weight: 600; color: #2c3e50; font-size: 14px;"><?php echo htmlspecialchars($student['name']); ?></div>
+                                  <div class="student-email" style="font-size: 12px; color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($student['email']); ?></div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 20px; margin-left: 16px;">
+                                  <div style="text-align: center;">
+                                    <div style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Average</div>
+                                    <div style="font-size: 18px; font-weight: 700; color: var(--muted);"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
+                                  </div>
+                                </div>
+                              </div>
+                            <?php endforeach; ?>
+                          <?php endif; ?>
+                        </div>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              </div>
+            <?php endfor; ?>
         </div>
       </section>
 
@@ -514,19 +627,23 @@ $quarters = [1, 2, 3, 4];
       localStorage.setItem(`grade_level_${gradeLevelId}`, isCollapsed ? 'collapsed' : 'expanded');
     }
 
-    function toggleSection(sectionId) {
-      const sectionCard = document.querySelector(`[data-section-id="${sectionId}"]`);
+    // Toggle a section by element to avoid affecting other sections with similar ids
+    function toggleSectionElement(sectionCard) {
       if (!sectionCard) return;
-      
+      const sectionId = sectionCard.getAttribute('data-section-id');
       const grid = sectionCard.querySelector('.students-cards-grid');
       const icon = sectionCard.querySelector('.section-header .toggle-icon');
-      
-      grid.classList.toggle('collapsed');
-      icon.classList.toggle('collapsed');
-      
-      const isCollapsed = grid.classList.contains('collapsed');
-      localStorage.setItem(`section_${sectionId}`, isCollapsed ? 'collapsed' : 'expanded');
+
+      if (grid) grid.classList.toggle('collapsed');
+      if (icon) icon.classList.toggle('collapsed');
+
+      const isCollapsed = grid && grid.classList.contains('collapsed');
+      if (sectionId) localStorage.setItem(`section_${sectionId}`, isCollapsed ? 'collapsed' : 'expanded');
     }
+
+    // ========================================================================
+    // RESTORE COLLAPSED STATES
+    // ========================================================================
 
     function restoreCollapsedStates() {
       // Restore grade level states
@@ -600,21 +717,24 @@ $quarters = [1, 2, 3, 4];
       document.querySelectorAll('[data-toggle="grade-level"]').forEach(header => {
         header.addEventListener('click', function(e) {
           e.preventDefault();
+          e.stopPropagation(); // prevent bubbling to other handlers
           const gradeLevelCard = this.closest('.grade-level-card');
           const gradeLevelId = gradeLevelCard.getAttribute('data-grade-level-id');
           toggleGradeLevel(gradeLevelId);
         });
       });
 
-      // Section toggle event delegation
+      // Section toggle event delegation — toggle only the clicked section element
       document.querySelectorAll('[data-toggle="section"]').forEach(header => {
         header.addEventListener('click', function(e) {
           e.preventDefault();
+          e.stopPropagation(); // important: prevent toggles from affecting other sections
           const sectionCard = this.closest('.section-card');
-          const sectionId = sectionCard.getAttribute('data-section-id');
-          toggleSection(sectionId);
+          toggleSectionElement(sectionCard);
         });
       });
+
+      // Note: backup grade-level headers use the same [data-toggle="grade-level"] listener above
 
       // Student card click handlers
       DOM.studentCards.forEach(card => {

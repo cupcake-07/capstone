@@ -1,3 +1,17 @@
+/* --- Theme variables: black & white --- */
+:root {
+  --primary: #000000;           /* main black accent */
+  --primary-dark: #111111;      /* slightly lighter black for hover */
+  --primary-contrast: #ffffff;  /* white text on black backgrounds */
+  --muted: #222222;             /* muted text (dark gray) */
+  --bg-card: #ffffff;           /* card background (white) */
+  --bg-section: #f7f7f7;        /* section background (very light gray) */
+  --border: #e6e6e6;            /* neutral border */
+  --accent-badge: #f2f2f2;      /* light badge background */
+  --accent-badge-text: #000000; /* badge text (black) */
+  --shadow-color: rgba(0,0,0,0.06);
+}
+
 /* ========================================================================
    STATISTICS SECTION
    ======================================================================== */
@@ -10,8 +24,8 @@
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: #2c3e50;
-  border-bottom: 2px solid #e0e7ff;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
   padding-bottom: 12px;
 }
 
@@ -22,12 +36,13 @@
   margin-bottom: 24px;
 }
 
+/* STAT CARD (black background, white text) */
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--primary);
+  color: var(--primary-contrast);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
   text-align: center;
 }
 
@@ -62,16 +77,16 @@
 }
 
 .grade-level-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-section);
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .grade-level-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e1;
+  box-shadow: 0 8px 16px var(--shadow-color);
+  border-color: #dcdcdc;
 }
 
 /* Grade Level Header */
@@ -80,15 +95,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--primary);
+  color: var(--primary-contrast);
   cursor: pointer;
   user-select: none;
   transition: all 0.3s ease;
 }
 
 .grade-level-header:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #6a3a8f 100%);
+  background: var(--primary-dark);
 }
 
 .grade-level-info h3 {
@@ -96,6 +111,7 @@
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
+  color: var(--primary-contrast);
 }
 
 .grade-level-stats {
@@ -105,7 +121,8 @@
 }
 
 .stat-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--primary-contrast);
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 12px;
@@ -148,16 +165,16 @@
 }
 
 .section-card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .section-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border-color: #dcdcdc;
 }
 
 /* Section Header */
@@ -166,22 +183,22 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f1f5f9;
-  border-bottom: 2px solid #e2e8f0;
+  background: #f9f9f9;
+  border-bottom: 2px solid var(--border);
   cursor: pointer;
   user-select: none;
   transition: all 0.3s ease;
 }
 
 .section-header:hover {
-  background: #e8eef7;
+  background: #f2f2f2;
 }
 
 .section-info h4 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--muted);
   margin-bottom: 6px;
 }
 
@@ -191,9 +208,10 @@
   flex-wrap: wrap;
 }
 
+/* Section stats badges use neutral accent */
 .section-stats .stat-badge {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--accent-badge);
+  color: var(--accent-badge-text);
   padding: 2px 8px;
   font-size: 11px;
 }
@@ -219,8 +237,8 @@
 }
 
 .student-grade-card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 16px;
   cursor: pointer;
@@ -229,13 +247,13 @@
 }
 
 .student-grade-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
 
 .student-grade-card:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -254,20 +272,21 @@
 .student-name {
   font-size: 15px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--muted);
   margin-bottom: 4px;
   display: block;
 }
 
 .student-email {
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
   display: block;
 }
 
+/* Grade-count badge neutral (kept if used elsewhere) */
 .grade-count-badge {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--accent-badge);
+  color: var(--accent-badge-text);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 11px;
@@ -282,33 +301,19 @@
   gap: 16px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.grade-stat {
-  flex: 1;
-  text-align: center;
-}
-
-.grade-stat .stat-label {
-  font-size: 11px;
-  color: #64748b;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 4px;
-  display: block;
+  border-bottom: 1px solid #f5f5f5;
 }
 
 .grade-stat .stat-value {
   font-size: 20px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--muted);
   display: block;
 }
 
 .add-grade-link {
   text-align: center;
-  color: #667eea;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -318,7 +323,7 @@
 }
 
 .add-grade-link:hover {
-  background: #eef2ff;
+  background: #f5f5f5;
 }
 
 /* ========================================================================
@@ -332,6 +337,7 @@
   border: 1px solid;
 }
 
+/* keep message colors as-is (red/green) for clarity */
 .message-error {
   background: #fff3f3;
   color: #7a1414;
@@ -362,57 +368,32 @@
   animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .grade-modal-content {
-  background: white;
+  background: var(--bg-card);
   border-radius: 10px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px var(--shadow-color);
   animation: slideUp 0.3s ease;
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
+/* Modal header uses black */
 .grade-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--primary);
+  color: var(--primary-contrast);
   border-radius: 10px 10px 0 0;
-}
-
-.grade-modal-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
 }
 
 .modal-close {
   background: none;
   border: none;
-  color: white;
+  color: var(--primary-contrast);
   font-size: 28px;
   cursor: pointer;
   padding: 0;
@@ -426,7 +407,7 @@
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ========================================================================
@@ -437,31 +418,19 @@
   padding: 24px;
 }
 
-.quarter-selector {
-  margin-bottom: 24px;
-  border: none;
-  padding: 0;
-}
-
 .quarter-selector legend {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--muted);
   margin-bottom: 12px;
   display: block;
 }
 
-.quarter-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
 .quarter-tab {
   padding: 8px 16px;
-  border: 2px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--muted);
   font-weight: 600;
   font-size: 13px;
   border-radius: 6px;
@@ -469,64 +438,26 @@
   transition: all 0.3s ease;
 }
 
-.quarter-tab:hover {
-  border-color: #667eea;
-  color: #667eea;
-}
-
 .quarter-tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--primary);
+  color: var(--primary-contrast);
   border-color: transparent;
 }
 
-.form-section {
-  margin-bottom: 24px;
-}
-
-.form-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.subjects-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.subject-input-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.subject-input-group label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 6px;
-}
-
-.subject-score-input {
-  padding: 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.quarter-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .subject-score-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
 }
 
 .average-box {
-  background: #eef2ff;
-  border: 2px solid #667eea;
+  background: #ffffff;
+  border: 2px solid var(--border);
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -537,51 +468,183 @@
 .average-label {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--muted);
 }
 
 .average-value {
   font-size: 24px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--muted);
 }
 
+/* Improved form action buttons layout and styling */
 .form-actions {
   display: flex;
   gap: 12px;
   margin-top: 24px;
+
+  /* right align buttons on desktop */
+  justify-content: flex-end;
+  align-items: center;
 }
 
-.submit-btn,
-.cancel-btn {
-  flex: 1;
-  padding: 12px 16px;
+/* Base button styling for consistency */
+.form-actions .submit-btn,
+.form-actions .cancel-btn {
+  min-width: 120px;
+  padding: 10px 16px;
   font-size: 14px;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
+  font-weight: 700;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+  line-height: 1;
 }
 
-.submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+/* Primary submit button: black background, white text */
+.form-actions .submit-btn {
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border-color: rgba(255,255,255,0.06);
 }
 
-.submit-btn:hover {
+/* subtle hover and active */
+.form-actions .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  background: var(--primary-dark);
 }
 
-.cancel-btn {
-  background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+.form-actions .submit-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
 }
 
-.cancel-btn:hover {
-  background: #e2e8f0;
+/* Disabled state */
+.form-actions .submit-btn[disabled],
+.form-actions .submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Cancel button: white/neutral outline style */
+.form-actions .cancel-btn {
+  background: var(--bg-card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.form-actions .cancel-btn:hover {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+/* Focus-visible for accessibility */
+.form-actions .submit-btn:focus,
+.form-actions .cancel-btn:focus {
+  outline: 3px solid rgba(0,0,0,0.08);
+  outline-offset: 2px;
+}
+
+/* Mobile: stack buttons full-width */
+@media (max-width: 480px) {
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-actions .submit-btn,
+  .form-actions .cancel-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ========================================================================
+   SUBJECTS GRID — improved modal input layout
+   ======================================================================== */
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* Each subject row: label on the left, input on the right (desktop) */
+.subject-input-group {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  border-radius: 6px;
+}
+
+/* Label styling */
+.subject-input-group label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Hidden subject field keep unchanged (no display) */
+.subject-input-group input[type="hidden"] {
+  display: none;
+}
+
+/* Numeric input full width, consistent sizing */
+.subject-score-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: textfield;
+}
+
+/* Remove number input spinner for nicer compact look (WebKit) */
+.subject-score-input::-webkit-outer-spin-button,
+.subject-score-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Focus state */
+.subject-score-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+}
+
+/* Responsive: stack label above input on narrow viewports */
+@media (max-width: 768px) {
+  .subjects-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .subject-input-group {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .subject-input-group label {
+    font-size: 14px;
+  }
 }
 
 /* ========================================================================
