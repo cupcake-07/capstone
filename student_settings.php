@@ -10,9 +10,9 @@ if (empty($_SESSION['user_id'])) {
 
 $userId = intval($_SESSION['user_id']);
 
-// fetch user
+// fetch user - include section
 $user = null;
-if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level FROM students WHERE id = ? LIMIT 1")) {
+if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, section FROM students WHERE id = ? LIMIT 1")) {
     $stmt->bind_param('i', $userId);
     $stmt->execute();
     if (method_exists($stmt, 'get_result')) {
@@ -21,9 +21,9 @@ if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level FROM s
     } else {
         $stmt->store_result();
         if ($stmt->num_rows === 1) {
-            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade);
+            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection);
             $stmt->fetch();
-            $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade];
+            $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection];
         }
     }
     $stmt->close();
@@ -46,6 +46,15 @@ function esc($v){ return htmlspecialchars($v ?? '', ENT_QUOTES); }
 $name = esc($user['name'] ?? 'Student');
 $email = esc($user['email'] ?? '');
 $grade = esc($user['grade_level'] ?? 'Not Set');
+
+// Force Grade 1 students to Section A (match grades.php logic)
+$rawSection = trim((string)($user['section'] ?? ''));
+if ($grade === '1' || empty($rawSection) || strtolower($rawSection) === 'n/a') {
+  $section = 'A';
+} else {
+  $section = esc($rawSection);
+}
+
 $studentId = esc($user['id'] ?? '');
 ?>
 <!doctype html>
@@ -249,11 +258,21 @@ $studentId = esc($user['id'] ?? '');
           </div>
 
           <h2 class="name"><?php echo $name; ?></h2>
-          <p class="role">Section A • Student ID: <strong><?php echo $studentId; ?></strong></p>
+          <p class="role">Section <?php echo $section; ?> • Student ID: <strong><?php echo $studentId; ?></strong></p>
 
           <div class="card info">
-            <div class="row"><div class="label">Email</div><div class="value"><?php echo $email; ?></div></div>
-            <div class="row"><div class="label">Status</div><div class="value status"><?php echo esc(($user['grade_level'])? 'Enrolled':'Not Enrolled'); ?></div></div>
+            <div class="row">
+              <div class="label">Email</div>
+              <div class="value"><?php echo $email; ?></div>
+            </div>
+            <div class="row">
+              <div class="label">Section</div>
+              <div class="value"><?php echo $section; ?></div>
+            </div>
+            <div class="row">
+              <div class="label">Status</div>
+              <div class="value status"><?php echo esc(($user['grade_level'])? 'Enrolled':'Not Enrolled'); ?></div>
+            </div>
           </div>
 
           <div style="margin-top:12px;"><a class="btn ghost" href="student.php">Back to Profile</a></div>

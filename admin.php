@@ -164,10 +164,10 @@ $user = getAdminSession();
                 </section>
 
                 <section class="data-table" id="students">
-                    <h2>All Students</h2>
+                    <h2>Recent Students</h2>
                     <div class="table-actions">
-                        <label>Show <select id="pageSize"><option>10</option><option>25</option><option>50</option></select> rows</label>
-                        <button onclick="window.location.href='admin/students.php'" class="btn-primary">Manage Students</button>
+                        <p style="color: #666; font-size: 13px; margin: 0;">Showing latest 5 students</p>
+                        <a href="admin/students.php" class="btn-primary">Manage All Students</a>
                     </div>
                     <table id="studentsTable">
                         <thead>
@@ -177,30 +177,27 @@ $user = getAdminSession();
                                 <th>Email</th>
                                 <th>Grade Level</th>
                                 <th>Section</th>
-                                <th>Enrollment Status</th>
-                                <th>Enrolled Date</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="studentsBody">
                             <?php if (!empty($allStudents)): ?>
-                                <?php foreach ($allStudents as $student): ?>
+                                <?php foreach (array_slice($allStudents, 0, 5) as $student): 
+                                    $displayGrade = htmlspecialchars($student['grade_level'] ?? '1');
+                                    $displaySection = htmlspecialchars($student['section'] ?? 'A');
+                                    $statusBadge = $student['is_enrolled'] ? '<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Enrolled</span>' : '<span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Not Enrolled</span>';
+                                ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($student['id']); ?></td>
                                         <td><?php echo htmlspecialchars($student['name']); ?></td>
                                         <td><?php echo htmlspecialchars($student['email']); ?></td>
-                                        <td><?php echo htmlspecialchars($student['grade_level'] ?? 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?></td>
-                                        <td>
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" class="enrollment-toggle" data-student-id="<?php echo $student['id']; ?>" <?php echo $student['is_enrolled'] ? 'checked' : ''; ?> />
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($student['enrollment_date'])); ?></td>
+                                        <td><?php echo $displayGrade; ?></td>
+                                        <td><?php echo $displaySection; ?></td>
+                                        <td><?php echo $statusBadge; ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan="7">No students registered yet</td></tr>
+                                <tr><td colspan="6" style="text-align: center; padding: 20px;">No students registered yet</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -245,7 +242,218 @@ $user = getAdminSession();
                 align-items: center;
                 margin-right: 50px;
             }
+
+            .filter-dropdown {
+                padding: 10px 14px;
+                border: 2px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                background-color: white;
+                color: #2c3e50;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-width: 150px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            }
+
+            .filter-dropdown:hover {
+                border-color: #4A90E2;
+                box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+                background-color: #f8fafc;
+            }
+
+            .filter-dropdown:focus {
+                outline: none;
+                border-color: #4A90E2;
+                box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+            }
+
+            .filter-dropdown:active {
+                border-color: #357ABD;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            }
+
+            .table-actions {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+
+            .table-actions label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: 500;
+                color: #2c3e50;
+                font-size: 13px;
+            }
+
+            .table-actions select[id="pageSize"] {
+                padding: 8px 10px;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                font-size: 12px;
+                background-color: white;
+                cursor: pointer;
+                min-width: 60px;
+            }
+
+            .btn-edit-student {
+                background-color: #4A90E2;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                transition: background-color 0.3s ease;
+            }
+
+            .btn-edit-student:hover {
+                background-color: #357ABD;
+            }
+
+            .edit-modal {
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.4);
+                align-items: center;
+                justify-content: center;
+            }
+
+            .edit-modal-content {
+                background-color: white;
+                padding: 30px;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 400px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .edit-modal-header {
+                margin-bottom: 20px;
+            }
+
+            .edit-modal-header h2 {
+                margin: 0;
+                color: #2c3e50;
+                font-size: 20px;
+            }
+
+            .modal-close {
+                float: right;
+                font-size: 24px;
+                font-weight: bold;
+                color: #999;
+                cursor: pointer;
+                border: none;
+                background: none;
+            }
+
+            .modal-close:hover {
+                color: #000;
+            }
+
+            .edit-form-group {
+                margin-bottom: 16px;
+            }
+
+            .edit-form-group label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: 600;
+                color: #2c3e50;
+                font-size: 14px;
+            }
+
+            .edit-form-group select {
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+            .edit-form-actions {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 20px;
+            }
+
+            .btn-save, .btn-cancel {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.3s ease;
+            }
+
+            .btn-save {
+                background-color: #27ae60;
+                color: white;
+            }
+
+            .btn-save:hover {
+                background-color: #229954;
+            }
+
+            .btn-cancel {
+                background-color: #95a5a6;
+                color: white;
+            }
+
+            .btn-cancel:hover {
+                background-color: #7f8c8d;
+            }
         </style>
+        <div id="editStudentModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <div class="edit-modal-header">
+                    <button class="modal-close" id="closeEditModal">&times;</button>
+                    <h2>Edit Student - <span id="editStudentName"></span></h2>
+                </div>
+                <form id="editStudentForm">
+                    <input type="hidden" id="editStudentId" name="student_id">
+                    
+                    <div class="edit-form-group">
+                        <label for="editGradeLevel">Grade Level:</label>
+                        <select id="editGradeLevel" name="grade_level">
+                            <option value="1">Grade 1</option>
+                            <option value="2">Grade 2</option>
+                            <option value="3">Grade 3</option>
+                            <option value="4">Grade 4</option>
+                            <option value="5">Grade 5</option>
+                            <option value="6">Grade 6</option>
+                        </select>
+                    </div>
+
+                    <div class="edit-form-group">
+                        <label for="editSection">Section:</label>
+                        <select id="editSection" name="section">
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+
+                    <div class="edit-form-actions">
+                        <button type="button" class="btn-cancel" id="cancelEditModal">Cancel</button>
+                        <button type="submit" class="btn-save">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <script>
             // Enrollment toggle handler
             document.querySelectorAll('.enrollment-toggle').forEach(toggle => {
@@ -365,6 +573,123 @@ $user = getAdminSession();
             });
 
             document.getElementById('year').textContent = new Date().getFullYear();
+
+            // Edit Student Modal
+            const editModal = document.getElementById('editStudentModal');
+            const editForm = document.getElementById('editStudentForm');
+            const closeEditModal = document.getElementById('closeEditModal');
+            const cancelEditModal = document.getElementById('cancelEditModal');
+            const editButtons = document.querySelectorAll('.btn-edit-student');
+
+            editButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const studentId = this.dataset.studentId;
+                    const studentName = this.dataset.studentName;
+                    const grade = this.dataset.grade;
+                    const section = this.dataset.section;
+
+                    document.getElementById('editStudentId').value = studentId;
+                    document.getElementById('editStudentName').textContent = studentName;
+                    document.getElementById('editGradeLevel').value = grade;
+                    document.getElementById('editSection').value = section;
+
+                    editModal.style.display = 'flex';
+                });
+            });
+
+            closeEditModal.addEventListener('click', function() {
+                editModal.style.display = 'none';
+            });
+
+            cancelEditModal.addEventListener('click', function() {
+                editModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(e) {
+                if (e.target === editModal) {
+                    editModal.style.display = 'none';
+                }
+            });
+
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                fetch('api/update-student-grade-section.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Student updated successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update student');
+                });
+            });
+
+            // Table Filtering
+            const gradeFilter = document.getElementById('gradeFilter');
+            const sectionFilter = document.getElementById('sectionFilter');
+            const studentsTable = document.getElementById('studentsTable');
+            const tableRows = studentsTable.querySelectorAll('tbody tr');
+            let noResultsRow = null;
+
+            function applyFilters() {
+                const selectedGrade = gradeFilter.value;
+                const selectedSection = sectionFilter.value;
+                let visibleCount = 0;
+
+                // Remove previous "no results" message
+                if (noResultsRow) {
+                    noResultsRow.remove();
+                    noResultsRow = null;
+                }
+
+                tableRows.forEach(row => {
+                    // Skip the "no students" message row
+                    if (row.cells.length < 8) return;
+
+                    const gradeCell = row.cells[3].textContent.trim();
+                    const sectionCell = row.cells[4].textContent.trim();
+
+                    const gradeMatch = !selectedGrade || gradeCell === selectedGrade;
+                    const sectionMatch = !selectedSection || sectionCell === selectedSection;
+
+                    if (gradeMatch && sectionMatch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Show "no results" message if needed
+                if (visibleCount === 0) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 20px; color: #999;">No students match the selected filters</td>';
+                    noResultsRow.id = 'noResultsMessage';
+                    studentsTable.querySelector('tbody').appendChild(noResultsRow);
+
+                    // Auto-remove after 1 second
+                    setTimeout(() => {
+                        if (noResultsRow) {
+                            noResultsRow.remove();
+                            noResultsRow = null;
+                        }
+                    }, 1000);
+                }
+            }
+
+            gradeFilter.addEventListener('change', applyFilters);
+            sectionFilter.addEventListener('change', applyFilters);
         </script>
         <script src="js/admin.js" defer></script>
     </body>

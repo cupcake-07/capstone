@@ -357,12 +357,29 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null) {
           </div>
 
           <div class="card announcements">
-            <h3>Latest Announcements</h3>
+            <h3>Latest Announcements & Events</h3>
             <ul class="ann-list">
-              <li><strong>Oct 15</strong> — Parent-Teacher Conference on Oct 20.</li>
-              <li><strong>Oct 10</strong> — School fee due date extended.</li>
+              <?php
+                // Fetch upcoming school events (latest 2)
+                $upcomingEvents = $conn->query("SELECT event_date, title FROM school_events ORDER BY event_date DESC LIMIT 2");
+                $eventCount = 0;
+                
+                if ($upcomingEvents) {
+                  while ($event = $upcomingEvents->fetch_assoc()) {
+                    $eventCount++;
+                    $eventDate = date('M d, Y', strtotime($event['event_date']));
+                    echo '<li><strong>' . htmlspecialchars($eventDate) . '</strong> — <span style="color: #0369a1; font-weight: 600;">📅</span> ' . htmlspecialchars($event['title']) . '</li>';
+                  }
+                }
+                
+                // Show fallback if no events
+                if ($eventCount === 0) {
+                  echo '<li><strong>Oct 20</strong> — 📅 Parent-Teacher Conference on Oct 20.</li>';
+                  echo '<li><strong>Oct 15</strong> — 📅 School fee due date extended.</li>';
+                }
+              ?>
             </ul>
-            <a href="announcements.php" class="link-more">All announcements →</a>
+            <a href="announcements.php" class="link-more">All announcements & events →</a>
           </div>
         </section>
       </section>
