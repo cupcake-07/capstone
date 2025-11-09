@@ -25,3 +25,25 @@ if ($isAdmin) {
 }
 exit;
 ?>
+
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Destroy session
+session_unset();
+session_destroy();
+
+// Check redirect parameter
+$redirect = $_GET['redirect'] ?? 'login';
+
+if ($redirect === 'student') {
+    // Redirect to student login
+    header('Location: login.php?role=student');
+} else {
+    // Default redirect to main login
+    header('Location: login.php');
+}
+exit;
+?>

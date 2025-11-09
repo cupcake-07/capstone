@@ -233,7 +233,7 @@ $studentId = esc($user['id'] ?? '');
 
               <h4 style="margin:0 0 10px;">More</h4>
               <div style="display:flex;flex-direction:column;gap:8px;">
-                <a class="btn ghost" href="logout.php">Log out</a>
+                <a class="btn ghost" href="logout.php?redirect=student">Log out</a>
               </div>
             </aside>
           </div>

@@ -47,7 +47,15 @@ if (!$user) {
 $name = htmlspecialchars($user['name'] ?? 'Student');
 $email = htmlspecialchars($user['email'] ?? '');
 $grade = htmlspecialchars($user['grade_level'] ?? 'Not Set');
-$section = htmlspecialchars($user['section'] ?? 'N/A');
+
+// Force Grade 1 students to Section A
+$rawSection = trim((string)($user['section'] ?? ''));
+if ($grade === '1' || empty($rawSection) || strtolower($rawSection) === 'n/a') {
+  $section = 'A';
+} else {
+  $section = htmlspecialchars($rawSection);
+}
+
 $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
 $isEnrolled = $user['is_enrolled'] ?? 1;
 $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
@@ -209,7 +217,7 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null) {
           </div>
 
           <h2 class="name"><?php echo $name; ?></h2>
-          <p class="role">Section A • Student ID: <strong><?php echo $studentIdDisplay; ?></strong></p>
+          <p class="role">Section <?php echo $section; ?> • Student ID: <strong><?php echo $studentIdDisplay; ?></strong></p>
 
           <div class="card info">
             <div class="row">

@@ -102,10 +102,16 @@ function getStudentsByGradeLevel($conn) {
             $rawLower = strtolower($raw);
             $unsetMarkers = ['', 'n/a', 'not set', 'not_set', 'null'];
             $gradeLevel = in_array($rawLower, $unsetMarkers, true) ? '1' : $raw;
-             if (!isset($studentsByGradeLevel[$gradeLevel])) {
-                 $studentsByGradeLevel[$gradeLevel] = [];
-             }
-             $studentsByGradeLevel[$gradeLevel][] = $row;
+            
+            // Force Grade 1 students to Section A
+            if ($gradeLevel === '1') {
+                $row['section'] = 'A';
+            }
+            
+            if (!isset($studentsByGradeLevel[$gradeLevel])) {
+                $studentsByGradeLevel[$gradeLevel] = [];
+            }
+            $studentsByGradeLevel[$gradeLevel][] = $row;
         }
     }
 
@@ -271,21 +277,29 @@ $quarters = [1, 2, 3, 4];
               $studentsBySection[$section][] = $student;
             }
 
-            // Ensure at least two section cards for visualization (adds an empty section if only one present)
-            if (count($studentsBySection) < 2) {
-              if (empty($studentsBySection)) {
+            // For Grade 1, only show Section A (remove empty section logic)
+            if ($gradeLevel === '1') {
+              // Keep only Section A for Grade 1
+              $studentsBySection = array_intersect_key($studentsBySection, array_flip(['A']));
+              if (empty($studentsBySection['A'])) {
                 $studentsBySection['A'] = [];
-                $studentsBySection['B'] = [];
-              } else {
-                // pick a new section name that's not already used (prefer 'B')
-                $existingKeys = array_keys($studentsBySection);
-                $newKey = 'B';
-                $i = 1;
-                while (isset($studentsBySection[$newKey])) {
-                  $newKey = 'Extra' . $i;
-                  $i++;
+              }
+            } else {
+              // Ensure at least two section cards for other grades
+              if (count($studentsBySection) < 2) {
+                if (empty($studentsBySection)) {
+                  $studentsBySection['A'] = [];
+                  $studentsBySection['B'] = [];
+                } else {
+                  $existingKeys = array_keys($studentsBySection);
+                  $newKey = 'B';
+                  $i = 1;
+                  while (isset($studentsBySection[$newKey])) {
+                    $newKey = 'Extra' . $i;
+                    $i++;
+                  }
+                  $studentsBySection[$newKey] = [];
                 }
-                $studentsBySection[$newKey] = [];
               }
             }
           ?>

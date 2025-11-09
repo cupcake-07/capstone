@@ -17,40 +17,57 @@ if ($hasTable) {
     }
 
     $hasTitle = in_array('title', $cols);
-    // choose a body-like column if present
     $bodyCol = in_array('body', $cols) ? 'body' : (in_array('content', $cols) ? 'content' : (in_array('message', $cols) ? 'message' : null));
-    // choose a date-like column if present
     $dateCol = in_array('published_at', $cols) ? 'published_at' : (in_array('created_at', $cols) ? 'created_at' : (in_array('date', $cols) ? 'date' : null));
 
     if ($hasTitle && $bodyCol && $dateCol) {
-        // build safe SELECT using discovered column names
-        $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e') AS pub_date FROM `announcements` ORDER BY `$dateCol` DESC LIMIT 20";
+        $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e, %Y') AS pub_date FROM `announcements` ORDER BY `$dateCol` DESC LIMIT 50";
         if ($stmt = $conn->prepare($sql)) {
             $stmt->execute();
             if (method_exists($stmt, 'get_result')) {
                 $res = $stmt->get_result();
-                while ($r = $res->fetch_assoc()) $announcements[] = $r;
+                while ($r = $res->fetch_assoc()) {
+                    $announcements[] = array_merge($r, ['type' => 'announcement']);
+                }
             } else {
-                // fallback for environments without mysqlnd
                 $stmt->bind_result($id, $title, $body, $pub_date);
-                while ($stmt->fetch()) $announcements[] = ['id'=>$id,'title'=>$title,'body'=>$body,'pub_date'=>$pub_date];
+                while ($stmt->fetch()) {
+                    $announcements[] = ['id'=>$id,'title'=>$title,'body'=>$body,'pub_date'=>$pub_date,'type'=>'announcement'];
+                }
             }
             $stmt->close();
-        } else {
-            error_log('[announcements.php] failed to prepare announcements query: ' . $conn->error);
         }
-    } else {
-        error_log('[announcements.php] announcements table exists but required columns missing: ' . json_encode($cols));
     }
 }
+
+// Fetch school events - visible to ALL students
+$eventsStmt = $conn->query("SELECT id, event_date, title FROM school_events ORDER BY event_date DESC LIMIT 50");
+if ($eventsStmt) {
+    while ($row = $eventsStmt->fetch_assoc()) {
+        $announcements[] = [
+            'id' => $row['id'],
+            'pub_date' => date('M d, Y', strtotime($row['event_date'])),
+            'title' => $row['title'],
+            'body' => 'School Event',
+            'type' => 'event'
+        ];
+    }
+}
+
+// Sort all items by date (newest first)
+usort($announcements, function($a, $b) {
+    $dateA = strtotime($a['pub_date']);
+    $dateB = strtotime($b['pub_date']);
+    return $dateB - $dateA;
+});
 
 // Fallback static announcements if none loaded
 if (empty($announcements)) {
     $announcements = [
-        ['pub_date' => 'Oct 20', 'title' => 'Parent-Teacher Conference', 'body' => 'All parents are invited to attend the conference on October 20 from 2:00 PM to 6:00 PM. Please sign up at the office.'],
-        ['pub_date' => 'Oct 15', 'title' => 'School Fee Due Date Extended', 'body' => 'Due to recent circumstances, the school fee payment deadline has been extended to December 15, 2025.'],
-        ['pub_date' => 'Oct 10', 'title' => 'New Library Extended Hours', 'body' => 'The library is now open from 7:00 AM to 7:00 PM on weekdays to support student study needs.'],
-        ['pub_date' => 'Oct 05', 'title' => 'Quarterly Exam Schedule Released', 'body' => 'Q1 exams will be held from October 28 to November 8. Check the portal for your exam schedule.'],
+        ['pub_date' => 'Oct 20, 2025', 'title' => 'Parent-Teacher Conference', 'body' => 'All parents are invited to attend the conference on October 20 from 2:00 PM to 6:00 PM. Please sign up at the office.', 'type' => 'announcement'],
+        ['pub_date' => 'Oct 15, 2025', 'title' => 'School Fee Due Date Extended', 'body' => 'Due to recent circumstances, the school fee payment deadline has been extended to December 15, 2025.', 'type' => 'announcement'],
+        ['pub_date' => 'Oct 10, 2025', 'title' => 'New Library Extended Hours', 'body' => 'The library is now open from 7:00 AM to 7:00 PM on weekdays to support student study needs.', 'type' => 'announcement'],
+        ['pub_date' => 'Oct 05, 2025', 'title' => 'Quarterly Exam Schedule Released', 'body' => 'Q1 exams will be held from October 28 to November 8. Check the portal for your exam schedule.', 'type' => 'announcement'],
     ];
 }
 
@@ -61,11 +78,11 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Announcements — Elegant View</title>
+  <title>Announcements & Events — Elegant View</title>
   <link rel="stylesheet" href="css/student_v2.css" />
 </head>
 <body>
-  <!-- ...existing navbar markup... -->
+  <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
       <div class="navbar-logo">GGF</div>
@@ -83,6 +100,7 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
   </nav>
 
   <div class="page-wrapper">
+    <!-- SIDEBAR -->
     <aside class="side">
       <nav class="nav">
         <a href="student.php">Profile</a>
@@ -95,22 +113,38 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
       <div class="side-foot">Logged in as <strong><?php echo esc($_SESSION['user_name'] ?? 'Student'); ?></strong></div>
     </aside>
 
+    <!-- MAIN CONTENT -->
     <main class="main">
-      <header class="header"><h1>Announcements</h1></header>
+      <header class="header"><h1>Announcements & School Events</h1></header>
 
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">
           <div class="card announcements">
-            <h3>Latest News & Updates</h3>
-            <?php foreach ($announcements as $a): ?>
-              <div class="ann-item" style="padding:12px 0;border-bottom:1px solid var(--border);">
-                <div class="ann-date" style="margin-bottom:6px;"><strong><?php echo esc($a['pub_date']); ?></strong></div>
-                <div class="ann-content">
-                  <h4 style="margin:6px 0;"><?php echo esc($a['title']); ?></h4>
-                  <p style="margin:0;"><?php echo esc($a['body']); ?></p>
+            <h3>📢 Latest News, Updates & School Events</h3>
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">All announcements and events are visible to all students.</p>
+            
+            <?php if (!empty($announcements)): ?>
+              <?php foreach ($announcements as $item): ?>
+                <div class="ann-item" style="padding:16px 0;border-bottom:1px solid var(--border);">
+                  <div class="ann-date" style="margin-bottom:8px; display: flex; align-items: center; gap: 10px;">
+                    <strong><?php echo esc($item['pub_date']); ?></strong>
+                    <?php if (isset($item['type']) && $item['type'] === 'event'): ?>
+                      <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">📅 EVENT</span>
+                    <?php else: ?>
+                      <span style="background:#f3f3f3;color:#666;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">📋 ANNOUNCEMENT</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="ann-content">
+                    <h4 style="margin:6px 0;font-size:16px;"><?php echo esc($item['title']); ?></h4>
+                    <p style="margin:6px 0;color:#555;line-height:1.5;"><?php echo esc($item['body']); ?></p>
+                  </div>
                 </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <p style="font-size: 14px;">No announcements or events at this time.</p>
               </div>
-            <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </section>
       </section>

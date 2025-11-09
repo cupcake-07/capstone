@@ -176,6 +176,14 @@ CREATE TABLE IF NOT EXISTS events (
     FOREIGN KEY (created_by) REFERENCES admins(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS school_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_date DATE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_event (event_date, title)
+);
+
 ";
 
 // Execute each table creation statement

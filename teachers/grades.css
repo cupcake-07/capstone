@@ -82,11 +82,12 @@
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.3s ease;
+  border-color: #000000;
 }
 
 .grade-level-card:hover {
   box-shadow: 0 8px 16px var(--shadow-color);
-  border-color: #dcdcdc;
+  border-color:none;
 }
 
 /* Grade Level Header */
@@ -95,15 +96,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: var(--primary);
-  color: var(--primary-contrast);
+  background: white;
+  color: black
   cursor: pointer;
   user-select: none;
   transition: all 0.3s ease;
 }
 
 .grade-level-header:hover {
-  background: var(--primary-dark);
+  background: none;
 }
 
 .grade-level-info h3 {
@@ -111,7 +112,7 @@
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
-  color: var(--primary-contrast);
+  color: black;
 }
 
 .grade-level-stats {
