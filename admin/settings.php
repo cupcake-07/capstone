@@ -113,49 +113,50 @@ $user = getAdminSession();
                 </header>
                 
                 <!-- REPLACED: dashboard content -> settings form -->
-                <section style="padding:24px;">
-                    <form method="POST" style="max-width:1100px;margin:0 auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.05);">
+                <section style="padding:40px;">
+                    <form method="POST" style="max-width:1300px;margin:0 auto;background:#fff;padding:40px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.08);font-size:18px;">
                         <input type="hidden" name="action" value="save_settings" />
-                        <h2 style="margin:0 0 18px 0;color:#111;font-size:20px;">System Settings</h2>
+                        <h2 style="margin:0 0 22px 0;color:#111;font-size:22px;font-weight:700;">System Settings</h2>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">School Name</label>
-                                <input name="school_name" value="<?php echo htmlspecialchars($settings['school_name'] ?? ''); ?>" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;" />
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">School Name</label>
+                                <input name="school_name" value="<?php echo htmlspecialchars($settings['school_name'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
                             </div>
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">Address</label>
-                                <input name="address" value="<?php echo htmlspecialchars($settings['address'] ?? ''); ?>" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;" />
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Address</label>
+                                <input name="address" value="<?php echo htmlspecialchars($settings['address'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
                             </div>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">Phone</label>
-                                <input name="phone" value="<?php echo htmlspecialchars($settings['phone'] ?? ''); ?>" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;" />
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Phone</label>
+                                <input name="phone" value="<?php echo htmlspecialchars($settings['phone'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
                             </div>
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">Email</label>
-                                <input name="email" value="<?php echo htmlspecialchars($settings['email'] ?? ''); ?>" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;" />
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Email</label>
+                                <input name="email" value="<?php echo htmlspecialchars($settings['email'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
                             </div>
                         </div>
 
-                        <h3 style="margin-top:10px;margin-bottom:12px;color:#333;font-size:16px;">Academic Settings</h3>
+                        <h3 style="margin-top:12px;margin-bottom:16px;color:#333;font-size:20px;font-weight:700;">Grading Settings</h3>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">Academic Year</label>
-                                <input name="academic_year" value="<?php echo htmlspecialchars($settings['academic_year'] ?? ''); ?>" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;" />
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Academic Year</label>
+                                <input name="academic_year" value="<?php echo htmlspecialchars($settings['academic_year'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
                             </div>
                             <div>
-                                <label style="display:block;font-weight:600;margin-bottom:6px;">Current Semester</label>
-                                <select name="current_semester" style="width:100%;padding:10px;border:1px solid #e6e6e6;border-radius:6px;">
+                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Current Grading Period</label>
+                                <select name="current_semester" style="width:100%;padding:14px 16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;">
                                     <?php
-                                        $semesters = ['First Semester','Second Semester','Summer'];
+                                        // Use 4 quarters for elementary grading
+                                        $periods = ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'];
                                         $current = $settings['current_semester'] ?? '';
-                                        foreach ($semesters as $s) {
-                                            $sel = ($s === $current) ? 'selected' : '';
-                                            echo "<option value=\"" . htmlspecialchars($s) . "\" $sel>" . htmlspecialchars($s) . "</option>";
+                                        foreach ($periods as $p) {
+                                            $sel = ($p === $current) ? 'selected' : '';
+                                            echo "<option value=\"" . htmlspecialchars($p) . "\" $sel>" . htmlspecialchars($p) . "</option>";
                                         }
                                     ?>
                                 </select>
@@ -163,7 +164,7 @@ $user = getAdminSession();
                         </div>
 
                         <div style="text-align:right;">
-                            <button type="submit" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:8px;border:none;font-weight:700;">Save Changes</button>
+                            <button type="submit" style="background:#2563eb;color:#fff;padding:12px 26px;border-radius:10px;border:none;font-weight:700;font-size:16px;">Save Changes</button>
                         </div>
                     </form>
                 </section>
