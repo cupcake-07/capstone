@@ -17,54 +17,52 @@ $totalStudents = $totalStudentsResult->fetch_assoc()['count'];
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
-// --- START: simplified teacher info (removed assignment lookups) ---
+// --- START: replace simplified teacher info with DB-driven grade/sections and subjects ---
 $teacherId = intval($_SESSION['user_id'] ?? 0);
 $gradeSectionDisplay = 'Managed by admin';
 $subjectsAssigned = 'Not assigned';
-$scheduleDisplay = 'No schedule';
 
-// Try to read subjects from teachers.subject (comma-separated) if present
 if ($teacherId > 0) {
-    $tq = $conn->prepare("SELECT subject FROM teachers WHERE id = ? LIMIT 1");
+    $tq = $conn->prepare("SELECT grade, sections, subject FROM teachers WHERE id = ? LIMIT 1");
     if ($tq) {
         $tq->bind_param('i', $teacherId);
         $tq->execute();
         $tr = $tq->get_result();
         if ($tr && $tr->num_rows === 1) {
             $trow = $tr->fetch_assoc();
-            $raw = trim((string)($trow['subject'] ?? ''));
-            if ($raw !== '') {
-                $parts = array_map('trim', explode(',', $raw));
-                $parts = array_values(array_filter($parts, function($v){ return $v !== ''; }));
-                $subjectsAssigned = count($parts) . ' subject(s) — ' . implode(', ', array_slice($parts, 0, 3));
+            $gradeRaw = trim((string)($trow['grade'] ?? ''));
+            $sectionsRaw = trim((string)($trow['sections'] ?? ''));
+            $subjectRaw = trim((string)($trow['subject'] ?? ''));
+
+            // Build Grade & Sections display if available
+            $parts = [];
+            if ($gradeRaw !== '') {
+                $parts[] = 'Grade ' . $gradeRaw;
+            }
+            if ($sectionsRaw !== '') {
+                $sArr = array_map('trim', explode(',', $sectionsRaw));
+                $sArr = array_values(array_filter($sArr, function($v){ return $v !== ''; }));
+                if (!empty($sArr)) {
+                    $parts[] = 'Sections ' . implode(', ', $sArr);
+                }
+            }
+            if (!empty($parts)) {
+                $gradeSectionDisplay = implode(' — ', $parts);
+            }
+
+            // Subjects assigned (existing behavior, now reads from DB)
+            if ($subjectRaw !== '') {
+                $partsS = array_map('trim', explode(',', $subjectRaw));
+                $partsS = array_values(array_filter($partsS, function($v){ return $v !== ''; }));
+                if (!empty($partsS)) {
+                    $subjectsAssigned = count($partsS) . ' subject(s) — ' . implode(', ', array_slice($partsS, 0, 3));
+                }
             }
         }
         $tq->close();
     }
 }
-
-// Try to show schedule if schedules table exists and has teacher_id
-$colsRes = $conn->query("SHOW TABLES LIKE 'schedules'");
-if ($colsRes && $colsRes->num_rows > 0) {
-    $colsRes2 = $conn->query("SHOW COLUMNS FROM schedules LIKE 'teacher_id'");
-    if ($colsRes2 && $colsRes2->num_rows > 0) {
-        $sstmt = $conn->prepare("SELECT day, start_time, end_time, location FROM schedules WHERE teacher_id = ? ORDER BY FIELD(day,'Mon','Tue','Wed','Thu','Fri','Sat','Sun'), start_time LIMIT 5");
-        if ($sstmt) {
-            $sstmt->bind_param('i', $teacherId);
-            $sstmt->execute();
-            $sr = $sstmt->get_result();
-            $rows = [];
-            while ($r = $sr->fetch_assoc()) {
-                $rows[] = trim(($r['day'] ?? '') . ' ' . ($r['start_time'] ?? '') . '‑' . ($r['end_time'] ?? '') . ' ' . ($r['location'] ?? ''));
-            }
-            if (!empty($rows)) {
-                $scheduleDisplay = implode(' • ', $rows);
-            }
-            $sstmt->close();
-        }
-    }
-}
-// --- END: simplified teacher info ---
+// --- END: replace simplified teacher info ---
 ?>
 <!doctype html>
 <html lang="en">
