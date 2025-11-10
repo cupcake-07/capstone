@@ -17,10 +17,21 @@ $totalStudents = $totalStudentsResult->fetch_assoc()['count'];
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
+// --- EARLY: Load all schedules once ---
+$allSchedules = [];
+$dataFile = __DIR__ . '/data/schedules.json';
+if (file_exists($dataFile)) {
+    $allSchedules = json_decode(file_get_contents($dataFile), true) ?: [];
+}
+// --- END early load ---
+
 // --- START: replace simplified teacher info with DB-driven grade/sections and subjects ---
 $teacherId = intval($_SESSION['user_id'] ?? 0);
 $gradeSectionDisplay = 'Managed by admin';
 $subjectsAssigned = 'Not assigned';
+$gradeRaw = '';
+$sectionsRaw = '';
+$subjectRaw = '';
 
 if ($teacherId > 0) {
     $tq = $conn->prepare("SELECT grade, sections, subject FROM teachers WHERE id = ? LIMIT 1");
@@ -63,6 +74,133 @@ if ($teacherId > 0) {
     }
 }
 // --- END: replace simplified teacher info ---
+
+
+// Build schedule display: load schedules.json and render summary for the teacher's assigned grade/sections
+$scheduleDisplay = 'No schedule available.';
+if (!empty($gradeRaw) && !empty($allSchedules)) {
+    // ensure sections array exists
+    $sectionsArr = [];
+    if (!empty($sectionsRaw)) {
+        $sectionsArr = array_values(array_filter(array_map('trim', explode(',', $sectionsRaw)), function($v){ return $v !== ''; }));
+    } else {
+        // fallback: if teacher has only a grade, try default section A
+        $sectionsArr = ['A'];
+    }
+
+    $rendered = [];
+    foreach ($sectionsArr as $sec) {
+        $key = $gradeRaw . '_' . $sec;
+        if (isset($allSchedules[$key]) && is_array($allSchedules[$key])) {
+            $sched = $allSchedules[$key];
+            $tbl = '<div style="max-width:720px;overflow:auto;"><strong>Grade '.htmlspecialchars($gradeRaw).' - Section '.htmlspecialchars($sec).'</strong>';
+            $tbl .= '<table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:13px;">';
+            $tbl .= '<thead><tr>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Period</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Time</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Mon</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Tue</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Wed</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Thu</th>'
+                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Fri</th>'
+                  . '</tr></thead><tbody>';
+            foreach ($sched as $row) {
+                $p = htmlspecialchars($row['period'] ?? '');
+                $t = htmlspecialchars($row['time'] ?? '');
+                $cells = [];
+                foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
+                    $teacherName = htmlspecialchars($row[$d]['teacher'] ?? '');
+                    $subjectName = htmlspecialchars($row[$d]['subject'] ?? '');
+                    $cells[] = trim($teacherName . ($subjectName ? ' — ' . $subjectName : '')) ?: '&nbsp;';
+                }
+                $tbl .= '<tr>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$p.'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$t.'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[0].'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[1].'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[2].'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[3].'</td>'
+                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[4].'</td>'
+                      . '</tr>';
+            }
+            $tbl .= '</tbody></table></div>';
+            $rendered[] = $tbl;
+        }
+    }
+    if (!empty($rendered)) {
+        $scheduleDisplay = implode('<br>', $rendered);
+    }
+}
+
+// --- NEW: determine current / upcoming class for logged-in teacher (today) ---
+$todayStatus = 'No classes right now.';
+$userRaw = trim($_SESSION['user_name'] ?? '');
+if (!empty($userRaw) && !empty($allSchedules)) {
+    $todayKey = strtolower(date('l')); // 'monday'..'friday'
+    $now = time();
+    $activeFound = false;
+    $nextStart = PHP_INT_MAX;
+    $nextClass = null;
+
+    // Scan ALL schedules for any class where this teacher teaches today
+    foreach ($allSchedules as $scheduleKey => $sched) {
+        if (!is_array($sched)) continue;
+        foreach ($sched as $row) {
+            $teacherNameCell = trim((string)($row[$todayKey]['teacher'] ?? ''));
+            if ($teacherNameCell === '') continue;
+            
+            // case-insensitive match
+            if (strcasecmp(trim($teacherNameCell), trim($userRaw)) !== 0) continue;
+
+            $timeStr = trim((string)($row['time'] ?? ''));
+            if ($timeStr === '') continue;
+            
+            // split start/end on first '-'
+            $parts = array_map('trim', explode('-', $timeStr, 2));
+            if (count($parts) < 2) continue;
+            $startStr = $parts[0];
+            $endStr = $parts[1];
+
+            // parse using strtotime
+            $startTs = strtotime($startStr);
+            $endTs = strtotime($endStr);
+            
+            if ($startTs === false || $endTs === false) continue;
+
+            // normalize if end earlier than start (assume next day)
+            if ($endTs <= $startTs) $endTs += 24*3600;
+
+            if ($startTs <= $now && $now <= $endTs) {
+                // active now
+                $subject = trim((string)($row[$todayKey]['subject'] ?? ''));
+                $grade = substr($scheduleKey, 0, strpos($scheduleKey, '_'));
+                $section = substr($scheduleKey, strpos($scheduleKey, '_') + 1);
+                $todayStatus = 'You have a class now: ' . ($subject ? htmlspecialchars($subject).' — ' : '') . 'Grade '.htmlspecialchars($grade).' Section '.htmlspecialchars($section).' ('.htmlspecialchars($timeStr).')';
+                $activeFound = true;
+                break 2;
+            }
+
+            if ($startTs > $now && $startTs < $nextStart) {
+                $nextStart = $startTs;
+                $grade = substr($scheduleKey, 0, strpos($scheduleKey, '_'));
+                $section = substr($scheduleKey, strpos($scheduleKey, '_') + 1);
+                $nextClass = [
+                    'start' => $startTs,
+                    'timeStr' => $timeStr,
+                    'subject' => trim((string)($row[$todayKey]['subject'] ?? '')),
+                    'section' => $section,
+                    'grade' => $grade
+                ];
+            }
+        }
+    }
+
+    if (!$activeFound && $nextClass) {
+        $startDisplay = date('g:i A', $nextClass['start']);
+        $todayStatus = 'Upcoming class at '.htmlspecialchars($startDisplay).': '.($nextClass['subject'] ? htmlspecialchars($nextClass['subject']).' — ' : '') . 'Grade '.htmlspecialchars($nextClass['grade']).' Section '.htmlspecialchars($nextClass['section']) . ' ('.htmlspecialchars($nextClass['timeStr']).')';
+    }
+}
+// --- END new logic ---
 ?>
 <!doctype html>
 <html lang="en">
@@ -131,10 +269,18 @@ if ($teacherId > 0) {
           <div class="card-title">Subjects Assigned</div>
           <div class="card-value" id="subjectassigned"><?php echo htmlspecialchars($subjectsAssigned); ?></div>
         </div>
+
+        <!-- New card showing current/upcoming class status -->
+        <div class="card">
+          <div class="card-title">Now / Upcoming</div>
+          <div class="card-value" id="classstatus"><?php echo $todayStatus; ?></div>
+        </div>
+
         <div class="card">
           <div class="card-title">Schedule</div>
-          <div class="card-value" id="schedule"><?php echo htmlspecialchars($scheduleDisplay); ?></div>
+          <div class="card-value" id="schedule"><?php echo $scheduleDisplay; ?></div>
         </div>
+
         <div class="card">
           <div class="card-title">Announcements</div>
           <div class="card-value" id="announcements">No new announcements</div>

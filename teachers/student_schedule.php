@@ -13,6 +13,30 @@ define('TEACHERS_FILE', DATA_DIR . '/teachers.json');
 $GRADES = ['1','2','3','4','5','6'];
 $SECTIONS = ['A', 'B', 'C', 'D'];
 
+// Server-side subjects list (from screenshot)
+$SUBJECTS = [
+    'Mathematics',
+    'English',
+    'Science',
+    'Social Studies',
+    'Physical Education',
+    'Arts',
+    'Music',
+    'Computer'
+];
+
+// Add server-side time slots (hourly from 6:00 AM - 7:00 AM up to 5:00 PM - 6:00 PM)
+function format_ampm($hour) {
+    $suffix = ($hour < 12) ? 'AM' : 'PM';
+    $h12 = $hour % 12;
+    if ($h12 === 0) $h12 = 12;
+    return sprintf('%d:00 %s', $h12, $suffix);
+}
+$TIME_SLOTS = [];
+for ($h = 6; $h <= 17; $h++) {
+    $TIME_SLOTS[] = format_ampm($h) . ' - ' . format_ampm($h + 1);
+}
+
 function default_schedule() {
     return [
         ['period'=>'1','time'=>'8:00 - 8:45','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
@@ -549,6 +573,10 @@ const SECTIONS = <?php echo json_encode($SECTIONS); ?>;
 const selectedGrade = '<?php echo $selectedGrade; ?>';
 const selectedSection = '<?php echo $selectedSection; ?>';
 const teachers = <?php echo json_encode($teachers); ?>;
+// expose subjects to JS
+const subjects = <?php echo json_encode($SUBJECTS); ?>;
+// expose time slots to JS
+const timeSlots = <?php echo json_encode($TIME_SLOTS); ?>;
 const initialSchedule = <?php
     if ($selectedGrade === 'all' || $selectedSection === 'all') echo 'null';
     else echo json_encode($schedule_for_page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
@@ -626,13 +654,34 @@ if (initialSchedule !== null) {
             inpPeriod.onchange = () => schedule[rIdx].period = inpPeriod.value;
             tdPeriod.appendChild(inpPeriod);
             tr.appendChild(tdPeriod);
-            // time
+            // time (replaced free-text input with select)
             const tdTime = document.createElement('td');
-            const inpTime = document.createElement('input');
-            inpTime.className = 'small';
-            inpTime.value = row.time || '';
-            inpTime.onchange = () => schedule[rIdx].time = inpTime.value;
-            tdTime.appendChild(inpTime);
+            const selectTime = document.createElement('select');
+            selectTime.className = 'small';
+            // placeholder option
+            const optPlaceholder = document.createElement('option');
+            optPlaceholder.value = '';
+            optPlaceholder.textContent = '-- Select Time --';
+            selectTime.appendChild(optPlaceholder);
+            // populate from timeSlots
+            timeSlots.forEach(ts => {
+                const o = document.createElement('option');
+                o.value = ts;
+                o.textContent = ts;
+                selectTime.appendChild(o);
+            });
+            // if the existing row.time isn't in the list and is non-empty, add it so value is preserved
+            if (row.time && !timeSlots.includes(row.time)) {
+                const customOpt = document.createElement('option');
+                customOpt.value = row.time;
+                customOpt.textContent = row.time;
+                selectTime.appendChild(customOpt);
+            }
+            selectTime.value = row.time || '';
+            selectTime.onchange = () => {
+                schedule[rIdx].time = selectTime.value;
+            };
+            tdTime.appendChild(selectTime);
             tr.appendChild(tdTime);
             // days
             ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
@@ -659,18 +708,27 @@ if (initialSchedule !== null) {
                     schedule[rIdx][day].teacher = selectTeacher.value;
                 };
                 
-                // Subject input (free text)
-                const inpSubject = document.createElement('input');
-                inpSubject.placeholder = 'Subject';
-                inpSubject.className = 'small';
-                inpSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
-                inpSubject.onchange = () => {
+                // Subject dropdown (select populated from server-side subjects list)
+                const selectSubject = document.createElement('select');
+                selectSubject.className = 'small';
+                const optEmptyS = document.createElement('option');
+                optEmptyS.value = '';
+                optEmptyS.textContent = '-- Select Subject --';
+                selectSubject.appendChild(optEmptyS);
+                subjects.forEach(subj => {
+                    const op = document.createElement('option');
+                    op.value = subj;
+                    op.textContent = subj;
+                    selectSubject.appendChild(op);
+                });
+                selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
+                selectSubject.onchange = () => {
                     if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                    schedule[rIdx][day].subject = inpSubject.value;
+                    schedule[rIdx][day].subject = selectSubject.value;
                 };
                 
                 div.appendChild(selectTeacher);
-                div.appendChild(inpSubject);
+                div.appendChild(selectSubject);
                 td.appendChild(div);
                 tr.appendChild(td);
             });
@@ -682,6 +740,7 @@ if (initialSchedule !== null) {
 
     function addRow(){
         const newPeriod = String(schedule.length + 1);
+        // default time left empty so placeholder is shown
         schedule.push({period:newPeriod,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
         createTable();
     }
