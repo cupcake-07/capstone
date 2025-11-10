@@ -295,9 +295,7 @@ $user = getAdminSession();
 			}
 		});
 	})();
-	</script>
 
-	<script>
 	// Enrollment toggle handler
 	document.querySelectorAll('.enrollment-toggle').forEach(toggle => {
 		toggle.addEventListener('change', function() {
@@ -379,161 +377,52 @@ $user = getAdminSession();
 		}
 	});
 
-	// Grade Distribution Chart
-	const gradeCtx = document.getElementById('gradeChart').getContext('2d');
-	new Chart(gradeCtx, {
-		type: 'doughnut',
-		data: {
-			labels: ['A', 'B', 'C', 'D', 'F'],
-			datasets: [{
-				data: [
-					<?php echo $gradeDistribution['A']; ?>,
-					<?php echo $gradeDistribution['B']; ?>,
-					<?php echo $gradeDistribution['C']; ?>,
-					<?php echo $gradeDistribution['D']; ?>,
-					<?php echo $gradeDistribution['F']; ?>
-				],
-				backgroundColor: [
-					'#1ABC9C',
-					'#3498DB',
-					'#F39C12',
-					'#E74C3C',
-					'#34495E'
-				],
-				borderColor: '#fff',
-				borderWidth: 2
-			}]
-		},
-		options: {
-			responsive: true,
-			maintainAspectRatio: true,
-			plugins: {
-				legend: {
-					position: 'bottom'
+	// Grade Distribution Chart (grade-level counts 1..6)
+	(function renderGradeLevelCounts() {
+		const canvas = document.getElementById('gradeChart');
+		if (!canvas) return;
+		const ctx = canvas.getContext('2d');
+		const labels = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+		const colors = ['#1ABC9C','#3498DB','#F39C12','#E74C3C','#9B59B6','#34495E'];
+
+		const chart = new Chart(ctx, {
+			type: 'doughnut',
+			data: {
+				labels,
+				datasets: [{
+					data: [0,0,0,0,0,0],
+					backgroundColor: colors,
+					borderColor: '#fff',
+					borderWidth: 2
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: true,
+				plugins: { legend: { position: 'bottom' } }
+			}
+		});
+
+		// Fetch counts from API
+		fetch('api/student-grade-counts.php', { credentials: 'same-origin' })
+			.then(r => {
+				if (!r.ok) throw new Error('Network response not ok: ' + r.status);
+				return r.json();
+			})
+			.then(payload => {
+				if (!payload || !payload.success || !Array.isArray(payload.data)) {
+					console.warn('student-grade-counts API returned unexpected payload', payload);
+					return;
 				}
-			}
-		}
-	});
-
-	document.getElementById('year').textContent = new Date().getFullYear();
-
-	// Edit Student Modal
-	const editModal = document.getElementById('editStudentModal');
-	const editForm = document.getElementById('editStudentForm');
-	const closeEditModal = document.getElementById('closeEditModal');
-	const cancelEditModal = document.getElementById('cancelEditModal');
-	const editButtons = document.querySelectorAll('.btn-edit-student');
-
-	editButtons.forEach(btn => {
-		btn.addEventListener('click', function() {
-			const studentId = this.dataset.studentId;
-			const studentName = this.dataset.studentName;
-			const grade = this.dataset.grade;
-			const section = this.dataset.section;
-
-			document.getElementById('editStudentId').value = studentId;
-			document.getElementById('editStudentName').textContent = studentName;
-			document.getElementById('editGradeLevel').value = grade;
-			document.getElementById('editSection').value = section;
-
-			editModal.style.display = 'flex';
-		});
-	});
-
-	closeEditModal.addEventListener('click', function() {
-		editModal.style.display = 'none';
-	});
-
-	cancelEditModal.addEventListener('click', function() {
-		editModal.style.display = 'none';
-	});
-
-	window.addEventListener('click', function(e) {
-		if (e.target === editModal) {
-			editModal.style.display = 'none';
-		}
-	});
-
-	editForm.addEventListener('submit', function(e) {
-		e.preventDefault();
-		
-		const formData = new FormData(this);
-		
-		fetch('api/update-student-grade-section.php', {
-			method: 'POST',
-			body: formData
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.success) {
-				alert('Student updated successfully!');
-				location.reload();
-			} else {
-				alert('Error: ' + data.message);
-			}
-		})
-		.catch(error => {
-			console.error('Error:', error);
-			alert('Failed to update student');
-		});
-	});
-
-	// Table Filtering
-	const gradeFilter = document.getElementById('gradeFilter');
-	const sectionFilter = document.getElementById('sectionFilter');
-	const studentsTable = document.getElementById('studentsTable');
-	const tableRows = studentsTable.querySelectorAll('tbody tr');
-	let noResultsRow = null;
-
-	function applyFilters() {
-		const selectedGrade = gradeFilter.value;
-		const selectedSection = sectionFilter.value;
-		let visibleCount = 0;
-
-		// Remove previous "no results" message
-		if (noResultsRow) {
-			noResultsRow.remove();
-			noResultsRow = null;
-		}
-
-		tableRows.forEach(row => {
-			// Skip the "no students" message row
-			if (row.cells.length < 8) return;
-
-			const gradeCell = row.cells[3].textContent.trim();
-			const sectionCell = row.cells[4].textContent.trim();
-
-			const gradeMatch = !selectedGrade || gradeCell === selectedGrade;
-			const sectionMatch = !selectedSection || sectionCell === selectedSection;
-
-			if (gradeMatch && sectionMatch) {
-				row.style.display = '';
-				visibleCount++;
-			} else {
-				row.style.display = 'none';
-			}
-		});
-
-		// Show "no results" message if needed
-		if (visibleCount === 0) {
-			noResultsRow = document.createElement('tr');
-			noResultsRow.innerHTML = '<td colspan="8" style="text-align: center; padding: 20px; color: #999;">No students match the selected filters</td>';
-			noResultsRow.id = 'noResultsMessage';
-			studentsTable.querySelector('tbody').appendChild(noResultsRow);
-
-			// Auto-remove after 1 second
-			setTimeout(() => {
-				if (noResultsRow) {
-					noResultsRow.remove();
-					noResultsRow = null;
-				}
-			}, 1000);
-		}
-	}
-
-	gradeFilter.addEventListener('change', applyFilters);
-	sectionFilter.addEventListener('change', applyFilters);
+				// payload.data expected as [count1, count2, ..., count6]
+				const counts = payload.data.map(n => Number(n || 0));
+				chart.data.datasets[0].data = counts;
+				chart.update();
+			})
+			.catch(err => {
+				console.error('Failed to fetch student grade counts:', err);
+			});
+	})();
 	</script>
-	<script src="js/admin.js" defer></script>
 </body>
 </html>

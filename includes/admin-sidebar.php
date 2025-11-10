@@ -8,7 +8,6 @@
 		<a href="../admin.php">Dashboard</a>
 		<a href="students.php">Students</a>
 		<a href="teachers.php">Teachers</a>
-		<a href="manage_classes.php">Classes</a>
 		<a href="reports.php">Reports</a>
 		<a href="settings.php">Settings</a>
 		<a href="../logout.php?type=admin">Logout</a>

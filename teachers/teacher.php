@@ -32,6 +32,7 @@ $subjectsAssigned = 'Not assigned';
 $gradeRaw = '';
 $sectionsRaw = '';
 $subjectRaw = '';
+$sectionsListHtml = ''; // NEW: HTML list for multiple sections
 
 if ($teacherId > 0) {
     $tq = $conn->prepare("SELECT grade, sections, subject FROM teachers WHERE id = ? LIMIT 1");
@@ -61,6 +62,17 @@ if ($teacherId > 0) {
                 $gradeSectionDisplay = implode(' — ', $parts);
             }
 
+            // Build sections list HTML for dashboard (links jump to schedule blocks)
+            if (!empty($sArr)) {
+                $sectionsListHtml = '<ul class="my-sections">';
+                foreach ($sArr as $secItem) {
+                    // safe anchor id: grade_section
+                    $anchorId = 'sched_' . preg_replace('/[^A-Za-z0-9_-]/', '', $gradeRaw . '_' . $secItem);
+                    $sectionsListHtml .= '<li><a href="#' . $anchorId . '" class="section-link">Grade ' . htmlspecialchars($gradeRaw) . ' — Section ' . htmlspecialchars($secItem) . '</a></li>';
+                }
+                $sectionsListHtml .= '</ul>';
+            }
+
             // Subjects assigned (existing behavior, now reads from DB)
             if ($subjectRaw !== '') {
                 $partsS = array_map('trim', explode(',', $subjectRaw));
@@ -76,131 +88,62 @@ if ($teacherId > 0) {
 // --- END: replace simplified teacher info ---
 
 
-// Build schedule display: load schedules.json and render summary for the teacher's assigned grade/sections
+// --- REPLACE: Build schedule display with a "sneak peek" showing only entries where the logged-in teacher teaches ---
 $scheduleDisplay = 'No schedule available.';
-if (!empty($gradeRaw) && !empty($allSchedules)) {
-    // ensure sections array exists
-    $sectionsArr = [];
-    if (!empty($sectionsRaw)) {
-        $sectionsArr = array_values(array_filter(array_map('trim', explode(',', $sectionsRaw)), function($v){ return $v !== ''; }));
-    } else {
-        // fallback: if teacher has only a grade, try default section A
-        $sectionsArr = ['A'];
-    }
+$teacherLookup = trim($_SESSION['user_name'] ?? '');
+if ($teacherLookup !== '' && !empty($allSchedules)) {
+    $matches = []; // keyed by grade_section
 
-    $rendered = [];
-    foreach ($sectionsArr as $sec) {
-        $key = $gradeRaw . '_' . $sec;
-        if (isset($allSchedules[$key]) && is_array($allSchedules[$key])) {
-            $sched = $allSchedules[$key];
-            $tbl = '<div style="max-width:720px;overflow:auto;"><strong>Grade '.htmlspecialchars($gradeRaw).' - Section '.htmlspecialchars($sec).'</strong>';
-            $tbl .= '<table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:13px;">';
-            $tbl .= '<thead><tr>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Period</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Time</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Mon</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Tue</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Wed</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Thu</th>'
-                  . '<th style="border:1px solid #ddd;padding:6px;text-align:left">Fri</th>'
-                  . '</tr></thead><tbody>';
-            foreach ($sched as $row) {
-                $p = htmlspecialchars($row['period'] ?? '');
-                $t = htmlspecialchars($row['time'] ?? '');
-                $cells = [];
-                foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
-                    $teacherName = htmlspecialchars($row[$d]['teacher'] ?? '');
-                    $subjectName = htmlspecialchars($row[$d]['subject'] ?? '');
-                    $cells[] = trim($teacherName . ($subjectName ? ' — ' . $subjectName : '')) ?: '&nbsp;';
-                }
-                $tbl .= '<tr>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$p.'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$t.'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[0].'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[1].'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[2].'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[3].'</td>'
-                      . '<td style="border:1px solid #eee;padding:6px;vertical-align:top;">'.$cells[4].'</td>'
-                      . '</tr>';
-            }
-            $tbl .= '</tbody></table></div>';
-            $rendered[] = $tbl;
-        }
-    }
-    if (!empty($rendered)) {
-        $scheduleDisplay = implode('<br>', $rendered);
-    }
-}
-
-// --- NEW: determine current / upcoming class for logged-in teacher (today) ---
-$todayStatus = 'No classes right now.';
-$userRaw = trim($_SESSION['user_name'] ?? '');
-if (!empty($userRaw) && !empty($allSchedules)) {
-    $todayKey = strtolower(date('l')); // 'monday'..'friday'
-    $now = time();
-    $activeFound = false;
-    $nextStart = PHP_INT_MAX;
-    $nextClass = null;
-
-    // Scan ALL schedules for any class where this teacher teaches today
-    foreach ($allSchedules as $scheduleKey => $sched) {
+    foreach ($allSchedules as $key => $sched) {
         if (!is_array($sched)) continue;
         foreach ($sched as $row) {
-            $teacherNameCell = trim((string)($row[$todayKey]['teacher'] ?? ''));
-            if ($teacherNameCell === '') continue;
-            
-            // case-insensitive match
-            if (strcasecmp(trim($teacherNameCell), trim($userRaw)) !== 0) continue;
-
-            $timeStr = trim((string)($row['time'] ?? ''));
-            if ($timeStr === '') continue;
-            
-            // split start/end on first '-'
-            $parts = array_map('trim', explode('-', $timeStr, 2));
-            if (count($parts) < 2) continue;
-            $startStr = $parts[0];
-            $endStr = $parts[1];
-
-            // parse using strtotime
-            $startTs = strtotime($startStr);
-            $endTs = strtotime($endStr);
-            
-            if ($startTs === false || $endTs === false) continue;
-
-            // normalize if end earlier than start (assume next day)
-            if ($endTs <= $startTs) $endTs += 24*3600;
-
-            if ($startTs <= $now && $now <= $endTs) {
-                // active now
-                $subject = trim((string)($row[$todayKey]['subject'] ?? ''));
-                $grade = substr($scheduleKey, 0, strpos($scheduleKey, '_'));
-                $section = substr($scheduleKey, strpos($scheduleKey, '_') + 1);
-                $todayStatus = 'You have a class now: ' . ($subject ? htmlspecialchars($subject).' — ' : '') . 'Grade '.htmlspecialchars($grade).' Section '.htmlspecialchars($section).' ('.htmlspecialchars($timeStr).')';
-                $activeFound = true;
-                break 2;
-            }
-
-            if ($startTs > $now && $startTs < $nextStart) {
-                $nextStart = $startTs;
-                $grade = substr($scheduleKey, 0, strpos($scheduleKey, '_'));
-                $section = substr($scheduleKey, strpos($scheduleKey, '_') + 1);
-                $nextClass = [
-                    'start' => $startTs,
-                    'timeStr' => $timeStr,
-                    'subject' => trim((string)($row[$todayKey]['subject'] ?? '')),
-                    'section' => $section,
-                    'grade' => $grade
+            $period = trim((string)($row['period'] ?? ''));
+            $time = trim((string)($row['time'] ?? ''));
+            foreach (['monday','tuesday','wednesday','thursday','friday'] as $day) {
+                $cellTeacher = trim((string)($row[$day]['teacher'] ?? ''));
+                if ($cellTeacher === '') continue;
+                if (strcasecmp($cellTeacher, $teacherLookup) !== 0) continue;
+                $subject = trim((string)($row[$day]['subject'] ?? ''));
+                $matches[$key][] = [
+                    'day' => ucfirst($day),
+                    'period' => $period,
+                    'time' => $time,
+                    'subject' => $subject
                 ];
             }
         }
     }
 
-    if (!$activeFound && $nextClass) {
-        $startDisplay = date('g:i A', $nextClass['start']);
-        $todayStatus = 'Upcoming class at '.htmlspecialchars($startDisplay).': '.($nextClass['subject'] ? htmlspecialchars($nextClass['subject']).' — ' : '') . 'Grade '.htmlspecialchars($nextClass['grade']).' Section '.htmlspecialchars($nextClass['section']) . ' ('.htmlspecialchars($nextClass['timeStr']).')';
+    if (!empty($matches)) {
+        $parts = [];
+        foreach ($matches as $key => $entries) {
+            // key expected format "Grade_Section" or similar
+            if (strpos($key, '_') !== false) {
+                list($g, $s) = explode('_', $key, 2);
+            } else {
+                $g = $key;
+                $s = '';
+            }
+
+            $html = '<div class="schedule-peek"><strong>Grade '.htmlspecialchars($g). ($s!=='' ? ' — Section '.htmlspecialchars($s) : '') .'</strong>';
+            $html .= '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
+            $html .= '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Period</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
+            // show entries in order (keep existing order)
+            foreach ($entries as $e) {
+                $html .= '<tr>'
+                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['day']).'</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['time']).'</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['period']).'</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">'. ($e['subject'] !== '' ? htmlspecialchars($e['subject']) : '&nbsp;') .'</td>'
+                       . '</tr>';
+            }
+            $html .= '</tbody></table></div>';
+            $parts[] = $html;
+        }
+        $scheduleDisplay = implode('<br>', $parts);
     }
 }
-// --- END new logic ---
+// --- END replace ---
 ?>
 <!doctype html>
 <html lang="en">
@@ -211,6 +154,144 @@ if (!empty($userRaw) && !empty($allSchedules)) {
   <link rel="stylesheet" href="teacher.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Added: overrides to control card sizing and schedule table styling -->
+  <style>
+    /* layout: 3 equal cards per row for consistent spacing */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ensure cards have a consistent min height and padding */
+    .card {
+      min-height: 140px;
+      padding: 18px;
+      box-sizing: border-box;
+    }
+
+    /* make the schedule card appear full-width below the three cards */
+    .card.schedule-card {
+      grid-column: 1 / -1; /* span all 3 columns */
+      min-height: 220px;
+    }
+
+    /* limit content height and make scrollable if too tall */
+    .card .card-value {
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    /* schedule table wrapper and table styles */
+    .schedule-table-wrap {
+      width: 100%;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 4px;
+    }
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 620px; /* allow horizontal scroll on small screens */
+    }
+    .schedule-table thead th {
+      background: #f7f7f9;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid #e6e6e6;
+      font-weight: 600;
+    }
+    .schedule-table tbody td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    .schedule-table tbody tr:nth-child(even) td { background: #fbfbfc; }
+
+    /* column sizing */
+    .schedule-table .col-period { width: 6%; white-space: nowrap; font-weight:600; }
+    .schedule-table .col-time { width: 20%; white-space: nowrap; color:#444; }
+    .schedule-table .col-day { width: auto; word-break: break-word; }
+
+    /* teacher/subject formatting */
+    .cell-teacher { display:block; font-weight:600; color:#222; }
+    .cell-subject { display:block; color:#444; font-size:12px; margin-top:4px; }
+
+    /* make schedule table responsive on small screens */
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr; }
+      .card.schedule-card { grid-column: auto; }
+      .schedule-table { min-width: 520px; }
+    }
+
+    /* NEW: styles for section list on dashboard */
+    .my-sections {
+      padding: 0;
+      margin: 10px 0;
+      list-style-type: none;
+    }
+    .my-sections li {
+      margin: 0;
+      padding: 0;
+    }
+    .my-sections a {
+      display: block;
+      padding: 8px 12px;
+      margin: 4px 0;
+      background: #f0f0f0;
+      color: #333;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+    .my-sections a:hover {
+      background: #e0e0e0;
+    }
+
+    /* sections list styling */
+    .my-sections { list-style: none; margin: 8px 0 0; padding: 0; }
+    .my-sections li { margin-bottom: 6px; }
+    .my-sections .section-link { color: #1a73e8; text-decoration: none; font-weight:600; font-size:13px; }
+    .my-sections .section-link:hover { text-decoration: underline; }
+
+    /* NEW: styles for schedule sneak peek tables */
+    .schedule-peek {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+    .schedule-peek strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+    }
+    .schedule-peek table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    .schedule-peek th {
+      background: #f0f0f0;
+      padding: 8px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .schedule-peek td {
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    .schedule-peek tr:nth-child(even) td { background: #fbfbfc; }
+  </style>
 </head>
 <body>
   <!-- TOP NAVBAR -->
@@ -263,20 +344,23 @@ if (!empty($userRaw) && !empty($allSchedules)) {
         </div>
         <div class="card">
           <div class="card-title">Grade and Section</div>
-          <div class="card-value" id="gradesection"><?php echo htmlspecialchars($gradeSectionDisplay); ?></div>
+          <div class="card-value" id="gradesection">
+            <?php echo htmlspecialchars($gradeSectionDisplay); ?>
+            <?php
+              // show the per-section list if available
+              if ($sectionsListHtml !== '') {
+                  echo $sectionsListHtml;
+              }
+            ?>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Subjects Assigned</div>
           <div class="card-value" id="subjectassigned"><?php echo htmlspecialchars($subjectsAssigned); ?></div>
         </div>
 
-        <!-- New card showing current/upcoming class status -->
-        <div class="card">
-          <div class="card-title">Now / Upcoming</div>
-          <div class="card-value" id="classstatus"><?php echo $todayStatus; ?></div>
-        </div>
-
-        <div class="card">
+        <!-- Schedule card now spans full width below the three equal cards -->
+        <div class="card schedule-card">
           <div class="card-title">Schedule</div>
           <div class="card-value" id="schedule"><?php echo $scheduleDisplay; ?></div>
         </div>
@@ -287,7 +371,8 @@ if (!empty($userRaw) && !empty($allSchedules)) {
         </div>
       </section>
     </main>
-    
+
+    <!-- FIXED: Clean footer and scripts -->
     <footer class="footer">
       <div class="footer-content">
         <div class="footer-section">
@@ -301,40 +386,55 @@ if (!empty($userRaw) && !empty($allSchedules)) {
           <h3>Connect With Us</h3>
           <div class="social-links">
             <a href="#" aria-label="Facebook">
-              <svg xlmns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-              </svg>
+              <!-- svg icon -->
             </a>
             <a href="#" aria-label="Instagram">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram">
-                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"/>
-              </svg>
+              <!-- svg icon -->
             </a>
             <a href="#" aria-label="Twitter">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-twitter">
-                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
-              </svg>
+              <!-- svg icon -->
             </a>
           </div>
         </div>
         <div class="footer-section">
-            <h3>System Info</h3>
-            <p>Schoolwide Management System</p>
-            <p>Version 1.0.0</p>
+          <h3>System Info</h3>
+          <p>Schoolwide Management System</p>
+          <p>Version 1.0.0</p>
         </div>
       </div>
+
       <div class="footer-bottom">
-        <p>&copy; 2025 Glorious God Family Christian School. All rights reserved.</p>
+        <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
         <div class="footer-links">
           <a href="privacy.php">Privacy Policy</a> |
           <a href="terms.php">Terms of Service</a>
         </div>
-        <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>
       </div>
     </footer>
+
     <script>
-        // Update the year in the footer
-        document.getElementById('year').textContent = new Date().getFullYear();
-    </script> 
+      // Update the year in the footer
+      (function(){
+        var yearEl = document.getElementById('year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+        // Smooth scroll for section links (grade/section links)
+        document.addEventListener('click', function(e){
+          var t = e.target;
+          // walk up DOM in case inner span/text was clicked
+          while (t && t !== document) {
+            if (t.matches && t.matches('.section-link')) break;
+            t = t.parentNode;
+          }
+          if (!t || t === document) return;
+          e.preventDefault();
+          var href = t.getAttribute('href');
+          if (!href) return;
+          var el = document.querySelector(href);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, false);
+      })();
+    </script>
+
   </body>
 </html>

@@ -582,181 +582,201 @@ const initialSchedule = <?php
     else echo json_encode($schedule_for_page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 ?>;
 
+/* --- UPDATED: dynamic schedule loader and select handlers --- */
+
+let schedule = null; // will hold current editable schedule array
+
+function createTable() {
+    const container = document.getElementById('tableContainer');
+    container.innerHTML = '';
+    const table = document.createElement('table');
+    table.className = 'schedule-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(t => {
+        const th = document.createElement('th'); th.textContent = t; headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow); table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+
+    schedule.forEach((row, rIdx) => {
+        const tr = document.createElement('tr');
+        // period
+        const tdPeriod = document.createElement('td');
+        const inpPeriod = document.createElement('input');
+        inpPeriod.className = 'small';
+        inpPeriod.value = row.period || '';
+        inpPeriod.onchange = () => schedule[rIdx].period = inpPeriod.value;
+        tdPeriod.appendChild(inpPeriod);
+        tr.appendChild(tdPeriod);
+        // time (select)
+        const tdTime = document.createElement('td');
+        const selectTime = document.createElement('select');
+        selectTime.className = 'small';
+        const optPlaceholder = document.createElement('option');
+        optPlaceholder.value = '';
+        optPlaceholder.textContent = '-- Select Time --';
+        selectTime.appendChild(optPlaceholder);
+        timeSlots.forEach(ts => {
+            const o = document.createElement('option');
+            o.value = ts;
+            o.textContent = ts;
+            selectTime.appendChild(o);
+        });
+        if (row.time && !timeSlots.includes(row.time)) {
+            const customOpt = document.createElement('option');
+            customOpt.value = row.time;
+            customOpt.textContent = row.time;
+            selectTime.appendChild(customOpt);
+        }
+        selectTime.value = row.time || '';
+        selectTime.onchange = () => {
+            schedule[rIdx].time = selectTime.value;
+        };
+        tdTime.appendChild(selectTime);
+        tr.appendChild(tdTime);
+        // days
+        ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
+            const td = document.createElement('td');
+            const div = document.createElement('div');
+            div.className = 'day-cell';
+            // Teacher dropdown
+            const selectTeacher = document.createElement('select');
+            selectTeacher.className = 'small';
+            const optEmpty = document.createElement('option');
+            optEmpty.value = '';
+            optEmpty.textContent = '-- Select Teacher --';
+            selectTeacher.appendChild(optEmpty);
+            teachers.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                selectTeacher.appendChild(opt);
+            });
+            selectTeacher.value = (row[day] && row[day].teacher) ? row[day].teacher : '';
+            selectTeacher.onchange = () => {
+                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
+                schedule[rIdx][day].teacher = selectTeacher.value;
+            };
+            // Subject dropdown
+            const selectSubject = document.createElement('select');
+            selectSubject.className = 'small';
+            const optEmptyS = document.createElement('option');
+            optEmptyS.value = '';
+            optEmptyS.textContent = '-- Select Subject --';
+            selectSubject.appendChild(optEmptyS);
+            subjects.forEach(subj => {
+                const op = document.createElement('option');
+                op.value = subj;
+                op.textContent = subj;
+                selectSubject.appendChild(op);
+            });
+            selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
+            selectSubject.onchange = () => {
+                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
+                schedule[rIdx][day].subject = selectSubject.value;
+            };
+            div.appendChild(selectTeacher);
+            div.appendChild(selectSubject);
+            td.appendChild(div);
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+}
+
+function loadScheduleData(data) {
+    schedule = JSON.parse(JSON.stringify(data));
+    createTable();
+}
+
+function addRow(){
+    const newPeriod = String(schedule.length + 1);
+    schedule.push({period:newPeriod,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
+    createTable();
+}
+
+function saveSchedule() {
+    document.getElementById('schedule_json').value = JSON.stringify(schedule);
+    document.getElementById('scheduleForm').submit();
+}
+
+// Provide global access for buttons
+window.addRow = addRow;
+window.saveSchedule = saveSchedule;
+
+// If initialSchedule was provided from server on page load, render it
+if (initialSchedule !== null) {
+    loadScheduleData(initialSchedule);
+}
+
+// Fetch schedule via AJAX and load into editor
+function fetchSchedule(grade, section) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('fetch_schedule', '1');
+    url.searchParams.set('grade', grade);
+    url.searchParams.set('section', section);
+    return fetch(url.toString(), { credentials: 'same-origin' })
+        .then(r => {
+            if (!r.ok) throw new Error('Network error');
+            return r.json();
+        })
+        .then(json => {
+            if (json && json.schedule) {
+                // update export link and hidden inputs if present
+                const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) exportBtn.href = '?export=1&grade=' + encodeURIComponent(grade) + '&section=' + encodeURIComponent(section);
+                // update form hidden grade/section inputs so save will work
+                const gradeInput = document.querySelector('input[name="grade"]');
+                const sectionInput = document.querySelector('input[name="section"]');
+                if (gradeInput) gradeInput.value = grade;
+                if (sectionInput) sectionInput.value = section;
+                loadScheduleData(json.schedule);
+            }
+        })
+        .catch(err => {
+            console.error('Failed to fetch schedule:', err);
+        });
+}
+
+// Replace previous change handlers to fetch schedule dynamically when both grade & section selected
 document.getElementById('gradeSelect').addEventListener('change', function(){
     const g = this.value;
     const s = document.getElementById('sectionSelect').value;
-    const qs = new URLSearchParams(location.search);
-    qs.set('grade', g);
-    qs.set('section', s);
-    location.search = qs.toString();
+    if (g !== 'all' && s !== 'all') {
+        // update address bar (no full reload) for shareable URL
+        const qs = new URLSearchParams(location.search);
+        qs.set('grade', g);
+        qs.set('section', s);
+        history.replaceState(null, '', '?' + qs.toString());
+        fetchSchedule(g, s);
+    } else {
+        // fallback to full navigation when 'all' selected
+        const qs = new URLSearchParams(location.search);
+        qs.set('grade', g);
+        qs.set('section', s);
+        location.search = qs.toString();
+    }
 });
 
 document.getElementById('sectionSelect').addEventListener('change', function(){
     const g = document.getElementById('gradeSelect').value;
     const s = this.value;
-    const qs = new URLSearchParams(location.search);
-    qs.set('grade', g);
-    qs.set('section', s);
-    location.search = qs.toString();
+    if (g !== 'all' && s !== 'all') {
+        const qs = new URLSearchParams(location.search);
+        qs.set('grade', g);
+        qs.set('section', s);
+        history.replaceState(null, '', '?' + qs.toString());
+        fetchSchedule(g, s);
+    } else {
+        const qs = new URLSearchParams(location.search);
+        qs.set('grade', g);
+        qs.set('section', s);
+        location.search = qs.toString();
+    }
 });
-
-function openManageTeachersModal() {
-    document.getElementById('manageTeachersModal').classList.add('active');
-}
-
-function closeManageTeachersModal() {
-    document.getElementById('manageTeachersModal').classList.remove('active');
-}
-
-function switchModalTab(event, tabName) {
-    event.preventDefault();
-    const tabs = document.querySelectorAll('#manageTeachersModal .tab-content');
-    tabs.forEach(tab => tab.classList.remove('active'));
-    
-    const buttons = document.querySelectorAll('#manageTeachersModal .tab-button');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('manageTeachersModal');
-    if (event.target == modal) {
-        modal.classList.remove('active');
-    }
-}
-
-if (initialSchedule !== null) {
-    // client-managed schedule array
-    let schedule = JSON.parse(JSON.stringify(initialSchedule));
-
-    function createTable() {
-        const container = document.getElementById('tableContainer');
-        container.innerHTML = '';
-        const table = document.createElement('table');
-        table.className = 'schedule-table';
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        ['Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(t => {
-            const th = document.createElement('th'); th.textContent = t; headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow); table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        schedule.forEach((row, rIdx) => {
-            const tr = document.createElement('tr');
-            // period
-            const tdPeriod = document.createElement('td');
-            const inpPeriod = document.createElement('input');
-            inpPeriod.className = 'small';
-            inpPeriod.value = row.period || '';
-            inpPeriod.onchange = () => schedule[rIdx].period = inpPeriod.value;
-            tdPeriod.appendChild(inpPeriod);
-            tr.appendChild(tdPeriod);
-            // time (replaced free-text input with select)
-            const tdTime = document.createElement('td');
-            const selectTime = document.createElement('select');
-            selectTime.className = 'small';
-            // placeholder option
-            const optPlaceholder = document.createElement('option');
-            optPlaceholder.value = '';
-            optPlaceholder.textContent = '-- Select Time --';
-            selectTime.appendChild(optPlaceholder);
-            // populate from timeSlots
-            timeSlots.forEach(ts => {
-                const o = document.createElement('option');
-                o.value = ts;
-                o.textContent = ts;
-                selectTime.appendChild(o);
-            });
-            // if the existing row.time isn't in the list and is non-empty, add it so value is preserved
-            if (row.time && !timeSlots.includes(row.time)) {
-                const customOpt = document.createElement('option');
-                customOpt.value = row.time;
-                customOpt.textContent = row.time;
-                selectTime.appendChild(customOpt);
-            }
-            selectTime.value = row.time || '';
-            selectTime.onchange = () => {
-                schedule[rIdx].time = selectTime.value;
-            };
-            tdTime.appendChild(selectTime);
-            tr.appendChild(tdTime);
-            // days
-            ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
-                const td = document.createElement('td');
-                const div = document.createElement('div');
-                div.className = 'day-cell';
-                
-                // Teacher dropdown (registered teachers only)
-                const selectTeacher = document.createElement('select');
-                selectTeacher.className = 'small';
-                const optEmpty = document.createElement('option');
-                optEmpty.value = '';
-                optEmpty.textContent = '-- Select Teacher --';
-                selectTeacher.appendChild(optEmpty);
-                teachers.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    selectTeacher.appendChild(opt);
-                });
-                selectTeacher.value = (row[day] && row[day].teacher) ? row[day].teacher : '';
-                selectTeacher.onchange = () => {
-                    if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                    schedule[rIdx][day].teacher = selectTeacher.value;
-                };
-                
-                // Subject dropdown (select populated from server-side subjects list)
-                const selectSubject = document.createElement('select');
-                selectSubject.className = 'small';
-                const optEmptyS = document.createElement('option');
-                optEmptyS.value = '';
-                optEmptyS.textContent = '-- Select Subject --';
-                selectSubject.appendChild(optEmptyS);
-                subjects.forEach(subj => {
-                    const op = document.createElement('option');
-                    op.value = subj;
-                    op.textContent = subj;
-                    selectSubject.appendChild(op);
-                });
-                selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
-                selectSubject.onchange = () => {
-                    if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                    schedule[rIdx][day].subject = selectSubject.value;
-                };
-                
-                div.appendChild(selectTeacher);
-                div.appendChild(selectSubject);
-                td.appendChild(div);
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        container.appendChild(table);
-    }
-
-    function addRow(){
-        const newPeriod = String(schedule.length + 1);
-        // default time left empty so placeholder is shown
-        schedule.push({period:newPeriod,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
-        createTable();
-    }
-
-    function saveSchedule() {
-        document.getElementById('schedule_json').value = JSON.stringify(schedule);
-        document.getElementById('scheduleForm').submit();
-    }
-
-    // expose to global scope so buttons can call
-    window.addRow = addRow;
-    window.saveSchedule = saveSchedule;
-
-    // initial render
-    createTable();
-}
 </script>
 </body>
 </html>

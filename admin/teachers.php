@@ -80,11 +80,17 @@ if ($allTeachersResult) {
                   <td class="col-grade"><?php echo htmlspecialchars($teacher['grade']); ?></td>
                   <td class="col-sections"><?php echo htmlspecialchars($teacher['sections']); ?></td>
                   <td>
-                    <button class="manage-btn"
+                    <!-- improved manage button with icon -->
+                    <button class="manage-btn" 
                       data-id="<?php echo htmlspecialchars($teacher['id']); ?>"
                       data-name="<?php echo htmlspecialchars($teacher['name']); ?>"
                       data-grade="<?php echo htmlspecialchars($teacher['grade']); ?>"
-                      data-sections="<?php echo htmlspecialchars($teacher['sections']); ?>">
+                      data-sections="<?php echo htmlspecialchars($teacher['sections']); ?>"
+                      aria-label="Manage <?php echo htmlspecialchars($teacher['name']); ?>">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4 20v-1c0-2.21 3.58-4 8-4s8 1.79 8 4v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
                       Manage
                     </button>
                   </td>
@@ -102,14 +108,17 @@ if ($allTeachersResult) {
   </div>
 
   <!-- Manage modal -->
-  <div id="manageModal" style="display:none; position:fixed; left:0; top:0; right:0; bottom:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:20px; max-width:480px; width:100%; border-radius:6px;">
-      <h3 id="manageTitle">Manage Teacher</h3>
-      <form id="manageForm">
+  <div id="manageModal" class="manage-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="manage-modal-content" role="document">
+      <header class="manage-modal-header">
+        <h3 id="manageTitle">Manage Teacher</h3>
+        <button id="closeManage" class="modal-close" aria-label="Close">&times;</button>
+      </header>
+      <form id="manageForm" class="manage-form">
         <input type="hidden" name="teacher_id" id="teacher_id" />
-        <div style="margin-bottom:10px;">
+        <div class="form-row">
           <label for="grade">Grade</label>
-          <select name="grade" id="grade" style="width:100%; padding:6px; margin-top:4px;">
+          <select name="grade" id="grade">
             <option value="">-- Select grade --</option>
             <option value="1">Grade 1</option>
             <option value="2">Grade 2</option>
@@ -119,17 +128,63 @@ if ($allTeachersResult) {
             <option value="6">Grade 6</option>
           </select>
         </div>
-        <div style="margin-bottom:10px;">
+        <div class="form-row">
           <label for="sections">Sections (comma separated)</label>
-          <input type="text" name="sections" id="sections" style="width:100%; padding:6px; margin-top:4px;" placeholder="e.g. A, B, C" />
+          <input type="text" name="sections" id="sections" placeholder="e.g. A, B, C" />
         </div>
-        <div style="text-align:right;">
-          <button type="button" id="cancelManage" style="margin-right:8px;">Cancel</button>
-          <button type="submit" id="saveManage">Save</button>
+        <div class="form-actions">
+          <button type="button" id="cancelManage" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="saveManage" class="btn btn-primary">
+            <span id="saveLabel">Save</span>
+            <span id="saveSpinner" class="spinner" aria-hidden="true" style="display:none;"></span>
+          </button>
         </div>
       </form>
+      <div id="manageToast" class="manage-toast" role="status" aria-live="polite" style="display:none;"></div>
     </div>
   </div>
+
+  <style>
+    /* Manage button */
+    .manage-btn {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:8px;
+      background:#2563EB;
+      color:#fff;
+      border: none;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .12s ease;
+      box-shadow: 0 6px 14px rgba(37,99,235,0.12);
+      font-size:13px;
+    }
+    .manage-btn:hover { transform: translateY(-2px); }
+    .manage-btn svg { color: rgba(255,255,255,0.95); }
+
+    /* Modal */
+    .manage-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:24px; z-index:1200; }
+    .manage-modal[aria-hidden="false"] { display:flex; }
+    .manage-modal-content { background:#fff; border-radius:10px; max-width:520px; width:100%; box-shadow: 0 20px 60px rgba(2,6,23,0.2); overflow:hidden; }
+    .manage-modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid #f0f0f0; }
+    .manage-modal-header h3 { margin:0; font-size:18px; }
+    .modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:#666; padding:6px 8px; border-radius:6px; }
+    .modal-close:hover { background:#f4f6f8; color:#111; }
+
+    .manage-form { padding:18px 20px 22px; display:grid; gap:12px; }
+    .form-row label { display:block; font-weight:700; margin-bottom:6px; font-size:14px; color:#222; }
+    .form-row select, .form-row input[type="text"] { width:100%; padding:10px 12px; border:1px solid #e6e6e6; border-radius:8px; font-size:14px; }
+    .form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+    .btn { padding:8px 14px; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+    .btn-primary { background:#2563EB; color:#fff; }
+    .btn-secondary { background:#F1F5F9; color:#111; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; margin-left:8px; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .manage-toast { position: absolute; left: 20px; right:20px; bottom:16px; background:#0f172a; color:#fff; padding:10px 14px; border-radius:8px; text-align:center; font-weight:600; box-shadow:0 8px 24px rgba(2,6,23,0.2); }
+  </style>
 
   <script>
 	// Table sorting utility (same as students)
@@ -173,82 +228,131 @@ if ($allTeachersResult) {
 	// keep year script
 	document.getElementById('year').textContent = new Date().getFullYear();
 
-	// Manage modal logic
-	(function(){
+	// Manage modal logic (run after DOM ready, delegated)
+	document.addEventListener('DOMContentLoaded', function() {
 		const modal = document.getElementById('manageModal');
 		const form = document.getElementById('manageForm');
 		const teacherIdInput = document.getElementById('teacher_id');
 		const gradeInput = document.getElementById('grade');
 		const sectionsInput = document.getElementById('sections');
 		const manageTitle = document.getElementById('manageTitle');
+		const closeBtn = document.getElementById('closeManage');
+		const cancelBtn = document.getElementById('cancelManage');
+		const saveBtn = document.getElementById('saveManage');
+		const saveLabel = document.getElementById('saveLabel');
+		const saveSpinner = document.getElementById('saveSpinner');
+		const toast = document.getElementById('manageToast');
+		const tbody = document.querySelector('#teachersTable tbody');
 
-		function openModal(btn) {
-			const id = btn.dataset.id;
+		// Defensive guards
+		if (!modal || !form || !tbody) {
+			console.warn('Manage modal init aborted: missing elements');
+			return;
+		}
+
+		function openModalFromBtn(btn) {
+			const id = btn.dataset.id || '';
 			const name = btn.dataset.name || '';
 			const grade = btn.dataset.grade || '';
 			const sections = btn.dataset.sections || '';
 
 			teacherIdInput.value = id;
-			gradeInput.value = grade;
-			sectionsInput.value = sections;
-			manageTitle.textContent = 'Manage: ' + name;
-			modal.style.display = 'flex';
+			if (gradeInput) gradeInput.value = grade;
+			if (sectionsInput) sectionsInput.value = sections;
+			manageTitle.textContent = 'Manage: ' + (name || id);
+			modal.setAttribute('aria-hidden', 'false');
+			// focus first control
+			setTimeout(() => { if (gradeInput) gradeInput.focus(); }, 80);
+			document.addEventListener('keydown', onKeydown);
 		}
 
 		function closeModal() {
-			modal.style.display = 'none';
+			modal.setAttribute('aria-hidden', 'true');
+			document.removeEventListener('keydown', onKeydown);
 		}
 
-		document.querySelectorAll('.manage-btn').forEach(btn => {
-			btn.addEventListener('click', () => openModal(btn));
+		function onKeydown(e) {
+			if (e.key === 'Escape') closeModal();
+		}
+
+		// Close when clicking backdrop
+		modal.addEventListener('click', function(e) {
+			if (e.target === modal) closeModal();
 		});
 
-		document.getElementById('cancelManage').addEventListener('click', (e) => {
+		// Delegated handler so dynamically added rows still work
+		tbody.addEventListener('click', function(e) {
+			const btn = e.target.closest ? e.target.closest('.manage-btn') : null;
+			if (!btn) return;
 			e.preventDefault();
-			closeModal();
+			openModalFromBtn(btn);
 		});
 
-		form.addEventListener('submit', function(e){
+		// Close buttons
+		if (closeBtn) closeBtn.addEventListener('click', closeModal);
+		if (cancelBtn) cancelBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
+
+		// Submit handler
+		form.addEventListener('submit', function(e) {
 			e.preventDefault();
 			const fid = teacherIdInput.value;
 			const payload = new FormData();
 			payload.append('teacher_id', fid);
-			payload.append('grade', gradeInput.value);
-			payload.append('sections', sectionsInput.value);
+			if (gradeInput) payload.append('grade', gradeInput.value);
+			if (sectionsInput) payload.append('sections', sectionsInput.value);
+
+			// disable save UI
+			if (saveBtn) saveBtn.disabled = true;
+			if (saveSpinner) saveSpinner.style.display = 'inline-block';
+			if (saveLabel) saveLabel.textContent = 'Saving...';
 
 			fetch('update_teacher_assignments.php', {
 				method: 'POST',
 				body: payload,
 				credentials: 'same-origin'
 			})
-			.then(res => res.json())
+			.then(res => {
+				if (!res.ok) throw new Error('Network response not ok: ' + res.status);
+				return res.json();
+			})
 			.then(data => {
-				if (data.success) {
+				if (data && data.success) {
 					// update table row and button data attributes
 					const row = document.querySelector('tr[data-teacher-id="'+fid+'"]');
 					if (row) {
 						const gradeCell = row.querySelector('.col-grade');
 						const sectionsCell = row.querySelector('.col-sections');
-						if (gradeCell) gradeCell.textContent = gradeInput.value;
-						if (sectionsCell) sectionsCell.textContent = sectionsInput.value;
+						if (gradeCell && gradeInput) gradeCell.textContent = gradeInput.value;
+						if (sectionsCell && sectionsInput) sectionsCell.textContent = sectionsInput.value;
 						const btn = row.querySelector('.manage-btn');
 						if (btn) {
-							btn.dataset.grade = gradeInput.value;
-							btn.dataset.sections = sectionsInput.value;
+							if (gradeInput) btn.dataset.grade = gradeInput.value;
+							if (sectionsInput) btn.dataset.sections = sectionsInput.value;
 						}
+					}
+
+					// show toast briefly
+					if (toast) {
+						toast.textContent = 'Saved';
+						toast.style.display = 'block';
+						setTimeout(() => { toast.style.display = 'none'; }, 1600);
 					}
 					closeModal();
 				} else {
-					alert('Error: ' + (data.message || 'Unable to save'));
+					alert('Error: ' + (data && data.message ? data.message : 'Unable to save'));
 				}
 			})
 			.catch(err => {
-				console.error(err);
+				console.error('Save failed', err);
 				alert('Request failed');
+			})
+			.finally(() => {
+				if (saveBtn) saveBtn.disabled = false;
+				if (saveSpinner) saveSpinner.style.display = 'none';
+				if (saveLabel) saveLabel.textContent = 'Save';
 			});
 		});
-	})();
+	});
   </script>
-  <script src="../js/admin.js" defer></script>
 </body>
 </html>

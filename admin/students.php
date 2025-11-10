@@ -46,21 +46,24 @@ $user = getAdminSession();
                     <h2>All Students</h2>
                     <div class="table-actions">
                         <label>Show <select id="pageSize"><option>10</option><option>25</option><option>50</option></select> rows</label>
-                        <select id="gradeFilter" class="filter-dropdown">
-                            <option value="">📚 All Grades</option>
-                            <option value="1">Grade 1</option>
-                            <option value="2">Grade 2</option>
-                            <option value="3">Grade 3</option>
-                            <option value="4">Grade 4</option>
-                            <option value="5">Grade 5</option>
-                            <option value="6">Grade 6</option>
-                        </select>
-                        <select id="sectionFilter" class="filter-dropdown">
-                            <option value="">📂 All Sections</option>
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
-                        </select>
+                        <!-- group filters so they appear side-by-side -->
+                        <div class="filters-inline">
+                            <select id="gradeFilter" class="filter-dropdown">
+                                <option value="">📚 All Grades</option>
+                                <option value="1">Grade 1</option>
+                                <option value="2">Grade 2</option>
+                                <option value="3">Grade 3</option>
+                                <option value="4">Grade 4</option>
+                                <option value="5">Grade 5</option>
+                                <option value="6">Grade 6</option>
+                            </select>
+                            <select id="sectionFilter" class="filter-dropdown">
+                                <option value="">📂 All Sections</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                            </select>
+                        </div>
                     </div>
                     <table id="studentsTable">
                         <thead>
@@ -137,6 +140,15 @@ $user = getAdminSession();
                 box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
             }
 
+            /* inline wrapper so grade and section are side-by-side */
+            .filters-inline {
+                display: inline-flex;
+                gap: 12px;
+                align-items: center;
+                /* keep selects together; allow wrapping on very small screens */
+                flex-wrap: wrap;
+            }
+
             .table-actions {
                 display: flex;
                 gap: 12px;
@@ -179,11 +191,68 @@ $user = getAdminSession();
                 background-color: #357ABD;
             }
 
+            /* Toggle switch (styled) */
             .toggle-switch {
-                display: inline-flex;
-                justify-content: center;
-                align-items: center;
+                display: inline-block;
+                width: 46px;
+                height: 26px;
+                position: relative;
+                vertical-align: middle;
+                -webkit-tap-highlight-color: transparent;
             }
+
+            .toggle-switch input {
+                /* hide native checkbox but keep it focusable for accessibility */
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+
+            .toggle-slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #e6e6e6;
+                transition: background-color .15s ease;
+                border-radius: 999px;
+                box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            }
+
+            .toggle-slider::before {
+                content: "";
+                position: absolute;
+                height: 20px;
+                width: 20px;
+                left: 3px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: #fff;
+                border-radius: 50%;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+                transition: transform .18s cubic-bezier(.2,.9,.2,1), left .18s ease;
+            }
+
+            /* Checked state */
+            .toggle-switch input:checked + .toggle-slider {
+                background-color: #4A90E2;
+            }
+            .toggle-switch input:checked + .toggle-slider::before {
+                transform: translateY(-50%) translateX(20px);
+            }
+
+            /* Focus-visible for keyboard users */
+            .toggle-switch input:focus + .toggle-slider {
+                box-shadow: 0 0 0 4px rgba(74,144,226,0.12);
+            }
+
+            /* Small touch target spacing inside the table cell */
+            td .toggle-switch { margin: 4px 0; }
 
             .edit-modal {
                 display: none;
@@ -371,10 +440,13 @@ $user = getAdminSession();
                         alert('Student updated successfully!');
                         location.reload();
                     } else {
-                        alert('Error: ' + data.message);
+                        alert('Error: ' + (data.message || 'Unknown error'));
                     }
                 })
-                .catch(err => alert('Failed to update student'));
+                .catch(err => {
+                    console.error('Update error:', err);
+                    alert('Failed to update student');
+                });
             });
 
             // Enrollment toggle
@@ -383,13 +455,26 @@ $user = getAdminSession();
                     const formData = new FormData();
                     formData.append('student_id', this.dataset.studentId);
                     formData.append('is_enrolled', this.checked ? 1 : 0);
-                    
+
+                    const checkbox = this;
                     fetch('../api/update-enrollment.php', { method: 'POST', body: formData })
                         .then r => r.text())
-                        .then(text => JSON.parse(text))
+                        .then(text => {
+                            try {
+                                const data = JSON.parse(text);
+                                if (!data.success) {
+                                    alert('Error: ' + (data.message || 'Failed to update enrollment'));
+                                    checkbox.checked = !checkbox.checked;
+                                }
+                            } catch (e) {
+                                console.error('Invalid JSON response:', text);
+                                alert('Server error while updating enrollment');
+                                checkbox.checked = !checkbox.checked;
+                            }
+                        })
                         .catch(() => {
                             alert('Error updating enrollment');
-                            this.checked = !this.checked;
+                            checkbox.checked = !checkbox.checked;
                         });
                 });
             });
