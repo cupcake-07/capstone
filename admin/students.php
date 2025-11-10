@@ -418,12 +418,13 @@ $user = getAdminSession();
                 btn.addEventListener('click', function() {
                     document.getElementById('editStudentId').value = this.dataset.studentId;
                     document.getElementById('editStudentName').textContent = this.dataset.studentName;
-                    document.getElementById('editGradeLevel').value = this.dataset.grade;
-                    document.getElementById('editSection').value = this.dataset.section;
+                    // ensure values are strings and provide safe fallback
+                    document.getElementById('editGradeLevel').value = String(this.dataset.grade ?? '1');
+                    document.getElementById('editSection').value = String(this.dataset.section ?? 'A');
                     editModal.style.display = 'flex';
                 });
             });
-
+            
             closeEditModal.addEventListener('click', () => editModal.style.display = 'none');
             cancelEditModal.addEventListener('click', () => editModal.style.display = 'none');
             window.addEventListener('click', (e) => e.target === editModal && (editModal.style.display = 'none'));
@@ -458,21 +459,16 @@ $user = getAdminSession();
 
                     const checkbox = this;
                     fetch('../api/update-enrollment.php', { method: 'POST', body: formData })
-                        .then r => r.text())
-                        .then(text => {
-                            try {
-                                const data = JSON.parse(text);
-                                if (!data.success) {
-                                    alert('Error: ' + (data.message || 'Failed to update enrollment'));
-                                    checkbox.checked = !checkbox.checked;
-                                }
-                            } catch (e) {
-                                console.error('Invalid JSON response:', text);
-                                alert('Server error while updating enrollment');
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data || !data.success) {
+                                alert('Error: ' + (data && data.message ? data.message : 'Failed to update enrollment'));
+                                // revert checkbox on failure
                                 checkbox.checked = !checkbox.checked;
                             }
                         })
-                        .catch(() => {
+                        .catch((err) => {
+                            console.error('Enrollment update error:', err);
                             alert('Error updating enrollment');
                             checkbox.checked = !checkbox.checked;
                         });

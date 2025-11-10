@@ -343,15 +343,10 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
           <div class="card-value" id="totalstudents"><?php echo $totalStudents; ?></div>
         </div>
         <div class="card">
-          <div class="card-title">Grade and Section</div>
+          <div class="card-title">Grade level and Advisory</div>
           <div class="card-value" id="gradesection">
             <?php echo htmlspecialchars($gradeSectionDisplay); ?>
-            <?php
-              // show the per-section list if available
-              if ($sectionsListHtml !== '') {
-                  echo $sectionsListHtml;
-              }
-            ?>
+            <!-- per-section links were intentionally removed from this card to avoid duplication -->
           </div>
         </div>
         <div class="card">
