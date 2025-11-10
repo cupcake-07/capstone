@@ -761,23 +761,23 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "teacher": "Maria DB",
-                "subject": "Mathematics"
+                "subject": "English"
             },
             "tuesday": {
                 "teacher": "Machine Leg Extension",
                 "subject": "Science"
             },
             "wednesday": {
-                "teacher": "Machine Leg Extension",
+                "teacher": "",
                 "subject": "dasdsa"
             },
             "thursday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Ferd",
+                "subject": "Science"
             },
             "friday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Ferd",
+                "subject": "Physical Education"
             }
         },
         {

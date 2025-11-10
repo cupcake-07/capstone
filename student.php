@@ -60,6 +60,17 @@ $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
 $isEnrolled = $user['is_enrolled'] ?? 1;
 $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
 
+// --- ADD: helper to load schedule for specific grade+section ---
+function load_schedule_for($grade, $section) {
+    $schedules_file = __DIR__ . '/teachers/data/schedules.json';
+    if (!file_exists($schedules_file)) return null;
+    $json = file_get_contents($schedules_file);
+    $data = json_decode($json, true);
+    $key = $grade . '_' . $section;
+    if (isset($data[$key]) && is_array($data[$key])) return $data[$key];
+    return null;
+}
+
 // After verifying session and loading $user from students table (ensure avg_score is selected)
 $userId = intval($_SESSION['user_id']);
 
@@ -235,12 +246,41 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null) {
 
           <div class="small-card">
             <h4>Schedule (Today)</h4>
-            <ul class="schedule">
-              <li><span class="time">08:00</span> • Mathematics</li>
-              <li><span class="time">09:00</span> • Science</li>
-              <li><span class="time">10:00</span> • English</li>
-            </ul>
-            <a href="schedule.php" class="link-more">View full schedule →</a>
+            <?php
+              // determine weekday key used in teacher schedules (monday..friday)
+              $weekday = strtolower(date('l')); // e.g. Monday
+              $weekday_map = ['monday','tuesday','wednesday','thursday','friday'];
+              $dayKey = in_array($weekday, ['monday','tuesday','wednesday','thursday','friday']) ? $weekday : 'monday';
+
+              $studentSchedule = load_schedule_for($grade, $section);
+              if ($studentSchedule && is_array($studentSchedule)):
+                  $items = [];
+                  foreach ($studentSchedule as $row) {
+                      $time = $row['time'] ?? '';
+                      $entry = $row[$dayKey] ?? ['teacher'=>'','subject'=>''];
+                      $subject = trim($entry['subject'] ?? '');
+                      $teacherName = trim($entry['teacher'] ?? '');
+                      if ($subject !== '' || $teacherName !== '') {
+                          $display = trim(($time ? $time . ' • ' : '') . ($subject ?: $teacherName) . ($teacherName && $subject ? ' • ' . $teacherName : ''));
+                          $items[] = $display;
+                      }
+                  }
+                  if (count($items) > 0):
+            ?>
+                    <ul class="schedule">
+                      <?php foreach ($items as $it): ?>
+                        <li><?php echo htmlspecialchars($it); ?></li>
+                      <?php endforeach; ?>
+                    </ul>
+            <?php else: ?>
+                    <div style="color:#666;">No classes scheduled for today in Grade <?php echo htmlspecialchars($grade); ?> Section <?php echo htmlspecialchars($section); ?>.</div>
+            <?php
+                  endif;
+              else:
+            ?>
+                <div style="color:#666;">No schedule available for Grade <?php echo htmlspecialchars($grade); ?> Section <?php echo htmlspecialchars($section); ?>.</div>
+            <?php endif; ?>
+            <a href="schedule.php?grade=<?php echo urlencode($grade); ?>&section=<?php echo urlencode($section); ?>" class="link-more">View full schedule →</a>
           </div>
         </aside>
 
