@@ -760,8 +760,8 @@
             "period": "1",
             "time": "8:00 - 8:45",
             "monday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Maria DB",
+                "subject": "Mathematics"
             },
             "tuesday": {
                 "teacher": "Machine Leg Extension",
