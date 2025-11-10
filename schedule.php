@@ -1,7 +1,14 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'config/database.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (empty($_SESSION['user_id'])) { header('Location: login.php'); exit; }
+
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 ?>
 <!doctype html>
@@ -34,19 +41,7 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 
   <!-- MAIN PAGE CONTAINER -->
   <div class="page-wrapper">
-    <!-- SIDEBAR -->
-    <aside class="side">
-      <nav class="nav">
-        <a href="student.php">Profile</a>
-        <a class="active" href="schedule.php">Schedule</a>
-        <a href="grades.php">Grades</a>
-        <a href="account.php">Account Balance</a>
-        <a href="announcements.php">Announcements</a>
-        <a href="student_settings.php">Settings</a>
-      </nav>
-      <div class="side-foot">Logged in as <strong>Student</strong></div>
-    </aside>
-
+    <?php include __DIR__ . '/includes/student-sidebar.php'; ?>
     <!-- MAIN CONTENT -->
     <main class="main">
       <header class="header"><h1>Class Schedule</h1></header>

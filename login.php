@@ -2,6 +2,7 @@
 require_once 'config/database.php';
 
 // Start session and enable error reporting
+// Use default PHP session name for students
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

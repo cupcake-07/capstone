@@ -5,8 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../config/database.php';
 
-// Redirect to login if not logged in
-if (empty($_SESSION['user_id'])) {
+// Redirect to login if not logged in as teacher
+if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
     header('Location: ../login.php');
     exit;
 }

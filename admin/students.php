@@ -1,11 +1,7 @@
 <?php
-session_name('ADMIN_SESSION');
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/admin-session.php';
+require_once __DIR__ . '/../includes/admin-check.php';
 
 if (!isAdminLoggedIn()) {
     header('Location: ../admin-login.php');
@@ -35,26 +31,14 @@ $user = getAdminSession();
     </head>
     <body>
         <div class="app">
-            <aside class="sidebar">
-                <div class="brand">Glorious God's Family<span>Christian School</span></div>
-                <nav>
-                    <a href="../admin.php">Dashboard</a>
-                    <a class="active" href="students.php">Students</a>
-                    <a href="teachers.php">Teachers</a>
-                    <a href="classes.php">Classes</a>
-                    <a href="reports.php">Reports</a>
-                    <a href="settings.php">Settings</a>
-                    <a href="../logout.php">Logout</a>
-                </nav>
-                <div class="sidebar-foot">Logged in as <strong><?php echo htmlspecialchars($user['name'] ?? 'Admin'); ?></strong></div>
-            </aside>
+            <?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
 
             <main class="main">
                 <header class="topbar">
                     <h1>Students Management</h1>
                     <div class="top-actions">
-                        <input id="globalSearch" placeholder="Search students..." />
-                        <button id="exportCsv">Export CSV</button>
+                        <!-- use a direct link to the export endpoint to trigger browser download -->
+                        <a href="export_students.php" class="btn-export" title="Download students CSV">Export CSV</a>
                     </div>
                 </header>
 
@@ -301,6 +285,22 @@ $user = getAdminSession();
             .btn-cancel:hover {
                 background-color: #7f8c8d;
             }
+
+            /* Export CSV button: black background, white text (local override) */
+            .btn-export{
+                display: inline-block;
+                background: #000;
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.06);
+                padding: 8px 14px;
+                border-radius: 8px;
+                font-weight: 700;
+                text-decoration: none;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+                transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+            }
+            .btn-export:hover { transform: translateY(-2px); opacity: 0.98; }
+            .btn-export:active { transform: translateY(-1px); }
         </style>
 
         <div id="editStudentModal" class="edit-modal">
@@ -384,8 +384,8 @@ $user = getAdminSession();
                     formData.append('student_id', this.dataset.studentId);
                     formData.append('is_enrolled', this.checked ? 1 : 0);
                     
-                    fetch('../api/update-enrollment.php', {method: 'POST', body: formData})
-                        .then(r => r.text())
+                    fetch('../api/update-enrollment.php', { method: 'POST', body: formData })
+                        .then r => r.text())
                         .then(text => JSON.parse(text))
                         .catch(() => {
                             alert('Error updating enrollment');
@@ -430,6 +430,61 @@ $user = getAdminSession();
 
             gradeFilter.addEventListener('change', applyFilters);
             sectionFilter.addEventListener('change', applyFilters);
+
+            // Add table sorting utility
+            function enableTableSorting(tableId, nonSortableCols = []) {
+                const table = document.getElementById(tableId);
+                if (!table || !table.tHead) return;
+                const tbody = table.tBodies[0];
+                if (!tbody) return;
+
+                Array.from(table.tHead.rows[0].cells).forEach((th, index) => {
+                    if (nonSortableCols.includes(index)) return;
+                    th.style.cursor = 'pointer';
+                    let asc = true;
+                    th.addEventListener('click', () => {
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        rows.sort((a, b) => {
+                            const aCell = a.cells[index];
+                            const bCell = b.cells[index];
+                            let aVal = aCell ? aCell.textContent.trim() : '';
+                            let bVal = bCell ? bCell.textContent.trim() : '';
+
+                            // If cell contains a checkbox (enrollment status), use checked state
+                            const aCheckbox = aCell ? aCell.querySelector('input[type="checkbox"]') : null;
+                            const bCheckbox = bCell ? bCell.querySelector('input[type="checkbox"]') : null;
+                            if (aCheckbox || bCheckbox) {
+                                aVal = aCheckbox && aCheckbox.checked ? '1' : '0';
+                                bVal = bCheckbox && bCheckbox.checked ? '1' : '0';
+                            }
+
+                            // Try parse dates (e.g., "May 10, 2023")
+                            const aTime = Date.parse(aVal);
+                            const bTime = Date.parse(bVal);
+                            if (!isNaN(aTime) && !isNaN(bTime)) {
+                                return asc ? aTime - bTime : bTime - aTime;
+                            }
+
+                            // Numeric compare if both are numbers
+                            const aNum = parseFloat(aVal.replace(/[^0-9.\-]/g, ''));
+                            const bNum = parseFloat(bVal.replace(/[^0-9.\-]/g, ''));
+                            if (!isNaN(aNum) && !isNaN(bNum)) {
+                                return asc ? aNum - bNum : bNum - aNum;
+                            }
+
+                            // Fallback string compare
+                            const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+                            return asc ? cmp : -cmp;
+                        });
+                        // Re-append rows in sorted order
+                        rows.forEach(r => tbody.appendChild(r));
+                        asc = !asc;
+                    });
+                });
+            }
+
+            // Enable sorting on students table; skip "Actions" column (index 7)
+            enableTableSorting('studentsTable', [7]);
 
             document.getElementById('year').textContent = new Date().getFullYear();
         </script>

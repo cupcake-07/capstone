@@ -1,5 +1,5 @@
 <?php
-// Start session FIRST
+// Start session FIRST with DEFAULT name (no custom name for students)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -176,17 +176,7 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null) {
   <!-- MAIN PAGE CONTAINER -->
   <div class="page-wrapper">
     <!-- SIDEBAR -->
-    <aside class="side">
-      <nav class="nav">
-        <a class="active" href="student.php">Profile</a>
-        <a href="schedule.php">Schedule</a>
-        <a href="grades.php">Grades</a>
-        <a href="account.php">Account Balance</a>
-        <a href="announcements.php">Announcements</a>
-        <a href="student_settings.php">Settings</a>
-      </nav>
-      <div class="side-foot">Logged in as <strong>Student</strong></div>
-    </aside>
+    <?php include __DIR__ . '/includes/student-sidebar.php'; ?>
 
     <!-- MAIN CONTENT -->
     <main class="main">
@@ -411,7 +401,7 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null) {
       // Load avatar from database
       fetch('api/get-avatar.php?user_id=' + userId)
         .then(response => response.json())
-        .then(data => {
+        .then data => {
           if (data.avatar) {
             avatarImage.src = data.avatar;
           }

@@ -1,16 +1,23 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'config/database.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (empty($_SESSION['user_id'])) { header('Location: login.php'); exit; }
+
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
 $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- ...existing head... -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Account Balance — Elegant View</title>
+  <title>Account Balance</title>
   <link rel="stylesheet" href="css/student_v2.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -35,18 +42,7 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 
   <!-- MAIN PAGE CONTAINER -->
   <div class="page-wrapper">
-    <!-- SIDEBAR -->
-    <aside class="side">
-      <nav class="nav">
-        <a href="student.php">Profile</a>
-        <a href="schedule.php">Schedule</a>
-        <a href="grades.php">Grades</a>
-        <a class="active" href="account.php">Account Balance</a>
-        <a href="announcements.php">Announcements</a>
-        <a href="student_settings.php">Settings</a>
-      </nav>
-      <div class="side-foot">Logged in as <strong>Student</strong></div>
-    </aside>
+    <?php include __DIR__ . '/includes/student-sidebar.php'; ?>
 
     <!-- MAIN CONTENT -->
     <main class="main">

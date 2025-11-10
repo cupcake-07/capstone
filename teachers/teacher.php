@@ -5,8 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../config/database.php';
 
-// Redirect to login if not logged in
-if (empty($_SESSION['user_id'])) {
+// Redirect to login if not logged in as teacher
+if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
     header('Location: ../login.php');
     exit;
 }
@@ -16,6 +16,55 @@ $totalStudentsResult = $conn->query("SELECT COUNT(*) as count FROM students WHER
 $totalStudents = $totalStudentsResult->fetch_assoc()['count'];
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
+
+// --- START: simplified teacher info (removed assignment lookups) ---
+$teacherId = intval($_SESSION['user_id'] ?? 0);
+$gradeSectionDisplay = 'Managed by admin';
+$subjectsAssigned = 'Not assigned';
+$scheduleDisplay = 'No schedule';
+
+// Try to read subjects from teachers.subject (comma-separated) if present
+if ($teacherId > 0) {
+    $tq = $conn->prepare("SELECT subject FROM teachers WHERE id = ? LIMIT 1");
+    if ($tq) {
+        $tq->bind_param('i', $teacherId);
+        $tq->execute();
+        $tr = $tq->get_result();
+        if ($tr && $tr->num_rows === 1) {
+            $trow = $tr->fetch_assoc();
+            $raw = trim((string)($trow['subject'] ?? ''));
+            if ($raw !== '') {
+                $parts = array_map('trim', explode(',', $raw));
+                $parts = array_values(array_filter($parts, function($v){ return $v !== ''; }));
+                $subjectsAssigned = count($parts) . ' subject(s) — ' . implode(', ', array_slice($parts, 0, 3));
+            }
+        }
+        $tq->close();
+    }
+}
+
+// Try to show schedule if schedules table exists and has teacher_id
+$colsRes = $conn->query("SHOW TABLES LIKE 'schedules'");
+if ($colsRes && $colsRes->num_rows > 0) {
+    $colsRes2 = $conn->query("SHOW COLUMNS FROM schedules LIKE 'teacher_id'");
+    if ($colsRes2 && $colsRes2->num_rows > 0) {
+        $sstmt = $conn->prepare("SELECT day, start_time, end_time, location FROM schedules WHERE teacher_id = ? ORDER BY FIELD(day,'Mon','Tue','Wed','Thu','Fri','Sat','Sun'), start_time LIMIT 5");
+        if ($sstmt) {
+            $sstmt->bind_param('i', $teacherId);
+            $sstmt->execute();
+            $sr = $sstmt->get_result();
+            $rows = [];
+            while ($r = $sr->fetch_assoc()) {
+                $rows[] = trim(($r['day'] ?? '') . ' ' . ($r['start_time'] ?? '') . '‑' . ($r['end_time'] ?? '') . ' ' . ($r['location'] ?? ''));
+            }
+            if (!empty($rows)) {
+                $scheduleDisplay = implode(' • ', $rows);
+            }
+            $sstmt->close();
+        }
+    }
+}
+// --- END: simplified teacher info ---
 ?>
 <!doctype html>
 <html lang="en">
@@ -78,16 +127,15 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         </div>
         <div class="card">
           <div class="card-title">Grade and Section</div>
-          <div class="card-value" id="gradesection">-</div>
+          <div class="card-value" id="gradesection"><?php echo htmlspecialchars($gradeSectionDisplay); ?></div>
         </div>
         <div class="card">
           <div class="card-title">Subjects Assigned</div>
-          <div class="card-value" id="subjectassigned">-</div>
+          <div class="card-value" id="subjectassigned"><?php echo htmlspecialchars($subjectsAssigned); ?></div>
         </div>
         <div class="card">
           <div class="card-title">Schedule</div>
-          <div class="card-value" id="schedule">
-          </div>
+          <div class="card-value" id="schedule"><?php echo htmlspecialchars($scheduleDisplay); ?></div>
         </div>
         <div class="card">
           <div class="card-title">Announcements</div>

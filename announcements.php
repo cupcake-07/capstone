@@ -1,6 +1,14 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once 'config/database.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
+
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 
 $announcements = [];
 
@@ -78,11 +86,12 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Announcements & Events — Elegant View</title>
+  <title>Announcements</title>
   <link rel="stylesheet" href="css/student_v2.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
       <div class="navbar-logo">GGF</div>
@@ -93,29 +102,19 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
     </div>
     <div class="navbar-actions">
       <div class="user-menu">
-        <span><?php echo esc($_SESSION['user_name'] ?? 'Student'); ?></span>
+        <span>Student</span>
         <button class="btn-icon">⋮</button>
       </div>
     </div>
   </nav>
 
   <div class="page-wrapper">
-    <!-- SIDEBAR -->
-    <aside class="side">
-      <nav class="nav">
-        <a href="student.php">Profile</a>
-        <a href="schedule.php">Schedule</a>
-        <a href="grades.php">Grades</a>
-        <a href="account.php">Account Balance</a>
-        <a class="active" href="announcements.php">Announcements</a>
-        <a href="student_settings.php">Settings</a>
-      </nav>
-      <div class="side-foot">Logged in as <strong><?php echo esc($_SESSION['user_name'] ?? 'Student'); ?></strong></div>
-    </aside>
+    <?php include __DIR__ . '/includes/student-sidebar.php'; ?>
 
-    <!-- MAIN CONTENT -->
     <main class="main">
-      <header class="header"><h1>Announcements & School Events</h1></header>
+      <header class="header">
+        <h1>Announcements</h1>
+      </header>
 
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">

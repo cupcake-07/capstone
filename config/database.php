@@ -32,6 +32,29 @@ if ($conn->connect_error) {
 // Set charset to UTF-8
 $conn->set_charset("utf8mb4");
 
+// --- ensure settings table exists ---
+$createSettingsSql = <<<SQL
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `school_name` VARCHAR(255) DEFAULT NULL,
+  `address` TEXT DEFAULT NULL,
+  `phone` VARCHAR(50) DEFAULT NULL,
+  `email` VARCHAR(150) DEFAULT NULL,
+  `academic_year` VARCHAR(50) DEFAULT NULL,
+  `current_semester` VARCHAR(50) DEFAULT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SQL;
+
+if (isset($conn) && $conn instanceof mysqli) {
+    if (!$conn->query($createSettingsSql)) {
+        error_log('Failed to ensure settings table exists: ' . $conn->error);
+    }
+}
+// --- end insertion ---
+
 // Drop old grades table if it exists with wrong schema
 // $conn->query("DROP TABLE IF EXISTS grades");   // REMOVED — dropping the table each run deleted saved grades
 

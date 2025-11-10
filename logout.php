@@ -1,48 +1,38 @@
 <?php
 require_once 'config/database.php';
 
-// Check which session is active
-$adminSessionName = 'ADMIN_SESSION';
-$defaultSessionName = session_name();
+// Get logout type from URL parameter
+$type = isset($_GET['type']) && $_GET['type'] === 'admin' ? 'admin' : 'student';
 
-// Check if admin session is active
-session_name($adminSessionName);
+// Set the correct session name BEFORE session_start
+if ($type === 'admin') {
+    session_name('ADMIN_SESSION');
+}
+// else: use default PHP session name for students
+
+// Start the session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$isAdmin = isset($_SESSION['admin_id']) && isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'admin';
+// Get current session name for proper cookie deletion
+$currentSessionName = session_name();
 
-// Destroy the current session
+// Clear all session variables
 $_SESSION = [];
+
+// Delete the session cookie
+if (isset($_COOKIE[$currentSessionName])) {
+    setcookie($currentSessionName, '', time() - 3600, '/');
+}
+
+// Destroy the session
 session_destroy();
 
-// Redirect based on which session was active
-if ($isAdmin) {
+// Redirect to appropriate login page
+if ($type === 'admin') {
     header('Location: admin-login.php');
 } else {
-    header('Location: login.php');
-}
-exit;
-?>
-
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Destroy session
-session_unset();
-session_destroy();
-
-// Check redirect parameter
-$redirect = $_GET['redirect'] ?? 'login';
-
-if ($redirect === 'student') {
-    // Redirect to student login
-    header('Location: login.php?role=student');
-} else {
-    // Default redirect to main login
     header('Location: login.php');
 }
 exit;

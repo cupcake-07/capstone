@@ -1,5 +1,7 @@
 <?php
+// Set ADMIN_SESSION name FIRST before session_start
 session_name('ADMIN_SESSION');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
