@@ -1,9 +1,19 @@
 <?php
-// Set ADMIN_SESSION name FIRST before session_start
-session_name('ADMIN_SESSION');
-
+// Admin Session - UNIQUE NAME
+$_SESSION_NAME = 'ADMIN_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
+}
+
+// Handle Logout - only for ADMIN session
+if (isset($_GET['logout']) && $_GET['logout'] === 'admin') {
+    unset($_SESSION['admin_id']);
+    unset($_SESSION['admin_type']);
+    unset($_SESSION['admin_name']);
+    unset($_SESSION['admin_email']);
+    header('Location: admin-login.php');
+    exit;
 }
 
 require_once __DIR__ . '/config/database.php';

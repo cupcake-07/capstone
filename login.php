@@ -1,9 +1,19 @@
 <?php
-// Session setup
+// Student Session - UNIQUE NAME
 $_SESSION_NAME = 'STUDENT_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
     session_name($_SESSION_NAME);
     session_start();
+}
+
+// Handle Logout - only for STUDENT session
+if (isset($_GET['logout']) && $_GET['logout'] === 'student') {
+    unset($_SESSION['user_id']);
+    unset($_SESSION['user_type']);
+    unset($_SESSION['user_name']);
+    unset($_SESSION['user_email']);
+    header('Location: login.php');
+    exit;
 }
 
 // If already logged in, redirect to student.php

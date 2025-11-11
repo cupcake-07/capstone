@@ -382,13 +382,14 @@ $quarters = [1, 2, 3, 4];
                   <?php foreach ($studentsBySection as $section => $sectionStudents): 
                     $sectionKey = md5($gradeLevel . '-' . $section);
                     $sectionStats = getSectionStats($conn, $gradeLevel, $section);
+                    $studentsCount = count($sectionStudents);
                   ?>
-                    <div class="section-card" data-section-id="<?php echo $sectionKey; ?>" data-section-name="<?php echo htmlspecialchars($section); ?>">
+                    <div class="section-card" data-section-id="<?php echo $sectionKey; ?>" data-section-name="<?php echo htmlspecialchars($section); ?>" data-students-count="<?php echo $studentsCount; ?>">
                       <div class="section-header" data-toggle="section">
                         <div class="section-info">
                           <h4>Section <?php echo htmlspecialchars($section); ?></h4>
                           <div class="section-stats">
-                            <span class="stat-badge">Students: <?php echo count($sectionStudents); ?></span>
+                            <span class="stat-badge">Students: <?php echo $studentsCount; ?></span>
                             <span class="stat-badge">Grades: <?php echo $sectionStats['count']; ?></span>
                             <span class="stat-badge">Avg: <?php echo number_format($sectionStats['avg'] ?? 0, 1); ?>%</span>
                           </div>
@@ -396,7 +397,8 @@ $quarters = [1, 2, 3, 4];
                         <span class="toggle-icon">▼</span>
                       </div>
 
-                      <div class="students-cards-grid" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+                      <!-- removed inline styles; JS/CSS control collapse -->
+                      <div class="students-cards-grid">
                         <?php foreach ($sectionStudents as $student): 
                           $studentAvg = isset($student['avg_score']) && $student['avg_score'] !== null 
                             ? number_format(floatval($student['avg_score']), 1) 
@@ -624,117 +626,127 @@ $quarters = [1, 2, 3, 4];
       localStorage.setItem(`grade_level_${gradeLevelId}`, isCollapsed ? 'collapsed' : 'expanded');
     }
 
-    // Toggle a section by element to avoid affecting other sections with similar ids
+    // Animated expand: set maxHeight then clear it after transition so layout can grow
+    function expandElement(el) {
+      if (!el) return;
+      // remove collapsed flag
+      el.classList.remove('collapsed');
+      // set explicit max-height to animate
+      el.style.maxHeight = el.scrollHeight + 'px';
+      // once transition ends, remove inline maxHeight so content grows naturally
+      function onEnd(e) {
+        if (e.propertyName === 'max-height') {
+          el.style.maxHeight = 'none';
+          el.removeEventListener('transitionend', onEnd);
+        }
+      }
+      el.addEventListener('transitionend', onEnd);
+    }
+
+    // Animated collapse: set current height then collapse to 0
+    function collapseElement(el) {
+      if (!el) return;
+      // ensure measured height
+      el.style.maxHeight = el.scrollHeight + 'px';
+      // next frame collapse
+      requestAnimationFrame(() => {
+        el.style.maxHeight = '0';
+        el.classList.add('collapsed');
+      });
+    }
+
+    // Toggle a section's students grid with animation and persist state
     function toggleSectionElement(sectionCard) {
       if (!sectionCard) return;
       const sectionId = sectionCard.getAttribute('data-section-id');
       const grid = sectionCard.querySelector('.students-cards-grid');
       const icon = sectionCard.querySelector('.section-header .toggle-icon');
 
-      if (grid) grid.classList.toggle('collapsed');
-      if (icon) icon.classList.toggle('collapsed');
+      if (!grid) return;
+      const isCollapsed = grid.classList.contains('collapsed');
 
-      const isCollapsed = grid && grid.classList.contains('collapsed');
-      if (sectionId) localStorage.setItem(`section_${sectionId}`, isCollapsed ? 'collapsed' : 'expanded');
+      if (isCollapsed) {
+        expandElement(grid);
+        if (icon) icon.classList.remove('collapsed');
+      } else {
+        collapseElement(grid);
+        if (icon) icon.classList.add('collapsed');
+      }
+
+      if (sectionId) localStorage.setItem(`section_${sectionId}`, isCollapsed ? 'expanded' : 'collapsed');
     }
 
-    // ========================================================================
-    // RESTORE COLLAPSED STATES
-    // ========================================================================
-
+    // Restore collapsed/expanded states on load (use animated expand/collapse for visual consistency)
     function restoreCollapsedStates() {
-      // Restore grade level states
+      // grade-level restore (existing logic)
       document.querySelectorAll('[data-grade-level-id]').forEach(gradeLevelCard => {
         const gradeLevelId = gradeLevelCard.getAttribute('data-grade-level-id');
         const isGradeOne = gradeLevelCard.getAttribute('data-is-grade-one') === 'true';
         const state = localStorage.getItem(`grade_level_${gradeLevelId}`);
-        
         const content = gradeLevelCard.querySelector('.grade-level-content');
         const icon = gradeLevelCard.querySelector('.grade-level-header .toggle-icon');
-        
-        // If no saved state, default Grade 1 to expanded, others to collapsed
-        if (state === null) {
+
+        if (state === 'collapsed') {
+          if (content) content.classList.add('collapsed');
+          if (icon) icon.classList.add('collapsed');
+        } else if (state === 'expanded') {
+          if (content) content.classList.remove('collapsed');
+          if (icon) icon.classList.remove('collapsed');
+        } else {
           if (!isGradeOne) {
-            content.classList.add('collapsed');
-            icon.classList.add('collapsed');
+            if (content) content.classList.add('collapsed');
+            if (icon) icon.classList.add('collapsed');
           }
-        } else if (state === 'collapsed') {
-          content.classList.add('collapsed');
-          icon.classList.add('collapsed');
         }
       });
 
-      // Restore section states
+      // section state restore
       document.querySelectorAll('[data-section-id]').forEach(sectionCard => {
         const sectionId = sectionCard.getAttribute('data-section-id');
         const state = localStorage.getItem(`section_${sectionId}`);
-        
+        const grid = sectionCard.querySelector('.students-cards-grid');
+        const icon = sectionCard.querySelector('.section-header .toggle-icon');
+        const studentsCount = parseInt(sectionCard.getAttribute('data-students-count') || '0', 10);
+
+        if (!grid) return;
+
         if (state === 'collapsed') {
-          const grid = sectionCard.querySelector('.students-cards-grid');
-          const icon = sectionCard.querySelector('.section-header .toggle-icon');
           grid.classList.add('collapsed');
-          icon.classList.add('collapsed');
-        }
-      });
-    }
-
-    // ========================================================================
-    // FORM SUBMISSION
-    // ========================================================================
-
-    function submitGradeForm(e) {
-      e.preventDefault();
-      
-      const formData = new FormData(DOM.gradeForm);
-      const studentId = formData.get('student_id');
-      
-      // Validate that at least one score is provided
-      const hasScores = Array.from(DOM.scoreInputs).some(input => input.value !== '' && input.value !== null);
-      
-      if (!hasScores) {
-        alert('Please enter at least one grade before saving');
-        return;
-      }
-      
-      fetch(window.location.href, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.text();
-      })
-      .then(text => {
-        try {
-          const data = JSON.parse(text);
-          if (data.success) {
-            alert('Grades saved successfully!');
-            closeModal();
-            location.reload();
+          grid.style.maxHeight = '0';
+          if (icon) icon.classList.add('collapsed');
+        } else if (state === 'expanded') {
+          grid.classList.remove('collapsed');
+          grid.style.maxHeight = 'none';
+          if (icon) icon.classList.remove('collapsed');
+        } else {
+          // no stored state: auto-expand if there are students, else collapse
+          if (studentsCount > 0) {
+            grid.classList.remove('collapsed');
+            grid.style.maxHeight = 'none';
+            if (icon) icon.classList.remove('collapsed');
           } else {
-            alert('Error saving grades: ' + (data.error || 'Unknown error'));
+            grid.classList.add('collapsed');
+            grid.style.maxHeight = '0';
+            if (icon) icon.classList.add('collapsed');
           }
-        } catch (e) {
-          console.error('Response text:', text);
-          alert('Error: Invalid server response. Check console for details.');
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving grades: ' + error.message);
       });
     }
 
-    // ========================================================================
-    // EVENT LISTENERS
-    // ========================================================================
-
+    // wire up toggles and restore state on DOM ready
     document.addEventListener('DOMContentLoaded', function() {
-      // Restore UI state with Grade 1 defaulting to expanded
+      // restore states first so initial layout is correct
       restoreCollapsedStates();
+
+      // Section toggle event delegation
+      document.querySelectorAll('[data-toggle="section"]').forEach(header => {
+        header.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const sectionCard = this.closest('.section-card');
+          toggleSectionElement(sectionCard);
+        });
+      });
 
       // Grade level toggle event delegation
       document.querySelectorAll('[data-toggle="grade-level"]').forEach(header => {
@@ -744,16 +756,6 @@ $quarters = [1, 2, 3, 4];
           const gradeLevelCard = this.closest('.grade-level-card');
           const gradeLevelId = gradeLevelCard.getAttribute('data-grade-level-id');
           toggleGradeLevel(gradeLevelId);
-        });
-      });
-
-      // Section toggle event delegation
-      document.querySelectorAll('[data-toggle="section"]').forEach(header => {
-        header.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          const sectionCard = this.closest('.section-card');
-          toggleSectionElement(sectionCard);
         });
       });
 

@@ -308,7 +308,7 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
                 <h3>Grades</h3>
                 <div class="card-actions">
                   <button class="tab-btn active" data-tab="grades">Quarter View</button>
-                  <button class="tab-btn" data-tab="avg">Average</button>
+                  
                 </div>
               </div>
 
