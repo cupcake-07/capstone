@@ -20,13 +20,37 @@ $totalStudents = $totalStudentsResult->fetch_assoc()['count'];
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
-// --- EARLY: Load all schedules once ---
-$allSchedules = [];
-$dataFile = __DIR__ . '/data/schedules.json';
-if (file_exists($dataFile)) {
-    $allSchedules = json_decode(file_get_contents($dataFile), true) ?: [];
+// --- LOAD SCHEDULES: Check both teacher and admin data directories ---
+function load_teacher_schedules() {
+    $allSchedules = [];
+    
+    // Primary: Load from admin data directory (authoritative source)
+    $adminDataFile = __DIR__ . '/../admin/data/schedules.json';
+    if (file_exists($adminDataFile)) {
+        $adminData = json_decode(file_get_contents($adminDataFile), true);
+        if (is_array($adminData)) {
+            $allSchedules = array_merge($allSchedules, $adminData);
+        }
+    }
+    
+    // Fallback: Load from local teacher data directory (legacy support)
+    $teacherDataFile = __DIR__ . '/data/schedules.json';
+    if (file_exists($teacherDataFile)) {
+        $teacherData = json_decode(file_get_contents($teacherDataFile), true);
+        if (is_array($teacherData)) {
+            foreach ($teacherData as $key => $sched) {
+                if (!isset($allSchedules[$key])) {
+                    $allSchedules[$key] = $sched;
+                }
+            }
+        }
+    }
+    
+    return $allSchedules;
 }
-// --- END early load ---
+
+$allSchedules = load_teacher_schedules();
+// --- END schedule loading ---
 
 // --- START: replace simplified teacher info with DB-driven grade/sections and subjects ---
 $teacherId = intval($_SESSION['user_id'] ?? 0);
@@ -91,22 +115,32 @@ if ($teacherId > 0) {
 // --- END: replace simplified teacher info ---
 
 
-// --- REPLACE: Build schedule display with a "sneak peek" showing only entries where the logged-in teacher teaches ---
+// --- UPDATED: Build schedule display showing teacher's classes from latest admin data ---
 $scheduleDisplay = 'No schedule available.';
 $teacherLookup = trim($_SESSION['user_name'] ?? '');
+
 if ($teacherLookup !== '' && !empty($allSchedules)) {
-    $matches = []; // keyed by grade_section
+    $matches = [];
 
     foreach ($allSchedules as $key => $sched) {
         if (!is_array($sched)) continue;
+        
         foreach ($sched as $row) {
             $period = trim((string)($row['period'] ?? ''));
             $time = trim((string)($row['time'] ?? ''));
+            
             foreach (['monday','tuesday','wednesday','thursday','friday'] as $day) {
                 $cellTeacher = trim((string)($row[$day]['teacher'] ?? ''));
                 if ($cellTeacher === '') continue;
+                
                 if (strcasecmp($cellTeacher, $teacherLookup) !== 0) continue;
+                
                 $subject = trim((string)($row[$day]['subject'] ?? ''));
+                
+                if (!isset($matches[$key])) {
+                    $matches[$key] = [];
+                }
+                
                 $matches[$key][] = [
                     'day' => ucfirst($day),
                     'period' => $period,
@@ -120,7 +154,6 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     if (!empty($matches)) {
         $parts = [];
         foreach ($matches as $key => $entries) {
-            // key expected format "Grade_Section" or similar
             if (strpos($key, '_') !== false) {
                 list($g, $s) = explode('_', $key, 2);
             } else {
@@ -128,16 +161,16 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
                 $s = '';
             }
 
-            $html = '<div class="schedule-peek"><strong>Grade '.htmlspecialchars($g). ($s!=='' ? ' — Section '.htmlspecialchars($s) : '') .'</strong>';
+            $html = '<div class="schedule-peek" id="sched_' . htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]/', '', $g . '_' . $s)) . '"><strong>Grade ' . htmlspecialchars($g) . ($s !== '' ? ' — Section ' . htmlspecialchars($s) : '') . '</strong>';
             $html .= '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
             $html .= '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Period</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
-            // show entries in order (keep existing order)
+            
             foreach ($entries as $e) {
                 $html .= '<tr>'
-                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['day']).'</td>'
-                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['time']).'</td>'
-                       . '<td style="padding:6px 8px;vertical-align:top">'.htmlspecialchars($e['period']).'</td>'
-                       . '<td style="padding:6px 8px;vertical-align:top">'. ($e['subject'] !== '' ? htmlspecialchars($e['subject']) : '&nbsp;') .'</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['day']) . '</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['time']) . '</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['period']) . '</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">' . ($e['subject'] !== '' ? htmlspecialchars($e['subject']) : '&nbsp;') . '</td>'
                        . '</tr>';
             }
             $html .= '</tbody></table></div>';
@@ -146,19 +179,18 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
         $scheduleDisplay = implode('<br>', $parts);
     }
 }
-// --- END replace ---
+// --- END schedule display ---
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard Elegant View</title>
-  <link rel="stylesheet" href="teacher.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <!-- Added: overrides to control card sizing and schedule table styling -->
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Elegant View</title>
+<link rel="stylesheet" href="teacher.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
     /* layout: 3 equal cards per row for consistent spacing */
     .cards {
       display: grid;

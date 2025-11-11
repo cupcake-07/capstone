@@ -117,6 +117,7 @@ $user = getAdminSession();
 			<nav>
 				<a class="active" href="admin.php">Dashboard</a>
 				<a href="admin/students.php">Students</a>
+				<a href="admin/schedule.php">Schedule</a>
 				<a href="admin/teachers.php">Teachers</a>
 				<a href="admin/reports.php">Reports</a>
 				<a href="admin/settings.php">Settings</a>

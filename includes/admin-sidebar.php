@@ -7,6 +7,7 @@
 	<nav>
 		<a href="../admin.php">Dashboard</a>
 		<a href="students.php">Students</a>
+		<a href="schedule.php">Schedule</a>
 		<a href="teachers.php">Teachers</a>
 		<a href="reports.php">Reports</a>
 		<a href="settings.php">Settings</a>
