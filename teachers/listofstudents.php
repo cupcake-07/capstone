@@ -301,7 +301,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         <a href="school_calendar.php">School Calendar</a>
         <a href="teacher-announcements.php">Announcements</a>
         <a href="teacherslist.php">Teachers</a>
-        <a href="settings.php">Settings</a>
+        <a href="teacher-settings.php">Settings</a>
       </nav>
       <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>

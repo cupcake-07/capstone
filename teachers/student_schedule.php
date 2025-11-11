@@ -92,6 +92,32 @@ function save_schedules($schedules) {
     file_put_contents(DATA_FILE, json_encode($schedules, JSON_PRETTY_PRINT));
 }
 
+// --- NEW: load schedules preferring admin data, fallback to teacher local ---
+function load_all_schedules_sources() {
+    $allSchedules = [];
+
+    // Primary: admin data (authoritative)
+    $adminDataFile = __DIR__ . '/../admin/data/schedules.json';
+    if (file_exists($adminDataFile)) {
+        $j = json_decode(file_get_contents($adminDataFile), true);
+        if (is_array($j)) $allSchedules = array_merge($allSchedules, $j);
+    }
+
+    // Fallback: teacher local data
+    $teacherDataFile = __DIR__ . '/data/schedules.json';
+    if (file_exists($teacherDataFile)) {
+        $j = json_decode(file_get_contents($teacherDataFile), true);
+        if (is_array($j)) {
+            foreach ($j as $k => $v) {
+                if (!isset($allSchedules[$k])) $allSchedules[$k] = $v;
+            }
+        }
+    }
+
+    return $allSchedules;
+}
+// --- END new schedule loader ---
+
 // Handle POST (save)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['grade']) && isset($_POST['section']) && isset($_POST['schedule_json'])) {
     $grade = $_POST['grade'];
@@ -241,6 +267,73 @@ if ($result) {
         $db_teachers_list[] = $row;
     }
 }
+
+// --- NEW: load students for "list of students" view (robust column detection & grade/section mapping) ---
+$students = [];
+$cols = [];
+$colRes = $conn->query("SHOW COLUMNS FROM `students`");
+if ($colRes) {
+    while ($c = $colRes->fetch_assoc()) {
+        $cols[] = $c['Field'];
+    }
+}
+
+// decide grade & section column names (support grade_level, grade, etc.)
+$gradeCol = null;
+foreach (['grade_level','grade','gradelevel','level'] as $candidate) {
+    if (in_array($candidate, $cols)) { $gradeCol = $candidate; break; }
+}
+$sectionCol = null;
+foreach (['section','sect'] as $candidate) {
+    if (in_array($candidate, $cols)) { $sectionCol = $candidate; break; }
+}
+
+// Decide best name expression (unchanged logic, slightly adapted)
+$nameExpr = null;
+if (in_array('first_name', $cols) && in_array('last_name', $cols)) {
+    $nameExpr = "CONCAT(last_name, ', ', first_name) AS student_name";
+} elseif (in_array('firstname', $cols) && in_array('lastname', $cols)) {
+    $nameExpr = "CONCAT(lastname, ', ', firstname) AS student_name";
+} elseif (in_array('name', $cols)) {
+    $nameExpr = "name AS student_name";
+} elseif (in_array('student_name', $cols)) {
+    $nameExpr = "student_name";
+} else {
+    $picked = null;
+    foreach ($cols as $c) {
+        if (in_array($c, ['id','grade','grade_level','section','is_enrolled'])) continue;
+        if (preg_match('/name|full|student/i', $c)) { $picked = $c; break; }
+        if ($picked === null) $picked = $c;
+    }
+    if ($picked) $nameExpr = "$picked AS student_name";
+}
+if (!$nameExpr) $nameExpr = "id AS student_name";
+
+// Build SELECT with aliases so frontend always sees 'grade' and 'section'
+$selectCols = "id, $nameExpr";
+if ($gradeCol) $selectCols .= ", $gradeCol AS grade"; else $selectCols .= ", '' AS grade";
+if ($sectionCol) $selectCols .= ", $sectionCol AS section"; else $selectCols .= ", '' AS section";
+if (in_array('is_enrolled', $cols)) $selectCols .= ", is_enrolled"; else $selectCols .= ", 0 AS is_enrolled";
+
+$sql = "SELECT $selectCols FROM students ORDER BY grade ASC, section ASC, student_name ASC";
+$students_result = $conn->query($sql);
+if ($students_result) {
+    while ($s = $students_result->fetch_assoc()) {
+        $students[] = [
+            'id' => $s['id'] ?? '',
+            'student_name' => $s['student_name'] ?? '',
+            'grade' => $s['grade'] ?? '',
+            'section' => $s['section'] ?? '',
+            'is_enrolled' => !empty($s['is_enrolled']) ? 1 : 0
+        ];
+    }
+}
+// --- END new students load ---
+
+$allSchedules = load_all_schedules_sources();
+// prepare safe JSON for JS
+$allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -366,95 +459,85 @@ if ($result) {
             <a href="school_calendar.php">School Calendar</a>
             <a href="teacher-announcements.php">Announcements</a>
             <a href="teacherslist.php">Teachers</a>
-            <a href="settings.php">Settings</a>
+            <a href="teacher-settings.php">Settings</a>
         </nav>
         <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>
 
     <main class="main">
+        <!-- Students list view -->
         <div class="schedule-container">
             <div class="schedule-actions">
-                <h2>Class Schedule</h2>
-                <div class="controls">
-                    <div style="display:flex; gap:16px; align-items:center;">
-                        <label for="gradeSelect">Grade:</label>
-                        <select id="gradeSelect">
-                            <option value="all">All Grades</option>
-                            <?php foreach ($GRADES as $g): ?>
-                                <option value="<?php echo $g ?>" <?php echo ($selectedGrade===$g?'selected':'') ?>>Grade <?php echo $g ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <label for="sectionSelect" style="margin-left:12px;">Section:</label>
-                        <select id="sectionSelect">
-                            <option value="all">All Sections</option>
-                            <?php foreach ($SECTIONS as $s): ?>
-                                <option value="<?php echo $s ?>" <?php echo ($selectedSection===$s?'selected':'') ?>>Section <?php echo $s ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                <h2>List of Students</h2>
+                <div class="controls" style="justify-content:space-between;align-items:center;">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <label style="font-weight:600;">Total Students:</label>
+                        <div style="font-weight:700;"><?php echo count($students); ?></div>
                     </div>
-
-                    <div class="button-group">
-                        <a class="btn" id="exportBtn" href="?export=1&grade=<?php echo htmlspecialchars($selectedGrade) ?>&section=<?php echo htmlspecialchars($selectedSection) ?>">
-                            <span>📥</span> Export CSV
-                        </a>
-                        <div class="manage-link">
-                            <a onclick="openManageTeachersModal()">⚙️ Manage Teachers</a>
-                        </div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <input id="studentSearch" type="search" placeholder="Search by name, grade or section" style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; min-width:220px;">
+                        <label for="sortSelect" style="margin-left:6px; font-weight:600; font-size:13px;">Sort:</label>
+                        <select id="sortSelect" style="padding:8px 10px; border:1px solid #ddd; border-radius:6px; background:#fff; font-size:13px;">
+                            <option value="default">Default</option>
+                            <option value="grade_asc">Grade ↑</option>
+                            <option value="grade_desc">Grade ↓</option>
+                            <option value="section_asc">Section ↑</option>
+                            <option value="section_desc">Section ↓</option>
+                            <option value="grade_section">Grade ↑ • Section ↑</option>
+                        </select>
+                        <button class="btn" id="exportStudentsBtn">📥 Export CSV</button>
                     </div>
                 </div>
             </div>
 
-            <?php if (isset($saved_msg)): ?>
-                <div style="color:#155724; background:#d4edda; border:1px solid #c3e6cb; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-weight:500;">✓ <?php echo htmlspecialchars($saved_msg) ?></div>
-            <?php endif; ?>
-
-            <?php if ($selectedGrade === 'all' || $selectedSection === 'all'): ?>
-                <div style="padding:24px; background:#f9f9f9; border-radius:6px; text-align:center; color:#666; border:1px solid #e5e5e5;">
-                    <p style="margin:0; font-size:14px;">📋 Select both a Grade and Section to edit schedule, or view all schedules below.</p>
-                </div>
-                <?php foreach ($allSchedules as $key => $sched): ?>
-                    <h3 style="margin-top:24px; margin-bottom:12px; color:#1a1a1a;"><?php echo htmlspecialchars($key) ?></h3>
-                    <table class="schedule-table">
-                        <thead>
-                            <tr><th>Period</th><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($sched as $r): ?>
+            <div style="margin-top:16px;">
+                <table class="schedule-table" id="studentsTable" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">ID</th>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Name</th>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Grade</th>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Section</th>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Enrolled</th>
+                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($students as $st): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($r['period']) ?></td>
-                                <td><?php echo htmlspecialchars($r['time']) ?></td>
-                                <?php foreach (['monday','tuesday','wednesday','thursday','friday'] as $d): ?>
-                                    <td>
-                                        <div><strong><?php echo htmlspecialchars($r[$d]['teacher']) ?></strong></div>
-                                        <div><?php echo htmlspecialchars($r[$d]['subject']) ?></div>
-                                    </td>
-                                <?php endforeach; ?>
+                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['id']); ?></td>
+                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['student_name']); ?></td>
+                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['grade']); ?></td>
+                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['section']); ?></td>
+                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo ($st['is_enrolled'] ? 'Yes' : 'No'); ?></td>
+                               <td style="padding:8px;border:1px solid #f0f0f0;">
+                                   <?php
+                                       $g = trim((string)$st['grade']);
+                                       $s = trim((string)$st['section']);
+                                       if ($g !== '' && $s !== '') {
+                                           // normalize grade: prefer digits (e.g. "Grade 1" -> "1")
+                                           if (preg_match('/\d+/', $g, $m)) $gkey = $m[0];
+                                           else $gkey = preg_replace('/\s+/', '', $g);
+                                           // normalize section: uppercase single-letter (e.g. "a" -> "A")
+                                           $skey = strtoupper(preg_replace('/\s+/', '', $s));
+                                           $key = $gkey . '_' . $skey;
+                                           if (isset($allSchedules[$key])) {
+                                               // render view button with data-key
+                                               echo '<button class="btn btn-secondary view-schedule-btn" data-key="' . htmlspecialchars($key) . '">View</button>';
+                                           } else {
+                                               echo '<span style="color:#777;font-size:13px;">No schedule</span>';
+                                           }
+                                       } else {
+                                           echo '<span style="color:#777;font-size:13px;">N/A</span>';
+                                       }
+                                   ?>
+                               </td>
                             </tr>
                         <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endforeach; ?>
-
-            <?php else: ?>
-                <form id="scheduleForm" method="post" action="student_schedule.php">
-                    <input type="hidden" name="grade" value="<?php echo htmlspecialchars($selectedGrade) ?>">
-                    <input type="hidden" name="section" value="<?php echo htmlspecialchars($selectedSection) ?>">
-                    <input type="hidden" name="schedule_json" id="schedule_json" value="">
-                    <div class="row-controls">
-                        <button type="button" class="btn" onclick="addRow()">
-                            <span>➕</span> Add New Period
-                        </button>
-                        <button type="button" class="btn" style="background:#27ae60;" onclick="saveSchedule()">
-                            <span>💾</span> Save Changes
-                        </button>
-                    </div>
-                    <div id="tableContainer"></div>
-                </form>
-            <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </main>
-</div>
 
 <!-- Manage Teachers Modal -->
 <div id="manageTeachersModal" class="modal">
@@ -574,216 +657,219 @@ if ($result) {
     </div>
 </div>
 
+<!-- Schedule Viewer Modal -->
+<div id="scheduleViewerModal" class="modal" aria-hidden="true">
+    <div class="modal-content" style="max-width:800px;">
+        <div class="modal-header">
+            <h2 id="svTitle">Schedule</h2>
+            <button class="modal-close" onclick="closeScheduleModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="svBody" style="padding:16px; max-height:60vh; overflow:auto;">
+            <!-- populated by JS -->
+        </div>
+    </div>
+</div>
+
 <script>
-const GRADES = <?php echo json_encode($GRADES); ?>;
-const SECTIONS = <?php echo json_encode($SECTIONS); ?>;
-const selectedGrade = '<?php echo $selectedGrade; ?>';
-const selectedSection = '<?php echo $selectedSection; ?>';
-const teachers = <?php echo json_encode($teachers); ?>;
-// expose subjects to JS
-const subjects = <?php echo json_encode($SUBJECTS); ?>;
-// expose time slots to JS
-const timeSlots = <?php echo json_encode($TIME_SLOTS); ?>;
-const initialSchedule = <?php
-    if ($selectedGrade === 'all' || $selectedSection === 'all') echo 'null';
-    else echo json_encode($schedule_for_page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-?>;
+// embed schedules data
+const ALL_SCHEDULES = <?php echo $allSchedulesJson ?: '({})'; ?>;
 
-/* --- UPDATED: dynamic schedule loader and select handlers --- */
-
-let schedule = null; // will hold current editable schedule array
-
-function createTable() {
-    const container = document.getElementById('tableContainer');
-    container.innerHTML = '';
-    const table = document.createElement('table');
-    table.className = 'schedule-table';
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    ['Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(t => {
-        const th = document.createElement('th'); th.textContent = t; headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow); table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-
-    schedule.forEach((row, rIdx) => {
-        const tr = document.createElement('tr');
-        // period
-        const tdPeriod = document.createElement('td');
-        const inpPeriod = document.createElement('input');
-        inpPeriod.className = 'small';
-        inpPeriod.value = row.period || '';
-        inpPeriod.onchange = () => schedule[rIdx].period = inpPeriod.value;
-        tdPeriod.appendChild(inpPeriod);
-        tr.appendChild(tdPeriod);
-        // time (select)
-        const tdTime = document.createElement('td');
-        const selectTime = document.createElement('select');
-        selectTime.className = 'small';
-        const optPlaceholder = document.createElement('option');
-        optPlaceholder.value = '';
-        optPlaceholder.textContent = '-- Select Time --';
-        selectTime.appendChild(optPlaceholder);
-        timeSlots.forEach(ts => {
-            const o = document.createElement('option');
-            o.value = ts;
-            o.textContent = ts;
-            selectTime.appendChild(o);
-        });
-        if (row.time && !timeSlots.includes(row.time)) {
-            const customOpt = document.createElement('option');
-            customOpt.value = row.time;
-            customOpt.textContent = row.time;
-            selectTime.appendChild(customOpt);
-        }
-        selectTime.value = row.time || '';
-        selectTime.onchange = () => {
-            schedule[rIdx].time = selectTime.value;
-        };
-        tdTime.appendChild(selectTime);
-        tr.appendChild(tdTime);
-        // days
-        ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
-            const td = document.createElement('td');
-            const div = document.createElement('div');
-            div.className = 'day-cell';
-            // Teacher dropdown
-            const selectTeacher = document.createElement('select');
-            selectTeacher.className = 'small';
-            const optEmpty = document.createElement('option');
-            optEmpty.value = '';
-            optEmpty.textContent = '-- Select Teacher --';
-            selectTeacher.appendChild(optEmpty);
-            teachers.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
-                selectTeacher.appendChild(opt);
-            });
-            selectTeacher.value = (row[day] && row[day].teacher) ? row[day].teacher : '';
-            selectTeacher.onchange = () => {
-                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                schedule[rIdx][day].teacher = selectTeacher.value;
-            };
-            // Subject dropdown
-            const selectSubject = document.createElement('select');
-            selectSubject.className = 'small';
-            const optEmptyS = document.createElement('option');
-            optEmptyS.value = '';
-            optEmptyS.textContent = '-- Select Subject --';
-            selectSubject.appendChild(optEmptyS);
-            subjects.forEach(subj => {
-                const op = document.createElement('option');
-                op.value = subj;
-                op.textContent = subj;
-                selectSubject.appendChild(op);
-            });
-            selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
-            selectSubject.onchange = () => {
-                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                schedule[rIdx][day].subject = selectSubject.value;
-            };
-            div.appendChild(selectTeacher);
-            div.appendChild(selectSubject);
-            td.appendChild(div);
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    container.appendChild(table);
-}
-
-function loadScheduleData(data) {
-    schedule = JSON.parse(JSON.stringify(data));
-    createTable();
-}
-
-function addRow(){
-    const newPeriod = String(schedule.length + 1);
-    schedule.push({period:newPeriod,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
-    createTable();
-}
-
-function saveSchedule() {
-    document.getElementById('schedule_json').value = JSON.stringify(schedule);
-    document.getElementById('scheduleForm').submit();
-}
-
-// Provide global access for buttons
-window.addRow = addRow;
-window.saveSchedule = saveSchedule;
-
-// If initialSchedule was provided from server on page load, render it
-if (initialSchedule !== null) {
-    loadScheduleData(initialSchedule);
-}
-
-// Fetch schedule via AJAX and load into editor
-function fetchSchedule(grade, section) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('fetch_schedule', '1');
-    url.searchParams.set('grade', grade);
-    url.searchParams.set('section', section);
-    return fetch(url.toString(), { credentials: 'same-origin' })
-        .then(r => {
-            if (!r.ok) throw new Error('Network error');
-            return r.json();
-        })
-        .then(json => {
-            if (json && json.schedule) {
-                // update export link and hidden inputs if present
-                const exportBtn = document.getElementById('exportBtn');
-                if (exportBtn) exportBtn.href = '?export=1&grade=' + encodeURIComponent(grade) + '&section=' + encodeURIComponent(section);
-                // update form hidden grade/section inputs so save will work
-                const gradeInput = document.querySelector('input[name="grade"]');
-                const sectionInput = document.querySelector('input[name="section"]');
-                if (gradeInput) gradeInput.value = grade;
-                if (sectionInput) sectionInput.value = section;
-                loadScheduleData(json.schedule);
-            }
-        })
-        .catch(err => {
-            console.error('Failed to fetch schedule:', err);
-        });
-}
-
-// Replace previous change handlers to fetch schedule dynamically when both grade & section selected
-document.getElementById('gradeSelect').addEventListener('change', function(){
-    const g = this.value;
-    const s = document.getElementById('sectionSelect').value;
-    if (g !== 'all' && s !== 'all') {
-        // update address bar (no full reload) for shareable URL
-        const qs = new URLSearchParams(location.search);
-        qs.set('grade', g);
-        qs.set('section', s);
-        history.replaceState(null, '', '?' + qs.toString());
-        fetchSchedule(g, s);
-    } else {
-        // fallback to full navigation when 'all' selected
-        const qs = new URLSearchParams(location.search);
-        qs.set('grade', g);
-        qs.set('section', s);
-        location.search = qs.toString();
+// open/close modal helpers
+function openScheduleModal(key) {
+    const modal = document.getElementById('scheduleViewerModal');
+    const title = document.getElementById('svTitle');
+    const body = document.getElementById('svBody');
+    const sched = ALL_SCHEDULES[key];
+    // FIXED: proper quoting and spacing
+    title.textContent = 'Schedule: ' + key.replace('_', ' — Section ');
+    if (!sched || !Array.isArray(sched)) {
+        body.innerHTML = '<p style="color:#666;">No schedule available for this grade/section.</p>';
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden','false');
+        return;
     }
+
+    // build table view
+    let html = '<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Period</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Time</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Monday</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Tuesday</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Wednesday</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Thursday</th>'
+             + '<th style="padding:8px;border-bottom:1px solid #eee;">Friday</th>'
+             + '</tr></thead><tbody>';
+    sched.forEach(row => {
+        html += '<tr>';
+        html += '<td style="padding:8px;border-bottom:1px solid #f7f7f7;">' + escapeHtml(row.period || '') + '</td>';
+        html += '<td style="padding:8px;border-bottom:1px solid #f7f7f7;">' + escapeHtml(row.time || '') + '</td>';
+        ['monday','tuesday','wednesday','thursday','friday'].forEach(d => {
+            const cell = row[d] || {};
+            const teacher = cell.teacher || '';
+            const subject = cell.subject || '';
+            let cellHtml = '<div style="font-weight:600;">' + escapeHtml(teacher) + '</div>';
+            if (subject) cellHtml += '<div style="font-size:12px;color:#444;">' + escapeHtml(subject) + '</div>';
+            html += '<td style="padding:8px;border-bottom:1px solid #f7f7f7;vertical-align:top;">' + cellHtml + '</td>';
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    body.innerHTML = html;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden','false');
+}
+function closeScheduleModal(){
+    const modal = document.getElementById('scheduleViewerModal');
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden','true');
+}
+
+// escape helper
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+}
+
+// attach handlers to view buttons
+document.addEventListener('click', function(e){
+    const btn = e.target.closest && e.target.closest('.view-schedule-btn');
+    if (!btn) return;
+    const key = btn.getAttribute('data-key');
+    if (!key) return;
+    openScheduleModal(key);
 });
 
-document.getElementById('sectionSelect').addEventListener('change', function(){
-    const g = document.getElementById('gradeSelect').value;
-    const s = this.value;
-    if (g !== 'all' && s !== 'all') {
-        const qs = new URLSearchParams(location.search);
-        qs.set('grade', g);
-        qs.set('section', s);
-        history.replaceState(null, '', '?' + qs.toString());
-        fetchSchedule(g, s);
-    } else {
-        const qs = new URLSearchParams(location.search);
-        qs.set('grade', g);
-        qs.set('section', s);
-        location.search = qs.toString();
+// allow modal close by clicking overlay or close button
+document.getElementById('scheduleViewerModal').addEventListener('click', function(e){
+    if (e.target === this) closeScheduleModal();
+});
+
+// MARK original order on rows so we can restore Default sorting
+(function markOriginalRowOrder(){
+    const tbody = document.querySelector('#studentsTable tbody');
+    if (!tbody) return;
+    Array.from(tbody.rows).forEach((row, i) => row.dataset.origOrder = i);
+})();
+
+// helper: extract numeric grade when possible, otherwise return lowercase string
+function parseGradeValue(text) {
+    if (!text) return -Infinity;
+    const m = String(text).match(/\d+/);
+    if (m) return parseInt(m[0], 10);
+    return String(text).trim().toLowerCase();
+}
+function parseSectionValue(text) {
+    if (!text) return '';
+    return String(text).trim().toUpperCase();
+}
+
+// comparator helpers
+function cmp(a, b) {
+    if (a === b) return 0;
+    return a > b ? 1 : -1;
+}
+function compareRowsByGrade(aRow, bRow, asc = true) {
+    const a = parseGradeValue(aRow.cells[2].textContent);
+    const b = parseGradeValue(bRow.cells[2].textContent);
+    const res = (typeof a === 'number' && typeof b === 'number') ? (a - b) : cmp(String(a), String(b));
+    return asc ? res : -res;
+}
+function compareRowsBySection(aRow, bRow, asc = true) {
+    const a = parseSectionValue(aRow.cells[3].textContent);
+    const b = parseSectionValue(bRow.cells[3].textContent);
+    const res = cmp(a, b);
+    return asc ? res : -res;
+}
+function compareRowsGradeThenSection(aRow, bRow) {
+    const g = compareRowsByGrade(aRow, bRow, true);
+    if (g !== 0) return g;
+    return compareRowsBySection(aRow, bRow, true);
+}
+
+// main sorter
+function sortStudents(option) {
+    const tbody = document.querySelector('#studentsTable tbody');
+    if (!tbody) return;
+    const rows = Array.from(tbody.rows);
+
+    let sorted;
+    switch(option) {
+        case 'grade_asc':
+            sorted = rows.sort((a,b) => compareRowsByGrade(a,b,true));
+            break;
+        case 'grade_desc':
+            sorted = rows.sort((a,b) => compareRowsByGrade(a,b,false));
+            break;
+        case 'section_asc':
+            sorted = rows.sort((a,b) => compareRowsBySection(a,b,true));
+            break;
+        case 'section_desc':
+            sorted = rows.sort((a,b) => compareRowsBySection(a,b,false));
+            break;
+        case 'grade_section':
+            sorted = rows.sort((a,b) => compareRowsGradeThenSection(a,b));
+            break;
+        case 'default':
+        default:
+            // restore original DOM order using data-orig-order numeric key
+            sorted = rows.sort((a,b) => (Number(a.dataset.origOrder) || 0) - (Number(b.dataset.origOrder) || 0));
+            break;
     }
+
+    // append rows in new order (preserve visibility state)
+    sorted.forEach(r => tbody.appendChild(r));
+}
+
+// attach sort select handler
+const sortSelect = document.getElementById('sortSelect');
+if (sortSelect) {
+    sortSelect.addEventListener('change', function(){
+        sortStudents(this.value);
+    });
+}
+
+// wire search to not conflict with sorting (search only hides rows)
+document.getElementById('studentSearch').addEventListener('input', function(e){
+    const q = e.target.value.trim().toLowerCase();
+    const tbody = document.querySelector('#studentsTable tbody');
+    Array.from(tbody.rows).forEach(row => {
+        const txt = row.textContent.toLowerCase();
+        row.style.display = txt.indexOf(q) !== -1 ? '' : 'none';
+    });
+});
+
+// existing export logic (unchanged)
+document.getElementById('exportStudentsBtn').addEventListener('click', function(){
+    const rows = [];
+    const headers = ['ID','Name','Grade','Section','Enrolled'];
+    rows.push(headers);
+    const tbody = document.querySelector('#studentsTable tbody');
+    Array.from(tbody.rows).forEach(row => {
+        if (row.style.display === 'none') return;
+        const cols = Array.from(row.cells).map(c => c.textContent.trim());
+        rows.push(cols);
+    });
+    if (rows.length <= 1) {
+        alert('No students to export.');
+        return;
+    }
+    const csv = rows.map(r => r.map(v => '"' + v.replace(/"/g,'""') + '"').join(',')).join('\r\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'students_list.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 });
 </script>
+
 </body>
 </html>
