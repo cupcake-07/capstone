@@ -1,43 +1,52 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) session_start();
+// Return JSON of subject => score for a student's quarter
+// Require the teacher session (uses TEACHER_SESSION like other teacher pages)
+
+$_SESSION_NAME = 'TEACHER_SESSION';
+if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
+    session_start();
+}
+
 require_once __DIR__ . '/../config/database.php';
 
-header('Content-Type: application/json; charset=utf-8');
-
-$student_id = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
-$quarter = isset($_GET['quarter']) ? intval($_GET['quarter']) : 0;
-
-if ($student_id <= 0 || $quarter < 0 || $quarter > 4) {
-    echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+// Basic auth: must be logged in as teacher
+if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
 }
 
-// If quarter === 0, return any assignment without Q prefix; otherwise match "Q{n} - %"
-$like = $quarter === 0 ? '%' : 'Q' . $quarter . ' - %';
+header('Content-Type: application/json');
 
-$sql = "SELECT 
-            TRIM(SUBSTRING_INDEX(assignment, ' - ', -1)) AS subject,
-            AVG(score) AS avg_score
-        FROM grades
-        WHERE student_id = ? AND assignment LIKE ?
-        GROUP BY subject";
+$student_id = intval($_GET['student_id'] ?? 0);
+$quarter = intval($_GET['quarter'] ?? 1);
+if ($student_id <= 0 || $quarter < 1 || $quarter > 4) {
+    echo json_encode(['success' => false, 'error' => 'Invalid parameters']);
+    exit;
+}
 
-$stmt = $conn->prepare($sql);
+$pattern = "Q" . $quarter . " - %";
+$stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
 if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'DB prepare failed']);
+    echo json_encode(['success' => false, 'error' => 'Database error']);
     exit;
 }
-$stmt->bind_param('is', $student_id, $like);
+$stmt->bind_param('is', $student_id, $pattern);
 $stmt->execute();
-$result = $stmt->get_result();
+$res = $stmt->get_result();
 
 $data = [];
-while ($row = $result->fetch_assoc()) {
-    $subject = $row['subject'] === '' ? 'General' : $row['subject'];
-    $data[$subject] = $row['avg_score'] !== null ? round(floatval($row['avg_score']), 1) : null;
+while ($row = $res->fetch_assoc()) {
+    $assignment = trim($row['assignment']);
+    $score = $row['score'];
+    $parts = explode(' - ', $assignment, 2);
+    $subject = count($parts) === 2 ? trim($parts[1]) : $assignment;
+    if ($subject === '') $subject = 'General';
+    $data[$subject] = is_numeric($score) ? floatval($score) : $score;
 }
 
 $stmt->close();
-
 echo json_encode(['success' => true, 'data' => $data]);
 exit;
+?>

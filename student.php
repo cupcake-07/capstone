@@ -1,5 +1,5 @@
 <?php
-// Start session FIRST with DEFAULT name (no custom name for students)
+// Start session with default name for students
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -75,7 +75,7 @@ function load_schedule_for($grade, $section) {
 $userId = intval($_SESSION['user_id']);
 
 // Fetch saved grades for this student and prepare structured data for display
-$gradesStmt = $conn->prepare("SELECT assignment, score, created_at FROM grades WHERE student_id = ? ORDER BY created_at ASC");
+$gradesStmt = $conn->prepare("SELECT assignment, score, created_at FROM grades WHERE student_id = ? ORDER BY assignment ASC, created_at ASC");
 $gradesBySubject = []; // [subject][quarter] => [scores...]
 $gradesEntries = [];   // subject => [ ['quarter'=>n,'score'=>x,'date'=>d,'assignment'=>s], ... ]
 $subjectsOrder = []; // keep subjects order
@@ -84,11 +84,12 @@ if ($gradesStmt) {
     $gradesStmt->execute();
     $res = $gradesStmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        $assignment = $row['assignment'];
+        $assignment = trim($row['assignment']);
         $score = floatval($row['score']);
         $date = $row['created_at'];
+        
         // parse "Q{n} - Subject" pattern
-        if (preg_match('/Q\s*([1-4])\s*-\s*(.+)$/i', $assignment, $m)) {
+        if (preg_match('/^Q\s*([1-4])\s*-\s*(.+)$/i', $assignment, $m)) {
             $quarter = intval($m[1]);
             $subject = trim($m[2]);
         } else {
@@ -96,14 +97,20 @@ if ($gradesStmt) {
             $quarter = 0;
             $subject = trim($assignment);
         }
+        
         if ($subject === '') $subject = 'General';
+        
+        // Track subject order (only on first occurrence)
         if (!isset($gradesBySubject[$subject])) {
             $gradesBySubject[$subject] = [];
             $subjectsOrder[] = $subject;
         }
+        
         if (!isset($gradesBySubject[$subject][$quarter])) {
             $gradesBySubject[$subject][$quarter] = [];
         }
+        
+        // Add score to this quarter for this subject
         $gradesBySubject[$subject][$quarter][] = $score;
 
         // collect detailed entries (preserve date and assignment)
@@ -133,27 +140,34 @@ foreach ($subjectsOrder as $subj) {
 	$row = [];
 	$quarterTotals = [];
 	for ($q = 1; $q <= 4; $q++) {
-		if (isset($subjectData[$q]) && count($subjectData[$q])>0) {
+		if (isset($subjectData[$q]) && count($subjectData[$q]) > 0) {
 			$qavg = avgArray($subjectData[$q]);
-			$row['q'.$q] = round($qavg,1);
+			$row['q'.$q] = round($qavg, 1);
 			$quarterTotals[] = $qavg;
-			foreach ($subjectData[$q] as $sval) $allScores[] = $sval;
+			foreach ($subjectData[$q] as $sval) {
+				$allScores[] = $sval;
+			}
 		} else {
 			$row['q'.$q] = null;
 		}
 	}
 	$final = null;
-	if (count($quarterTotals) > 0) $final = round(array_sum($quarterTotals)/count($quarterTotals),1);
+	if (count($quarterTotals) > 0) {
+		$final = round(array_sum($quarterTotals) / count($quarterTotals), 1);
+	}
 	$row['final'] = $final;
 	$displayGrades[$subj] = $row;
 }
 
-// overall average: prefer persisted students.avg_score
+// overall average: use the persisted students.avg_score (updated by teacher when grades are saved)
 $overallAvgDisplay = '-';
-if (isset($user['avg_score']) && $user['avg_score'] !== null) {
-	$overallAvgDisplay = number_format(floatval($user['avg_score']),1) . '%';
+if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['avg_score']) > 0) {
+	$overallAvgDisplay = number_format(floatval($user['avg_score']), 1) . '%';
 } else {
-	if (count($allScores) > 0) $overallAvgDisplay = round(array_sum($allScores)/count($allScores),1) . '%';
+	// Fallback: calculate from individual grades if avg_score is not set
+	if (count($allScores) > 0) {
+		$overallAvgDisplay = round(array_sum($allScores) / count($allScores), 1) . '%';
+	}
 }
 ?>
 <!doctype html>

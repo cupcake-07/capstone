@@ -1,5 +1,8 @@
 <?php
+// Use a separate session name for teachers
+$_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 
@@ -7,7 +10,7 @@ require_once __DIR__ . '/../config/database.php';
 
 // Redirect to login if not logged in as teacher
 if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
-    header('Location: ../login.php');
+    header('Location: teacher-login.php');
     exit;
 }
 
@@ -21,41 +24,94 @@ function validateStudentGradeInput($student_id, $subjects) {
 
 function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter) {
     $savedAny = false;
-    $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
     
-    foreach ($subjects as $index => $subject) {
-        if ($subject === '' || $subject === null) continue;
-        
-        $score = floatval($scores[$index] ?? '');
-        if ($score === '' || !is_numeric($score)) continue;
-        
-        $assignment = "Q" . $quarter . " - " . $subject;
-        if ($stmt) {
-            $stmt->bind_param('isd', $student_id, $assignment, $score);
-            $stmt->execute();
-            $savedAny = true;
-        }
+    // First, delete all existing grades for this student and quarter
+    $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ?");
+    if ($deleteStmt) {
+        $pattern = "Q" . $quarter . "%";
+        $deleteStmt->bind_param('is', $student_id, $pattern);
+        $deleteStmt->execute();
+        $deleteStmt->close();
     }
     
-    if ($stmt) $stmt->close();
+    // Now insert the new grades
+    $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+    
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
+    }
+    
+    foreach ($subjects as $index => $subject) {
+        // Skip empty subjects
+        if (empty($subject) || $subject === null) continue;
+        
+        // Check if score exists and is numeric
+        $scoreValue = $scores[$index] ?? '';
+        $scoreValue = str_replace(',', '.', $scoreValue); // Convert to dot notation
+        if ($scoreValue === '' || !is_numeric($scoreValue)) continue;
+        
+        $score = floatval($scoreValue);
+        $assignment = "Q" . $quarter . " - " . $subject;
+        
+        // Properly bind parameters for each iteration
+        if (!$stmt->bind_param('isd', $student_id, $assignment, $score)) {
+            error_log("Bind failed: " . $stmt->error);
+            continue;
+        }
+        
+        if (!$stmt->execute()) {
+            error_log("Execute failed: " . $stmt->error);
+            continue;
+        }
+        
+        $savedAny = true;
+    }
+    
+    $stmt->close();
     return $savedAny;
 }
 
 function updateStudentAverage($conn, $student_id) {
+    // Calculate average from ALL grades for this student (across all quarters)
     $avgRes = $conn->query("SELECT AVG(score) as avg_score FROM grades WHERE student_id = " . intval($student_id));
     $avgRow = $avgRes ? $avgRes->fetch_assoc() : null;
-    $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : null;
+    $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : 0;
     
-    if ($avgValue !== null) {
-        $up = $conn->prepare("UPDATE students SET avg_score = ? WHERE id = ?");
-        if ($up) {
-            $up->bind_param('di', $avgValue, $student_id);
-            $up->execute();
-            $up->close();
-        }
+    // Always update the students table with the calculated average
+    $up = $conn->prepare("UPDATE students SET avg_score = ? WHERE id = ?");
+    if ($up) {
+        $up->bind_param('di', $avgValue, $student_id);
+        $up->execute();
+        $up->close();
     }
     
     return $avgValue;
+}
+
+// ============================================================================
+// NEW: helper to fetch saved grades for a student + quarter (subject => score)
+// ============================================================================
+
+function fetchStudentQuarterGrades($conn, $student_id, $quarter) {
+    $data = [];
+    $pattern = "Q" . intval($quarter) . " - %";
+    $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
+    if (!$stmt) return $data;
+    $stmt->bind_param('is', $student_id, $pattern);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        // Expect assignment format "Q{n} - Subject"
+        $assignment = trim($row['assignment']);
+        $score = $row['score'];
+        $parts = explode(' - ', $assignment, 2);
+        $subject = count($parts) === 2 ? trim($parts[1]) : $assignment;
+        if ($subject === '') $subject = 'General';
+        $data[$subject] = is_numeric($score) ? floatval($score) : $score;
+    }
+    $stmt->close();
+    return $data;
 }
 
 function handleGradeSubmission($conn) {
@@ -71,12 +127,15 @@ function handleGradeSubmission($conn) {
             $savedAny = saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter);
             
             if ($savedAny) {
+                // Always update average after saving grades
                 $avgValue = updateStudentAverage($conn, $student_id);
                 
                 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
                 if ($isAjax) {
+                    // return success + avg + the saved quarter grades so client can update UI without reload
+                    $savedData = fetchStudentQuarterGrades($conn, $student_id, $quarter);
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => true, 'avg' => $avgValue]);
+                    echo json_encode(['success' => true, 'avg' => $avgValue, 'data' => $savedData]);
                     exit;
                 } else {
                     header('Location: ' . $_SERVER['PHP_SELF'] . '?student=' . $student_id);
@@ -115,11 +174,17 @@ function getStudentsByGradeLevel($conn) {
 }
 
 function getGradeLevelStats($conn, $grade_level) {
-    $query = "SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
+    $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
         JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = '" . $conn->real_escape_string($grade_level) . "'";
-    $result = $conn->query($query);
-    return $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+        WHERE s.grade_level = ?");
+    if (!$stmt) return ['count' => 0, 'avg' => 0];
+    
+    $stmt->bind_param('s', $grade_level);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+    $stmt->close();
+    return $data;
 }
 
 function getStudentsBySection($conn) {
@@ -149,12 +214,17 @@ function getGradeStatistics($conn) {
 }
 
 function getSectionStats($conn, $grade_level, $section) {
-    $query = "SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
+    $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
         JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = '" . $conn->real_escape_string($grade_level) . "' 
-        AND s.section = '" . $conn->real_escape_string($section) . "'";
-    $result = $conn->query($query);
-    return $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+        WHERE s.grade_level = ? AND s.section = ?");
+    if (!$stmt) return ['count' => 0, 'avg' => 0];
+    
+    $stmt->bind_param('ss', $grade_level, $section);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+    $stmt->close();
+    return $data;
 }
 
 function getStudentGradeCount($conn, $student_id) {
@@ -198,8 +268,10 @@ $quarters = [1, 2, 3, 4];
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../login.php">
-          <img src="loginswitch.png" id="loginswitch" alt="login switch"/>
+        <a href="teacher-logout.php" class="logout-btn" title="Logout">
+          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+            Logout
+          </button>
         </a>
       </div>
     </div>
@@ -593,7 +665,7 @@ $quarters = [1, 2, 3, 4];
     function calculateAverage() {
       const scores = Array.from(DOM.scoreInputs)
         .map(input => parseFloat(input.value))
-        .filter(val => !isNaN(val) && val > 0);
+        .filter(val => !isNaN(val));
       
       if (scores.length === 0) {
         DOM.averageScore.textContent = '-';
@@ -609,24 +681,42 @@ $quarters = [1, 2, 3, 4];
       DOM.scoreInputs.forEach(input => input.value = '');
       
       fetch('get-student-grades.php?student_id=' + encodeURIComponent(studentId) + '&quarter=' + encodeURIComponent(quarter))
-        .then(res => res.json())
-        .then(json => {
-          if (!json.success) return;
-          const data = json.data || {};
-          
-          for (let i = 0; i < subjects.length; i++) {
-            const subj = subjects[i];
-            const input = DOM.scoreInputs[i];
-            if (data.hasOwnProperty(subj) && data[subj] !== null) {
-              input.value = data[subj];
-            } else {
-              const key = Object.keys(data).find(k => k.toLowerCase() === subj.toLowerCase());
-              if (key && data[key] !== null) input.value = data[key];
+        .then(res => res.text())
+        .then(text => {
+          try {
+            const json = JSON.parse(text);
+            if (!json.success) {
+              calculateAverage();
+              return;
             }
+            const data = json.data || {};
+            
+            for (let i = 0; i < subjects.length; i++) {
+              const subj = subjects[i];
+              const input = DOM.scoreInputs[i];
+              
+              // Try exact match first
+              if (data.hasOwnProperty(subj) && data[subj] !== null && data[subj] !== '') {
+                input.value = data[subj];
+              } else {
+                // Try case-insensitive match
+                const key = Object.keys(data).find(k => k.toLowerCase() === subj.toLowerCase());
+                if (key && data[key] !== null && data[key] !== '') {
+                  input.value = data[key];
+                }
+              }
+            }
+            calculateAverage();
+          } catch (e) {
+            console.error('Failed to parse JSON response:', e);
+            console.log('Response text:', text);
+            calculateAverage();
           }
-          calculateAverage();
         })
-        .catch(err => console.error('Failed to load student grades:', err));
+        .catch(err => {
+          console.error('Failed to load student grades:', err);
+          calculateAverage();
+        });
     }
 
     // ========================================================================
@@ -709,19 +799,45 @@ $quarters = [1, 2, 3, 4];
       e.preventDefault();
       
       const formData = new FormData(DOM.gradeForm);
+      const studentId = formData.get('student_id');
+      
+      // Validate that at least one score is provided
+      const hasScores = Array.from(DOM.scoreInputs).some(input => input.value !== '' && input.value !== null);
+      
+      if (!hasScores) {
+        alert('Please enter at least one grade before saving');
+        return;
+      }
       
       fetch(window.location.href, {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       })
-      .then(response => response.text())
-      .then(html => {
-        closeModal();
-        location.reload();
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+      })
+      .then(text => {
+        try {
+          const data = JSON.parse(text);
+          if (data.success) {
+            alert('Grades saved successfully!');
+            closeModal();
+            location.reload();
+          } else {
+            alert('Error saving grades: ' + (data.error || 'Unknown error'));
+          }
+        } catch (e) {
+          console.error('Response text:', text);
+          alert('Error: Invalid server response. Check console for details.');
+        }
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Error saving grades');
+        alert('Error saving grades: ' + error.message);
       });
     }
 
@@ -737,24 +853,22 @@ $quarters = [1, 2, 3, 4];
       document.querySelectorAll('[data-toggle="grade-level"]').forEach(header => {
         header.addEventListener('click', function(e) {
           e.preventDefault();
-          e.stopPropagation(); // prevent bubbling to other handlers
+          e.stopPropagation();
           const gradeLevelCard = this.closest('.grade-level-card');
           const gradeLevelId = gradeLevelCard.getAttribute('data-grade-level-id');
           toggleGradeLevel(gradeLevelId);
         });
       });
 
-      // Section toggle event delegation — toggle only the clicked section element
+      // Section toggle event delegation
       document.querySelectorAll('[data-toggle="section"]').forEach(header => {
         header.addEventListener('click', function(e) {
           e.preventDefault();
-          e.stopPropagation(); // important: prevent toggles from affecting other sections
+          e.stopPropagation();
           const sectionCard = this.closest('.section-card');
           toggleSectionElement(sectionCard);
         });
       });
-
-      // Note: backup grade-level headers use the same [data-toggle="grade-level"] listener above
 
       // Student card click handlers
       DOM.studentCards.forEach(card => {

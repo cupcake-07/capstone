@@ -1,5 +1,8 @@
 <?php
+// Use a separate session name for teachers
+$_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 
@@ -53,6 +56,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background-color: #1a1a1a;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .navbar-logo {
+            background: #d4af37;
+            color: #1a1a1a;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .navbar-text .navbar-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .navbar-text .navbar-subtitle {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .main-content {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -196,41 +244,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="subtitle">Teacher Portal</div>
-        <h1>School Management</h1>
-        <p>Glorious God's Family Christian School</p>
-
-        <?php if ($error): ?>
-            <div class="error"><?php echo htmlspecialchars($error); ?></div>
-        <?php endif; ?>
-
-        <form method="POST">
-            <div class="form-group">
-                <label for="email">Teacher Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email address" required />
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <div class="navbar-logo">GGF</div>
+            <div class="navbar-text">
+                <div class="navbar-title">Glorious God's Family</div>
+                <div class="navbar-subtitle">Christian School</div>
             </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required />
-            </div>
-
-            <button type="submit" class="btn-login">Login as Teacher</button>
-        </form>
-
-        <div class="info-box">
-            <strong>New to the system?</strong>
-            Create an account to get started with grade management and classroom coordination.
         </div>
+    </nav>
 
-        <div class="auth-links">
-            <p>Don't have an account?</p>
-            <a href="teacher-register.php">Create Teacher Account</a>
-            <p style="margin-top: 16px;">
-                <a href="../login.php">Login as Student</a> | 
-                <a href="../admin-login.php">Login as Admin</a>
-            </p>
+    <div class="main-content">
+        <div class="login-container">
+            <div class="subtitle">Teacher Portal</div>
+            <h1>School Management</h1>
+            <p>Glorious God's Family Christian School</p>
+
+            <?php if ($error): ?>
+                <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label for="email">Teacher Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email address" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required />
+                </div>
+
+                <button type="submit" class="btn-login">Login as Teacher</button>
+            </form>
+
+            <div class="info-box">
+                <strong>New to the system?</strong>
+                Create an account to get started with grade management and classroom coordination.
+            </div>
+
+            <div class="auth-links">
+                <p>Don't have an account?</p>
+                <a href="teacher-register.php">Create Teacher Account</a>
+                <p style="margin-top: 16px;">
+                    <a href="../login.php">Login as Student</a> | 
+                    <a href="../admin-login.php">Login as Admin</a>
+                </p>
+            </div>
         </div>
     </div>
 </body>

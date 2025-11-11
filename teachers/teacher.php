@@ -1,5 +1,8 @@
 <?php
+// Use a separate session name for teachers
+$_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 
@@ -7,7 +10,7 @@ require_once __DIR__ . '/../config/database.php';
 
 // Redirect to login if not logged in as teacher
 if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
-    header('Location: ../login.php');
+    header('Location: teacher-login.php');
     exit;
 }
 
