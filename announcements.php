@@ -15,74 +15,8 @@ if (empty($_SESSION['user_id'])) {
 
 $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 
+// Announcements will be loaded via JavaScript fetch from API
 $announcements = [];
-
-// Check if announcements table exists
-$check = $conn->query("SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'announcements'");
-$hasTable = $check && ($row = $check->fetch_assoc()) && $row['cnt'] > 0;
-
-if ($hasTable) {
-    // Discover available columns
-    $cols = [];
-    $colRes = $conn->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'announcements'");
-    if ($colRes) {
-        while ($c = $colRes->fetch_assoc()) $cols[] = $c['COLUMN_NAME'];
-    }
-
-    $hasTitle = in_array('title', $cols);
-    $bodyCol = in_array('body', $cols) ? 'body' : (in_array('content', $cols) ? 'content' : (in_array('message', $cols) ? 'message' : null));
-    $dateCol = in_array('published_at', $cols) ? 'published_at' : (in_array('created_at', $cols) ? 'created_at' : (in_array('date', $cols) ? 'date' : null));
-
-    if ($hasTitle && $bodyCol && $dateCol) {
-        $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e, %Y') AS pub_date FROM `announcements` ORDER BY `$dateCol` DESC LIMIT 50";
-        if ($stmt = $conn->prepare($sql)) {
-            $stmt->execute();
-            if (method_exists($stmt, 'get_result')) {
-                $res = $stmt->get_result();
-                while ($r = $res->fetch_assoc()) {
-                    $announcements[] = array_merge($r, ['type' => 'announcement']);
-                }
-            } else {
-                $stmt->bind_result($id, $title, $body, $pub_date);
-                while ($stmt->fetch()) {
-                    $announcements[] = ['id'=>$id,'title'=>$title,'body'=>$body,'pub_date'=>$pub_date,'type'=>'announcement'];
-                }
-            }
-            $stmt->close();
-        }
-    }
-}
-
-// Fetch school events - visible to ALL students
-$eventsStmt = $conn->query("SELECT id, event_date, title FROM school_events ORDER BY event_date DESC LIMIT 50");
-if ($eventsStmt) {
-    while ($row = $eventsStmt->fetch_assoc()) {
-        $announcements[] = [
-            'id' => $row['id'],
-            'pub_date' => date('M d, Y', strtotime($row['event_date'])),
-            'title' => $row['title'],
-            'body' => 'School Event',
-            'type' => 'event'
-        ];
-    }
-}
-
-// Sort all items by date (newest first)
-usort($announcements, function($a, $b) {
-    $dateA = strtotime($a['pub_date']);
-    $dateB = strtotime($b['pub_date']);
-    return $dateB - $dateA;
-});
-
-// Fallback static announcements if none loaded
-if (empty($announcements)) {
-    $announcements = [
-        ['pub_date' => 'Oct 20, 2025', 'title' => 'Parent-Teacher Conference', 'body' => 'All parents are invited to attend the conference on October 20 from 2:00 PM to 6:00 PM. Please sign up at the office.', 'type' => 'announcement'],
-        ['pub_date' => 'Oct 15, 2025', 'title' => 'School Fee Due Date Extended', 'body' => 'Due to recent circumstances, the school fee payment deadline has been extended to December 15, 2025.', 'type' => 'announcement'],
-        ['pub_date' => 'Oct 10, 2025', 'title' => 'New Library Extended Hours', 'body' => 'The library is now open from 7:00 AM to 7:00 PM on weekdays to support student study needs.', 'type' => 'announcement'],
-        ['pub_date' => 'Oct 05, 2025', 'title' => 'Quarterly Exam Schedule Released', 'body' => 'Q1 exams will be held from October 28 to November 8. Check the portal for your exam schedule.', 'type' => 'announcement'],
-    ];
-}
 
 function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
 ?>
@@ -131,23 +65,8 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
               <h3>Latest Announcements</h3>
             </div>
             <div class="card-body">
-              <ul class="ann-list" style="list-style:none;padding:0;">
-                <?php
-                  $upcomingEvents = $conn->query("SELECT event_date, title FROM school_events ORDER BY event_date DESC LIMIT 10");
-                  $eventCount = 0;
-                  
-                  if ($upcomingEvents) {
-                    while ($event = $upcomingEvents->fetch_assoc()) {
-                      $eventCount++;
-                      $eventDate = date('M d, Y', strtotime($event['event_date']));
-                      echo '<li style="padding:12px 0;border-bottom:1px solid #f0f0f0;"><strong>' . htmlspecialchars($eventDate) . '</strong> — 📅 ' . htmlspecialchars($event['title']) . '</li>';
-                    }
-                  }
-                  
-                  if ($eventCount === 0) {
-                    echo '<li style="padding:12px 0;color:#999;">No announcements at this time.</li>';
-                  }
-                ?>
+              <ul class="ann-list" style="list-style:none;padding:0;" id="announcement-list">
+                <li style="padding:12px 0;color:#999;">Loading announcements...</li>
               </ul>
             </div>
           </div>
@@ -159,6 +78,62 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
   </div>
 
   <script>
+    // Load announcements from API
+    function loadAnnouncements() {
+        fetch('api/announcements.php?action=list&audience=student')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('announcement-list');
+                list.innerHTML = '';
+                
+                if (!data.success || !data.announcements || data.announcements.length === 0) {
+                    list.innerHTML = '<li style="padding:12px 0;color:#999;">No announcements at this time.</li>';
+                    return;
+                }
+                
+                data.announcements.forEach(ann => {
+                    // Skip if no title
+                    if (!ann.title || ann.title.trim() === '') return;
+                    
+                    const li = document.createElement('li');
+                    li.style.cssText = 'padding:12px 0;border-bottom:1px solid #f0f0f0;';
+                    
+                    const icon = ann.type === 'event' ? '📅' : '📢';
+                    const date = ann.pub_date && ann.pub_date.trim() && ann.pub_date !== 'null' 
+                        ? escapeHtml(ann.pub_date) 
+                        : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    const title = ann.title ? escapeHtml(ann.title) : 'Untitled';
+                    
+                    li.innerHTML = `<strong>${date}</strong> — ${icon} ${title}`;
+                    list.appendChild(li);
+                });
+                
+                // If no valid announcements were added, show message
+                if (list.children.length === 0) {
+                    list.innerHTML = '<li style="padding:12px 0;color:#999;">No announcements at this time.</li>';
+                }
+            })
+            .catch(err => {
+                console.error('Error loading announcements:', err);
+                document.getElementById('announcement-list').innerHTML = '<li style="padding:12px 0;color:#999;">Error loading announcements.</li>';
+            });
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadAnnouncements);
+    
     const year = document.getElementById('year');
     if(year) year.textContent = new Date().getFullYear();
   </script>

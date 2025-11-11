@@ -352,14 +352,14 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     <!-- SIDEBAR -->
     <aside class="side">
       <nav class="nav">
-        <a href="teacher.php" class="active">Dashboard</a>
+        <a href="teacher.php">Dashboard</a>
         <a href="tprofile.php">Profile</a>
-        <a href="student_schedule.php">Schedule</a>      
+        <a href="student_schedule.php">Schedule</a>        
         <a href="attendance.php">Attendance</a>
         <a href="listofstudents.php">Lists of students</a>
         <a href="grades.php">Grades</a>
         <a href="school_calendar.php">School Calendar</a>
-        <a href="announcements.php">Announcements</a>
+        <a href="teacher-announcements.php">Announcements</a>
         <a href="teacherslist.php">Teachers</a>
         <a href="settings.php">Settings</a>
       </nav>
@@ -397,7 +397,11 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
         <div class="card">
           <div class="card-title">Announcements</div>
-          <div class="card-value" id="announcements">No new announcements</div>
+          <div class="card-value" id="announcements">
+            <ul style="list-style:none;padding:0;margin:0;" id="announcement-list">
+              <li style="color:#999;font-size:13px;">Loading announcements...</li>
+            </ul>
+          </div>
         </div>
       </section>
     </main>
@@ -443,10 +447,64 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     </footer>
 
     <script>
+      // Load announcements from API
+      function loadAnnouncements() {
+          fetch('../api/announcements.php?action=list&audience=teacher')
+              .then(res => res.json())
+              .then(data => {
+                  const list = document.getElementById('announcement-list');
+                  list.innerHTML = '';
+                  
+                  if (!data.success || !data.announcements || data.announcements.length === 0) {
+                      list.innerHTML = '<li style="color:#999;font-size:13px;">No announcements at this time.</li>';
+                      return;
+                  }
+                  
+                  // Show only latest 5 announcements on dashboard
+                  data.announcements.slice(0, 5).forEach(ann => {
+                      if (!ann.title || ann.title.trim() === '') return;
+                      
+                      const li = document.createElement('li');
+                      li.style.cssText = 'padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;';
+                      
+                      const icon = ann.type === 'event' ? '📅' : '📢';
+                      const date = ann.pub_date && ann.pub_date.trim() ? ann.pub_date : 'Today';
+                      const title = ann.title ? escapeHtml(ann.title) : 'Untitled';
+                      
+                      li.innerHTML = `<strong>${date}</strong><br>${icon} ${title}`;
+                      list.appendChild(li);
+                  });
+                  
+                  if (list.children.length === 0) {
+                      list.innerHTML = '<li style="color:#999;font-size:13px;">No announcements at this time.</li>';
+                  }
+              })
+              .catch(err => {
+                  console.error('Error loading announcements:', err);
+                  document.getElementById('announcement-list').innerHTML = '<li style="color:#999;font-size:13px;">Error loading announcements.</li>';
+              });
+      }
+      
+      // Helper function to escape HTML
+      function escapeHtml(text) {
+          if (!text) return '';
+          const map = {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#039;'
+          };
+          return text.replace(/[&<>"']/g, m => map[m]);
+      }
+
       // Update the year in the footer
       (function(){
         var yearEl = document.getElementById('year');
         if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+        // Load announcements on page load
+        loadAnnouncements();
 
         // Smooth scroll for section links (grade/section links)
         document.addEventListener('click', function(e){
