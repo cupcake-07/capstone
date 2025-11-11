@@ -65,6 +65,18 @@ $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS avatar LONGBLOB");
 // Add avg_score to persist per-student average
 $conn->query("ALTER TABLE students ADD COLUMN IF NOT EXISTS avg_score DECIMAL(5,2) NULL");
 
+// Check and create/alter students table for password reset functionality
+$check_columns = $conn->query("SHOW COLUMNS FROM students LIKE 'reset_token'");
+if ($check_columns->num_rows === 0) {
+    $alter_sql = "ALTER TABLE students ADD COLUMN reset_token VARCHAR(255) NULL, ADD COLUMN reset_token_expiry DATETIME NULL";
+    if ($conn->query($alter_sql) === TRUE) {
+        // Columns added successfully
+    } else {
+        // Handle error if needed
+        error_log("Error adding reset columns: " . $conn->error);
+    }
+}
+
 // Create tables if they don't exist
 $tables_sql = "
 
