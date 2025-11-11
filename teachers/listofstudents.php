@@ -268,6 +268,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
   </style>
 </head>
 <body>
+  <!-- NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
       <div class="navbar-logo">GGF</div>
@@ -279,8 +280,10 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../logout.php">
-          <img src="loginswitch.png" id="loginswitch" alt="login switch"/>
+        <a href="teacher-logout.php" class="logout-btn" title="Logout">
+          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+            Logout
+          </button>
         </a>
       </div>
     </div>

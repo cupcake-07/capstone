@@ -343,7 +343,14 @@ if ($result) {
         </div>
     </div>
     <div class="navbar-actions">
-        <div class="user-menu"><span>Teacher</span><a href="teacher-login.php"><img src="loginswitch.png" id="loginswitch" alt="Login Switch"></a></div>
+        <div class="user-menu">
+            <span><?php echo $user_name ?? 'Teacher'; ?></span>
+            <a href="teacher-logout.php" class="logout-btn" title="Logout">
+                <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+                    Logout
+                </button>
+            </a>
+        </div>
     </div>
 </nav>
 

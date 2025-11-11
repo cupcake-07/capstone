@@ -341,8 +341,11 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../logout.php">
-        <img src="loginswitch.png" id="loginswitch"></img></a>
+        <a href="teacher-logout.php" class="logout-btn" title="Logout">
+          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+            Logout
+          </button>
+        </a>
       </div>
     </div>
   </nav>

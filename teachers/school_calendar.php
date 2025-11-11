@@ -117,8 +117,10 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../logout.php">
-          <img src="loginswitch.png" id="loginswitch" alt="login switch"/>
+        <a href="teacher-logout.php" class="logout-btn" title="Logout">
+          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+            Logout
+          </button>
         </a>
       </div>
     </div>
@@ -172,25 +174,332 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
           <div class="day-name">Sat</div>
         </div>
 
-        <div class="events-management-card card">
-          <div class="card-title" style="color: var(--green);">Add New School Event</div>
-          <form id="add-event-form">
-            <input type="date" id="event-date" required>
-            <input type="text" id="event-title" placeholder="Event Title" required>
-            <button type="submit">Add Event</button>
-          </form>
-          <div id="message-box"></div>
-        </div>
-
-        <div class="events-list-card card">
-          <div class="card-title">School Events for 
-            <span id="select-date-display">Today</span>
+        <div class="calendar-content-wrapper">
+          <div class="events-management-card card">
+            <div class="card-title">📅 Add New School Event</div>
+            <form id="add-event-form" class="event-form">
+              <div class="form-group">
+                <input type="date" id="event-date" required>
+              </div>
+              <div class="form-group">
+                <input type="text" id="event-title" placeholder="Event Title" required>
+              </div>
+              <button type="submit" class="add-event-btn">
+                <span class="btn-icon">➕</span>
+                <span class="btn-text">Add Event</span>
+              </button>
+            </form>
+            <div id="message-box"></div>
           </div>
-          <ul id="events-lists">
-            <li>Loading events...</li>
-          </ul>
+
+          <div class="events-list-card card">
+            <div class="card-title">School Events for 
+              <span id="select-date-display">Today</span>
+            </div>
+            <ul id="events-lists">
+              <li>Loading events...</li>
+            </ul>
+          </div>
         </div>
       </section>
+
+      <style>
+        .calendar-container {
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .calendar-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24px;
+          padding: 0 16px;
+        }
+
+        .calendar-header h2 {
+          font-size: 24px;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 0;
+          flex: 1;
+          text-align: center;
+        }
+
+        .nav-button {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: #0f172a;
+        }
+
+        .nav-button:hover {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+
+        .calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 8px;
+          margin-bottom: 24px;
+          padding: 0 16px;
+          background: white;
+          padding: 16px;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .day-name {
+          font-weight: 700;
+          text-align: center;
+          padding: 12px 8px;
+          color: #64748b;
+          font-size: 13px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .calendar-day {
+          aspect-ratio: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          cursor: pointer;
+          background: white;
+          transition: all 0.2s;
+          position: relative;
+          font-weight: 600;
+          font-size: 14px;
+          color: #0f172a;
+        }
+
+        .calendar-day.empty {
+          background: #f8fafc;
+          cursor: default;
+          border: 1px solid #f0f0f0;
+        }
+
+        .calendar-day:hover:not(.empty) {
+          background: #f1f5f9;
+          border-color: #3b82f6;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+
+        .calendar-day.today {
+          background: #fef3c7;
+          border-color: #fbbf24;
+        }
+
+        .calendar-day.selected {
+          background: #3b82f6;
+          color: white;
+          border-color: #2563eb;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .calendar-day.has-event::after {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          width: 6px;
+          height: 6px;
+          background: #fbbf24;
+          border-radius: 50%;
+        }
+
+        .calendar-day.selected.has-event::after {
+          background: white;
+        }
+
+        .calendar-content-wrapper {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          padding: 0 16px;
+        }
+
+        .events-management-card,
+        .events-list-card {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+          border: 1px solid #e2e8f0;
+        }
+
+        .card-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: #0f172a;
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .event-form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .form-group input {
+          padding: 12px 14px;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 14px;
+          font-family: 'Inter', sans-serif;
+          transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .add-event-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 18px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 700;
+          font-size: 14px;
+          font-family: 'Inter', sans-serif;
+          transition: all 0.2s;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+
+        .add-event-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        .add-event-btn:active {
+          transform: translateY(0);
+        }
+
+        .btn-icon {
+          font-size: 16px;
+        }
+
+        .btn-text {
+          font-weight: 700;
+        }
+
+        #message-box {
+          padding: 12px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          display: none;
+          margin-top: 12px;
+          animation: slideIn 0.3s ease;
+        }
+
+        #message-box.message-success {
+          background: #d1fae5;
+          color: #065f46;
+          border: 1px solid #a7f3d0;
+        }
+
+        #message-box.message-error {
+          background: #fee2e2;
+          color: #991b1b;
+          border: 1px solid #fecaca;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        #events-lists {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        #events-lists li {
+          padding: 12px 14px;
+          background: #f8fafc;
+          border-radius: 8px;
+          border-left: 4px solid #3b82f6;
+          font-size: 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        #events-lists li:first-child {
+          color: #94a3b8;
+          font-style: italic;
+        }
+
+        .delete-event {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ef4444;
+          transition: all 0.2s;
+          margin-left: 8px;
+        }
+
+        .delete-event:hover {
+          color: #dc2626;
+          transform: scale(1.1);
+        }
+
+        @media (max-width: 900px) {
+          .calendar-content-wrapper {
+            grid-template-columns: 1fr;
+          }
+
+          .calendar-grid {
+            gap: 6px;
+          }
+
+          .calendar-day {
+            font-size: 12px;
+          }
+        }
+      </style>
     </main>
 
     <footer class="footer">© <span id="year">2025</span> Schoolwide Management System</footer>

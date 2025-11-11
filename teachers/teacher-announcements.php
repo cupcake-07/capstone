@@ -1,14 +1,20 @@
 <?php
-// filepath: c:\xampp\htdocs\capstone\teachers\teacher-announcements.php
-session_start();
+// Use a separate session name for teachers - MUST be first
+$_SESSION_NAME = 'TEACHER_SESSION';
+if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
+    session_start();
+}
 
-// Optional: Check if user is logged in (modify based on your auth system)
-// if (!isset($_SESSION['user_id'])) {
-//     header('Location: ../login.php');
-//     exit;
-// }
+require_once __DIR__ . '/../config/database.php';
 
-$teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
+// Redirect to login if not logged in as teacher
+if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
+    header('Location: teacher-login.php');
+    exit;
+}
+
+$user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,13 +23,75 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Announcements</title>
 
+    <link rel="stylesheet" href="teacher.css" />
     <link rel="stylesheet" href="announcement.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Override any announcement.css conflicts with teacher.css sidebar */
+        .side {
+            background: var(--primary-black);
+            width: var(--sidebar-width);
+            padding: 20px 0;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            position: fixed;
+            top: var(--navbar-height);
+            left: 0;
+            height: calc(100vh - var(--navbar-height));
+            z-index: 1000;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-right: 2px solid #FFD700;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-top: 28px;
+            margin-bottom: 28px;
+        }
+
+        .nav a {
+            padding: 14px 20px;
+            color: #999999;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .nav a:hover {
+            background: var(--secondary-black);
+            color: var(--primary-yellow);
+            border-left-color: var(--primary-yellow);
+        }
+
+        .nav a.active {
+            background: var(--secondary-black);
+            color: var(--primary-yellow);
+            border-left-color: var(--primary-yellow);
+        }
+
+        .side-foot {
+            padding: 16px 20px;
+            color: #777777;
+            font-size: 12px;
+            border-top: 1px solid var(--secondary-black);
+            margin-top: 20px;
+        }
+
+        .side-foot strong {
+            color: #ffffff;
+        }
+    </style>
         
 </head>
 <body>
-    <!--Top Navar-->
+    <!--Top Navbar-->
     <nav class="navbar">
         <div class="navbar-brand">
             <div class="navbar-logo">GGF</div>
@@ -34,9 +102,11 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
         </div>
         <div class="navbar-actions">
             <div class="user-menu">
-                <span><?php echo htmlspecialchars($teacher_name); ?></span>
-                <a href="logout.php">
-                    <img src="loginswitch.png" id="loginswitch"></img>
+                <span><?php echo $user_name; ?></span>
+                <a href="teacher-logout.php" class="logout-btn" title="Logout">
+                    <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
+                        Logout
+                    </button>
                 </a>
             </div>
         </div>
@@ -44,7 +114,7 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
 
     <!--Main Page Container-->
     <div class="page-wrapper">
-        <!--Side Bar-->
+        <!--Sidebar-->
         <aside class="side">
             <nav class="nav">
                 <a href="teacher.php">Dashboard</a>
@@ -58,7 +128,7 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                 <a href="teacherslist.php">Teachers</a>
                 <a href="settings.php">Settings</a>
             </nav>
-            <div class="side-foot">Logged in as <strong><?php echo htmlspecialchars($teacher_name); ?></strong></div>
+            <div class="side-foot">Logged in as <strong>Teacher</strong></div>
         </aside>
         
         <!--Main Content-->
@@ -118,6 +188,7 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
 
             <button type="button" id="add-announcement-btn" class="announcement-button" onclick="showModal()">+</button>
         </main>
+        
         <div id="announcement-modal" class="modal">
             <div class="modal-content">
                 <span class="close-btn" onclick="hideModal()">&times;</span>
@@ -151,7 +222,7 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                         <label for="content">Content</label>
                         <textarea id="content" required></textarea>
                     </div>
-                    <div class="form-actions"></div>
+                    <div class="form-actions">
                         <button type="button" onclick="hideModal()">Cancel</button>
                         <button type="submit" id="submit-btn">Post Announcement</button>
                     </div>
@@ -196,15 +267,15 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                 </div>
             </div>
             <div class="footer-bottom">
-                    <p>&copy; 2025 Glorious God Family Christian School. All rights reserved.</p>
-                    <div class="footer-links">
-                        <a href="privacy.html">Privacy Policy</a> |
-                        <a href="terms.html">Terms of Service</a>
-                    </div>
-                <div class="copyright">© <span id="year">2025</span> Schoolwide Management System</div>
+                <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="privacy.php">Privacy Policy</a> |
+                    <a href="terms.php">Terms of Service</a>
+                </div>
             </div>
         </footer>
     </div>
+
     <script>
         // Modal handling functions
         function showModal() {
@@ -321,6 +392,10 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
 
         // Form submission handling
         document.addEventListener('DOMContentLoaded', function() {
+            // Update year in footer
+            var yearEl = document.getElementById('year');
+            if (yearEl) yearEl.textContent = new Date().getFullYear();
+
             // Load announcements on page load
             loadAnnouncements();
 
@@ -350,7 +425,6 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                         alert('Announcement posted successfully!');
                         hideModal();
                         form.reset();
-                        // Reload announcements instead of full page reload
                         loadAnnouncements();
                     } else {
                         alert('Error: ' + (result.message || 'Unknown error'));
@@ -374,36 +448,6 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
 
             function normalize(str){ return (str || '').toString().toLowerCase(); }
 
-            function parseItemDate(li){
-                // Prefer data-date attribute if available
-                const dataAttr = li.getAttribute('data-date');
-                if (dataAttr) {
-                    const d = new Date(dataAttr);
-                    if (!isNaN(d)) return d;
-                }
-                // Fallback to visible date text
-                const dateEl = li.querySelector('.announcement-date, .item-meta time, .item-meta .date');
-                if (dateEl) {
-                    const d = new Date(dateEl.textContent.trim());
-                    if (!isNaN(d)) return d;
-                }
-                return null;
-            }
-
-            function getItemTag(li){
-                const tagEl = li.querySelector('.announcement-tag, .item-tag');
-                if (!tagEl) return '';
-                return normalize(tagEl.textContent);
-            }
-
-            function getItemText(li){
-                const titleEl = li.querySelector('.item-title, .announcement-title, strong');
-                const contentEl = li.querySelector('.item-content, .announcement-content');
-                const titleText = titleEl ? titleEl.textContent : '';
-                const contentText = contentEl ? contentEl.textContent : '';
-                return normalize(titleText + ' ' + contentText);
-            }
-
             function applyFilters(){
                 const query = normalize(textInput.value);
                 const tag = normalize(tagSelect.value);
@@ -416,19 +460,16 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                 items.forEach(li => {
                     let visible = true;
                     
-                    // Text filter - search in title and all text content
                     if (query) {
                         const titleEl = li.querySelector('strong');
                         const titleText = titleEl ? normalize(titleEl.textContent) : '';
                         if (!titleText.includes(query)) visible = false;
                     }
                     
-                    // Tag/Visibility filter
                     if (visible && tag) {
                         const badgeEl = li.querySelector('span[style*="background"]');
                         const badgeText = badgeEl ? normalize(badgeEl.textContent) : '';
                         
-                        // Map tag values to badge text
                         let shouldMatch = false;
                         if (tag === 'all') {
                             shouldMatch = true;
@@ -449,7 +490,6 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                         if (!shouldMatch) visible = false;
                     }
                     
-                    // Date filter
                     if (visible && (fromVal || toVal)) {
                         const dateText = li.querySelector('div[style*="color:#666"]')?.textContent.trim();
                         if (dateText) {
@@ -495,7 +535,6 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
             });
             
             applyBtn?.addEventListener('click', () => {
-                // Remove empty message before applying filters
                 const emptyMsg = document.querySelector('.empty-filter-msg');
                 if (emptyMsg) emptyMsg.remove();
                 applyFilters();
@@ -506,7 +545,6 @@ $teacher_name = $_SESSION['teacher_name'] ?? 'Teacher';
                 tagSelect.value = '';
                 fromInput.value = '';
                 toInput.value = '';
-                // Remove empty message
                 const emptyMsg = document.querySelector('.empty-filter-msg');
                 if (emptyMsg) emptyMsg.remove();
                 applyFilters();
