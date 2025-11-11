@@ -1,8 +1,8 @@
 :root {
         --bg: #f6f8fb;
-        --panel: #0d1114;
-        --green: #7b917a;
-        --yellow: #dada18;
+        --panel: #1a1a1a;
+        --green: #FFD700;
+        --yellow: #FFD700;
         --muted: #6b7280;
         --card: #ffffff;
         --border: #e6e9ef;
@@ -11,7 +11,6 @@
         --shadow-md: 0 10px 30px rgba(11, 17, 24, 0.06);
         --shadow-lg: 0 20px 50px rgba(2, 6, 23, 0.12);
         font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-        /* Updated values for fixed layout */
         --sidebar-width: 280px; 
         --navbar-height: 64px;
     }
@@ -42,14 +41,15 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+        background: linear-gradient(90deg, #0d0d0d 0%, #000000 100%);
         color: white;
         padding: 16px 24px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         position: sticky;
         top: 0;
         z-index: 100;
         height: var(--navbar-height);
+        border-bottom: 2px solid #FFD700;
     }
 
     .navbar-brand {
@@ -63,14 +63,15 @@
     .navbar-logo {
         width: 48px;
         height: 48px;
-        background: var(--accent);
+        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
         border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
         font-size: 24px;
-        color: white;
+        color: #000000;
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
     }
 
     .navbar-text {
@@ -88,7 +89,7 @@
         font-size: 12px;
         opacity: 0.8;
         margin: 0;
-        color: var(--muted);
+        color: #FFD700;
     }
 
     .navbar-actions {
@@ -127,13 +128,13 @@
 
     .side {
         width: var(--sidebar-width);
-        background: linear-gradient(180deg, var(--sidebar), #00121a);
+        background: #0d0d0d;
         color: #fff;
         padding: 20px;
         display: flex;
         flex-direction: column;
         gap: 16px;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.4);
         overflow-y: auto;
         position: fixed; 
         top: var(--navbar-height);
@@ -143,6 +144,7 @@
         transition: all 0.3s ease;
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
+        border-right: 2px solid #FFD700;
     }
 
     .brand {
@@ -156,14 +158,14 @@
         width: 56px;
         height: 56px;
         border-radius: 12px;
-        background: linear-gradient(135deg, var(--green) 0, var(--yellow) 100%);
+        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        color: black;
+        color: #000000;
         font-size: 18px;
-        box-shadow: 0 8px 24px rgba(15, 17, 20, 0.2);
+        box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
     }
     
     .brand-text {
@@ -202,18 +204,17 @@
     }
     
     .nav a:hover {
-        background: var(--hover-yellow);
-        color: var(--hover-text);
+        background: rgba(255, 215, 0, 0.15); 
+        color: #FFD700;
         font-weight: 700;
         border-radius: 10px;
     }
     
     .nav a.active {
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
+        background: #FFD700;
+        color: #000000;
         font-weight: 600;
-        border-left: 3px solid var(--accent);
-        padding-left: 11px;
+        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
     }
 
     .side-foot {
@@ -306,10 +307,11 @@
 
     /* ===== FOOTER ===== */
     .footer {
-        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        background: #0d0d0d;
         color: #fff;
         padding: 40px 24px 20px;
         margin-top: auto;
+        border-top: 2px solid #FFD700;
     }
     
     .footer-content {
@@ -522,8 +524,8 @@
         color: var(--panel);
     }
     .nav-button {
-        background-color: var(--panel);
-        color: white;
+        background-color: #FFD700;
+        color: #000000;
         border: none;
         padding: 10px 15px;
         border-radius: 8px;
@@ -532,7 +534,7 @@
         transition: background-color 0.2s, transform 0.1s;
     }
     .nav-button:hover {
-        background-color: #1e242d;
+        background-color: #FFC700;
         transform: translateY(-1px);
     }
     .calendar-grid {
