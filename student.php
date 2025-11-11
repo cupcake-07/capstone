@@ -1,6 +1,8 @@
 <?php
-// Start session with default name for students
+// Use same session name as login.php
+$_SESSION_NAME = 'STUDENT_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 

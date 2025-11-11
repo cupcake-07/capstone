@@ -1,5 +1,5 @@
 <?php
-// Use a separate session name for teachers
+// Use a separate session name for teachers - MUST be first
 $_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
     session_name($_SESSION_NAME);
@@ -341,7 +341,7 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../login.php">
+        <a href="../logout.php">
         <img src="loginswitch.png" id="loginswitch"></img></a>
       </div>
     </div>

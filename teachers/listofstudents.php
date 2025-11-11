@@ -1,13 +1,16 @@
 <?php
+// Use a separate session name for teachers
+$_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 
 require_once __DIR__ . '/../config/database.php';
 
-// Redirect to login if not logged in
-if (empty($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+// Redirect to login if not logged in as teacher
+if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher') {
+    header('Location: teacher-login.php');
     exit;
 }
 
@@ -276,7 +279,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="../login.php">
+        <a href="../logout.php">
           <img src="loginswitch.png" id="loginswitch" alt="login switch"/>
         </a>
       </div>

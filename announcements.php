@@ -1,5 +1,8 @@
 <?php
+// Ensure same session name as login.php
+$_SESSION_NAME = 'STUDENT_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
     session_start();
 }
 
@@ -9,6 +12,8 @@ if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+$name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
 
 $announcements = [];
 
@@ -92,6 +97,7 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
       <div class="navbar-logo">GGF</div>
@@ -102,48 +108,48 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
     </div>
     <div class="navbar-actions">
       <div class="user-menu">
-        <span>Student</span>
+        <span><?php echo $name; ?></span>
         <button class="btn-icon">⋮</button>
       </div>
     </div>
   </nav>
 
+  <!-- MAIN PAGE CONTAINER -->
   <div class="page-wrapper">
     <?php include __DIR__ . '/includes/student-sidebar.php'; ?>
 
+    <!-- MAIN CONTENT -->
     <main class="main">
       <header class="header">
-        <h1>Announcements</h1>
+        <h1>Announcements & Events</h1>
       </header>
 
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">
-          <div class="card announcements">
-            <h3>📢 Latest News, Updates & School Events</h3>
-            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">All announcements and events are visible to all students.</p>
-            
-            <?php if (!empty($announcements)): ?>
-              <?php foreach ($announcements as $item): ?>
-                <div class="ann-item" style="padding:16px 0;border-bottom:1px solid var(--border);">
-                  <div class="ann-date" style="margin-bottom:8px; display: flex; align-items: center; gap: 10px;">
-                    <strong><?php echo esc($item['pub_date']); ?></strong>
-                    <?php if (isset($item['type']) && $item['type'] === 'event'): ?>
-                      <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">📅 EVENT</span>
-                    <?php else: ?>
-                      <span style="background:#f3f3f3;color:#666;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">📋 ANNOUNCEMENT</span>
-                    <?php endif; ?>
-                  </div>
-                  <div class="ann-content">
-                    <h4 style="margin:6px 0;font-size:16px;"><?php echo esc($item['title']); ?></h4>
-                    <p style="margin:6px 0;color:#555;line-height:1.5;"><?php echo esc($item['body']); ?></p>
-                  </div>
-                </div>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <div style="text-align: center; padding: 40px 20px; color: #999;">
-                <p style="font-size: 14px;">No announcements or events at this time.</p>
-              </div>
-            <?php endif; ?>
+          <div class="card large">
+            <div class="card-head">
+              <h3>Latest Announcements</h3>
+            </div>
+            <div class="card-body">
+              <ul class="ann-list" style="list-style:none;padding:0;">
+                <?php
+                  $upcomingEvents = $conn->query("SELECT event_date, title FROM school_events ORDER BY event_date DESC LIMIT 10");
+                  $eventCount = 0;
+                  
+                  if ($upcomingEvents) {
+                    while ($event = $upcomingEvents->fetch_assoc()) {
+                      $eventCount++;
+                      $eventDate = date('M d, Y', strtotime($event['event_date']));
+                      echo '<li style="padding:12px 0;border-bottom:1px solid #f0f0f0;"><strong>' . htmlspecialchars($eventDate) . '</strong> — 📅 ' . htmlspecialchars($event['title']) . '</li>';
+                    }
+                  }
+                  
+                  if ($eventCount === 0) {
+                    echo '<li style="padding:12px 0;color:#999;">No announcements at this time.</li>';
+                  }
+                ?>
+              </ul>
+            </div>
           </div>
         </section>
       </section>
@@ -152,6 +158,9 @@ function esc($s){ return htmlspecialchars($s ?? '', ENT_QUOTES); }
     </main>
   </div>
 
-  <script> (function(){ const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear(); })(); </script>
+  <script>
+    const year = document.getElementById('year');
+    if(year) year.textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>

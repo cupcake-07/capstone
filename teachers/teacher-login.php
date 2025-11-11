@@ -1,5 +1,5 @@
 <?php
-// Use a separate session name for teachers
+// Use a separate session name for teachers - MUST be before session_start()
 $_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
     session_name($_SESSION_NAME);

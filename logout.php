@@ -1,39 +1,63 @@
 <?php
 require_once 'config/database.php';
 
-// Get logout type from URL parameter
-$type = isset($_GET['type']) && $_GET['type'] === 'admin' ? 'admin' : 'student';
+// Determine which session to destroy based on referrer or session name
+$isTeacher = false;
 
-// Set the correct session name BEFORE session_start
-if ($type === 'admin') {
-    session_name('ADMIN_SESSION');
+// Check if we're coming from teacher area
+if (strpos($_SERVER['HTTP_REFERER'] ?? '', '/teachers/') !== false) {
+    $isTeacher = true;
 }
-// else: use default PHP session name for students
 
-// Start the session
+// Try to detect based on active session
 if (session_status() === PHP_SESSION_NONE) {
+    // Try teacher session first
+    session_name('TEACHER_SESSION');
     session_start();
+    if (!empty($_SESSION['user_type']) && $_SESSION['user_type'] === 'teacher') {
+        $isTeacher = true;
+    } else {
+        session_destroy();
+        // Switch to student session
+        session_name('STUDENT_SESSION');
+        session_start();
+    }
+} else {
+    $isTeacher = ($_SESSION['user_type'] ?? '') === 'teacher';
 }
 
-// Get current session name for proper cookie deletion
-$currentSessionName = session_name();
-
-// Clear all session variables
-$_SESSION = [];
-
-// Delete the session cookie
-if (isset($_COOKIE[$currentSessionName])) {
-    setcookie($currentSessionName, '', time() - 3600, '/');
-}
-
-// Destroy the session
+// Destroy the active session
 session_destroy();
 
 // Redirect to appropriate login page
-if ($type === 'admin') {
-    header('Location: admin-login.php');
-} else {
-    header('Location: login.php');
+$redirectUrl = $isTeacher ? 'teachers/teacher-login.php' : 'login.php';
+header('Location: ' . $redirectUrl);
+exit;
+?>
+<?php
+// Use same session name as login.php
+$_SESSION_NAME = 'STUDENT_SESSION';
+if (session_status() === PHP_SESSION_NONE) {
+    session_name($_SESSION_NAME);
+    session_start();
 }
+
+// Clear all session data
+$_SESSION = [];
+
+// Delete session cookie
+if (ini_get("session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params["path"], $params["domain"],
+        $params["secure"], $params["httponly"]
+    );
+}
+
+// Destroy session
+session_destroy();
+
+// Redirect to login
+header('Location: login.php');
 exit;
 ?>
