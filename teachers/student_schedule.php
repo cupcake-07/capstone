@@ -453,7 +453,7 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
             <a href="teacher.php">Dashboard</a>
             <a href="tprofile.php">Profile</a>
             <a href="student_schedule.php" class="active">Schedule</a>
-            <a href="attendance.php">Attendance</a>
+            
             <a href="listofstudents.php">Lists of students</a>
             <a href="grades.php">Grades</a>
             <a href="school_calendar.php">School Calendar</a>

@@ -284,7 +284,7 @@ $quarters = [1, 2, 3, 4];
         <a href="teacher.php">Dashboard</a>
         <a href="tprofile.php">Profile</a>
         <a href="student_schedule.php">Schedule</a>
-        <a href="attendance.php">Attendance</a>
+        
         <a href="listofstudents.php">Lists of students</a>
         <a href="grades.php" class="active">Grades</a>
         <a href="school_calendar.php">School Calendar</a>

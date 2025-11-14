@@ -32,8 +32,7 @@ $totalStudents = $totalStudentsResult->fetch_assoc()['count'];
 $totalTeachersResult = $conn->query("SELECT COUNT(*) as count FROM teachers");
 $totalTeachers = $totalTeachersResult->fetch_assoc()['count'];
 
-$totalClassesResult = $conn->query("SELECT COUNT(*) as count FROM classes");
-$totalClasses = $totalClassesResult->fetch_assoc()['count'];
+$totalSubjects = 8;
 
 // Calculate average GPA
 $avgGpaResult = $conn->query("SELECT AVG(score) as avg_gpa FROM grades");
@@ -44,9 +43,8 @@ $avgGpa = number_format($avgGpa, 2);
 $attendanceResult = $conn->query("
     SELECT 
         DATE(created_at) as date,
-        COUNT(*) as total_records,
-        SUM(CASE WHEN score > 0 THEN 1 ELSE 0 END) as present
-    FROM grades
+        COUNT(*) as teacher_count
+    FROM teachers
     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     GROUP BY DATE(created_at)
     ORDER BY date ASC
@@ -56,8 +54,7 @@ $attendanceLabels = [];
 if ($attendanceResult && $attendanceResult->num_rows > 0) {
     while ($row = $attendanceResult->fetch_assoc()) {
         $attendanceLabels[] = date('m/d/Y', strtotime($row['date']));
-        $rate = $row['total_records'] > 0 ? ($row['present'] / $row['total_records']) * 100 : 0;
-        $attendanceData[] = round($rate, 1);
+        $attendanceData[] = (int)$row['teacher_count'];
     }
 } else {
     $attendanceLabels = [];
@@ -104,6 +101,15 @@ $allStudents = [];
 if ($allStudentsResult) {
     while ($row = $allStudentsResult->fetch_assoc()) {
         $allStudents[] = $row;
+    }
+}
+
+// Fetch recent teachers
+$recentTeachersResult = $conn->query("SELECT id, name, email, subject, phone FROM teachers ORDER BY created_at DESC LIMIT 5");
+$recentTeachers = [];
+if ($recentTeachersResult) {
+    while ($row = $recentTeachersResult->fetch_assoc()) {
+        $recentTeachers[] = $row;
     }
 }
 
@@ -158,14 +164,14 @@ $user = getAdminSession();
 					<div class="card-value" id="avgGpa"><?php echo $avgGpa; ?></div>
 				</div>
 				<div class="card">
-					<div class="card-title">Attendance Rate</div>
-					<div class="card-value" id="attendanceRate"><?php echo $attendanceRate; ?>%</div>
+					<div class="card-title">Total Subjects</div>
+					<div class="card-value" id="totalSubjects"><?php echo $totalSubjects; ?></div>
 				</div>
 			</section>
 
 			<section class="charts-container">
 				<div class="chart-box">
-					<h2>Attendance (last 7 days)</h2>
+					<h2>Teachers Registered (last 7 days)</h2>
 					<canvas id="attendanceChart"></canvas>
 				</div>
 				<div class="chart-box">
@@ -214,12 +220,13 @@ $user = getAdminSession();
 				</table>
 			</section>
 
-			<section class="data-table" id="teachers">
-				<h2>Teachers</h2>
+			<section class="data-table" id="recent-teachers">
+				<h2>Recent Teachers</h2>
 				<div class="table-actions">
-					<button onclick="window.location.href='admin/teachers.php'" class="btn-primary">Manage Teachers</button>
+					<p style="color: #666; font-size: 13px; margin: 0;">Showing latest 5 teachers</p>
+					<a href="admin/teachers.php" class="btn-primary">Manage All Teachers</a>
 				</div>
-				<table id="teachersTable">
+				<table id="recentTeachersTable">
 					<thead>
 						<tr>
 							<th>ID</th>
@@ -227,11 +234,22 @@ $user = getAdminSession();
 							<th>Email</th>
 							<th>Subject</th>
 							<th>Phone</th>
-							<th>Actions</th>
 						</tr>
 					</thead>
-					<tbody id="teachersBody">
-						<tr><td colspan="6">Loading...</td></tr>
+					<tbody>
+						<?php if (!empty($recentTeachers)): ?>
+							<?php foreach ($recentTeachers as $teacher): ?>
+								<tr>
+									<td><?php echo htmlspecialchars($teacher['id']); ?></td>
+									<td><?php echo htmlspecialchars($teacher['name']); ?></td>
+									<td><?php echo htmlspecialchars($teacher['email']); ?></td>
+									<td><?php echo htmlspecialchars($teacher['subject'] ?? 'N/A'); ?></td>
+									<td><?php echo htmlspecialchars($teacher['phone'] ?? 'N/A'); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						<?php else: ?>
+							<tr><td colspan="5" style="text-align: center; padding: 20px;">No teachers registered yet</td></tr>
+						<?php endif; ?>
 					</tbody>
 				</table>
 			</section>
@@ -353,7 +371,7 @@ $user = getAdminSession();
 		data: {
 			labels: <?php echo json_encode($attendanceLabels); ?>,
 			datasets: [{
-				label: 'Attendance Rate (%)',
+				label: 'Teachers Registered',
 				data: <?php echo json_encode($attendanceData); ?>,
 				borderColor: '#4A90E2',
 				backgroundColor: 'rgba(74, 144, 226, 0.1)',
@@ -377,7 +395,6 @@ $user = getAdminSession();
 			scales: {
 				y: {
 					beginAtZero: true,
-					max: 100,
 					ticks: {
 						callback: function(value) {
 							return value;

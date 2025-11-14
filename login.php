@@ -28,6 +28,7 @@ require_once 'config/email.php';
 $error_message = '';
 $flash_success = $_SESSION['flash_success'] ?? '';
 $reset_link = $_SESSION['reset_link'] ?? '';
+$reset_email_session = $_SESSION['reset_email'] ?? '';
 
 // Don't unset yet - we need them in the HTML
 // unset($_SESSION['flash_success']);
@@ -118,8 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
         if ($stmt->num_rows > 0) {
             $reset_token = bin2hex(random_bytes(32));
             $token_hash = hash('sha256', $reset_token);
-            
-            // Set expiry to 24 hours from now (more time for testing)
             $expiry = date('Y-m-d H:i:s', time() + (24 * 60 * 60));
             
             $upd = $conn->prepare("UPDATE students SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
@@ -128,7 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
             if ($upd->execute()) {
                 sendPasswordResetEmail($reset_email, $reset_token);
                 $_SESSION['flash_success'] = 'Password reset link generated!';
-                $_SESSION['reset_link'] = 'http://localhost/capstone/reset_password.php?token=' . $reset_token;
+                // include email in link for modal and server-side verification
+                $_SESSION['reset_link'] = 'http://localhost/capstone/reset_password.php?token=' . $reset_token . '&email=' . urlencode($reset_email);
+                $_SESSION['reset_email'] = $reset_email;
                 header('Location: login.php');
                 exit;
             } else {
@@ -138,7 +139,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
             }
             $upd->close();
         } else {
-            $_SESSION['flash_success'] = 'If email exists, reset link sent!';
+            // keep response generic to prevent enumeration, do NOT set reset_link/reset_email
+            $_SESSION['flash_success'] = 'If the email is registered, a reset link was sent.';
             header('Location: login.php');
             exit;
         }
@@ -151,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     $password = $_POST['new_password'] ?? '';
     $password_confirm = $_POST['confirm_password'] ?? '';
     $token = $_POST['reset_token'] ?? '';
+    $reset_email_post = strtolower(trim($_POST['reset_email'] ?? ''));
     
     if (empty($password) || empty($password_confirm)) {
         $error_message = 'All fields required.';
@@ -158,25 +161,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         $error_message = 'Passwords do not match.';
     } elseif (strlen($password) < 6) {
         $error_message = 'Password must be at least 6 characters.';
+    } elseif (empty($token) || empty($reset_email_post)) {
+        $error_message = 'Invalid reset request.';
     } else {
         $token_hash = hash('sha256', $token);
         
-        $stmt = $conn->prepare("SELECT id FROM students WHERE reset_token = ? AND reset_token_expiry > NOW()");
-        $stmt->bind_param('s', $token_hash);
+        // Verify token + email + expiry
+        $stmt = $conn->prepare("SELECT id FROM students WHERE reset_token = ? AND email = ? AND reset_token_expiry > NOW() LIMIT 1");
+        $stmt->bind_param('ss', $token_hash, $reset_email_post);
         $stmt->execute();
         $stmt->store_result();
         
         if ($stmt->num_rows > 0) {
             $new_password_hash = password_hash($password, PASSWORD_BCRYPT);
-            $upd = $conn->prepare("UPDATE students SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ?");
-            $upd->bind_param('ss', $new_password_hash, $token_hash);
+            $upd = $conn->prepare("UPDATE students SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ? AND email = ?");
+            $upd->bind_param('sss', $new_password_hash, $token_hash, $reset_email_post);
             
             if ($upd->execute()) {
-                $_SESSION['flash_success'] = '✓ Password reset successful! Please log in.';
+                $_SESSION['flash_success'] = 'Password reset successful! Please log in.';
                 header('Location: login.php');
                 exit;
             } else {
-                $error_message = 'Failed to reset password.';
+                $error_message = 'Failed to reset password. Try again.';
             }
             $upd->close();
         } else {
@@ -268,10 +274,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                 <div class="message-box success-message"><?php echo htmlspecialchars($flash_success); ?></div>
                 <?php if ($reset_link): 
                     $token = substr($reset_link, strpos($reset_link, 'token=') + 6);
+                    $reset_email_display = $reset_email_session;
                 ?>
                     <div class="message-box success-message" style="padding: 15px;">
                         <strong>✓ Reset Link Generated:</strong><br><br>
-                        <button type="button" onclick="openResetPasswordModal('<?php echo htmlspecialchars($token); ?>')" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: auto;">
+                        <button type="button" onclick="openResetPasswordModal('<?php echo htmlspecialchars($token); ?>','<?php echo htmlspecialchars($reset_email_display); ?>')" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: auto;">
                             Click Here to Reset Password
                         </button>
                     </div>
@@ -280,6 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                 // Now unset after using them
                 unset($_SESSION['flash_success']);
                 unset($_SESSION['reset_link']);
+                unset($_SESSION['reset_email']);
                 ?>
             <?php endif; ?>
             <?php if ($error_message && isset($_POST['login'])): ?>
@@ -350,6 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         </div>
         <form method="POST" class="reset-modal-form">
             <input type="hidden" name="reset_token" id="resetTokenInput" value=""/>
+            <input type="hidden" name="reset_email" id="resetEmailInput" value=""/>
             <div class="infield">
                 <input type="password" placeholder="New Password (min 6 chars)" name="new_password" required/>
             </div>
@@ -376,13 +385,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         document.getElementById('forgotPasswordModal').classList.remove('active');
     }
 
-    function openResetPasswordModal(token) {
+    function openResetPasswordModal(token, email) {
         document.getElementById('resetTokenInput').value = token;
+        document.getElementById('resetEmailInput').value = email || '';
         document.getElementById('resetPasswordModal').classList.add('active');
     }
 
     function closeResetPasswordModal() {
         document.getElementById('resetPasswordModal').classList.remove('active');
+        document.getElementById('resetTokenInput').value = '';
+        document.getElementById('resetEmailInput').value = '';
     }
 
     window.onclick = function(event) {
