@@ -3,7 +3,7 @@
   --card:#ffffff;
   --muted:#6b7280;
   --accent:#3b82f6;
-  --sidebar:#070707;
+  --sidebar:#bd1212;
   --sidebar-end:#0b0b0b;
   --text:#0f1724;
   --hover-yellow: #f5c518;
@@ -23,7 +23,7 @@ html,body {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #f5f7fa;
+  background-color: #104eaa;
   color: #333;
 }
 
@@ -137,7 +137,7 @@ body {
 }
 
 .side .nav a:hover {
-  background-color: rgba(245, 197, 24, 0.06);
+  background-color: rgba(255, 200, 0, 0.06);
   color: var(--hover-yellow);
   border-left-color: var(--hover-yellow);
   padding-left: 25px;
