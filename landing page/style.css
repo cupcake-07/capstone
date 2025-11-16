@@ -12,6 +12,11 @@ html {
 }
 body {
 	overflow-x: hidden;
+	/* improved global font */
+	font-family: 'Montserrat', 'Segoe UI', Tahoma, sans-serif;
+	font-size: 16px;
+	color: #222;
+	line-height: 1.6;
 }
 a {
 	text-decoration: none;
@@ -70,6 +75,59 @@ ul {
 }
 .welcome button:hover {
 	background: rgba(214, 22, 22, .9);
+}
+
+/* Hide legacy floating side-link if present */
+.side-link {
+    display: none;
+}
+
+/* CTA wrapper inside header content */
+.header .content .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+/* Facebook button next to the Inquire Now button */
+.header .content .fb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #1877f2; /* Facebook blue */
+    color: #fff;
+    font-size: 18px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+/* hover/focus effect */
+.header .content .fb-btn:hover,
+.header .content .fb-btn:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(3, 74, 153, 0.25);
+    opacity: 0.95;
+}
+
+/* On small screens stack the CTA controls */
+@media (max-width: 780px) {
+    .header .content .cta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* left align in narrow layout */
+        gap: 8px;
+    }
+    .header .content .fb-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+    }
 }
 
 /* Side link (floating icons) */
@@ -332,9 +390,31 @@ ul {
 	align-items: flex-start;
 }
 .about-section .sub .para {
-	width: 800px;
-	height: auto;
-	margin: 40px 0 30px;
+	/* improved font: Montserrat for consistency, slightly larger base size */
+	font-family: 'Montserrat', 'Segoe UI', Tahoma, sans-serif;
+	font-size: 18px;            /* slight enlargement */
+	line-height: 1.75;          /* more comfortable leading for readability */
+	color: #2f4f4f;             /* retain existing color tone */
+	font-weight: 400;           /* smooth, readable weight */
+	letter-spacing: 0.2px;      /* small letter spacing for clarity */
+	width: 100%;
+	max-width: 85ch;
+	margin: 8px 0;              /* slightly reduced vertical gap so it doesn't look too spaced */
+	padding: 0;
+	box-sizing: border-box;
+	align-self: center;
+}
+
+/* Ensure each paragraph inherits the spacing and remains readable */
+.about-section .sub .para p {
+	font-size: inherit;         /* use the parent .para font-size */
+	line-height: inherit;       /* use the parent line-height */
+	margin-top: 12px;           /* gentle spacing between paragraphs */
+	margin-bottom: 0;
+	color: inherit;
+	hyphens: auto;              /* optional: nicer wrapping on long words */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 .about-section .sub .video-box {
 	width: 550px;
@@ -454,13 +534,13 @@ ul {
 .career-section {
 	width: 100%;
 	height: auto;
-	background: #bfbbd7;
+	background: #d5aae6;
 	padding: 30px 0 50px;
 	text-align: center;
 }
 .career-section h1 {
 	padding: 30px;
-	color: navy;
+	color: rgb(22, 22, 32);
 }
 .career-section p {
 	margin: 30px 0;
@@ -523,7 +603,7 @@ ul {
 	font-size: 38px;
 }
 .career-section .sect .box h2 {
-	margin-top: 15px;
+	margin: 15px 0;
 	padding: 5px;
 	color: #000;
 	display: block;
@@ -544,7 +624,7 @@ ul {
 	margin: 0;
 	color: #fff;
 	text-align: center;
-	background: linear-gradient(rgba(12, 112, 154, .9), rgba(73, 21, 143, .9)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
+	background: linear-gradient(rgba(12, 112, 154, .9), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
 }
 .skill-section h1 {
 	padding: 6px 30px;
@@ -654,42 +734,70 @@ ul {
 	width: 100%;
 	height: auto;
 	background: #f5f5f5;
-	padding: 50px 0 60px;
+	padding: 50px 18px 80px;      /* increase bottom padding for breathing room */
 	text-align: center;
-	color: #fff;
+	color: #333;                  /* readable text color */
 	display: block;
 }
 .how h1 {
-	color: navy;
-	margin-bottom: 40px;
+	color: #0b3a5b;               /* darker, school-friendly header */
+	font-family: 'Montserrat', sans-serif;
+	margin-bottom: 30px;
+	font-weight: 700;
+	font-size: 2rem;
 }
 .how .box {
-	width: 260px;
-	height: 250px;
+	width: 300px;                 /* slightly larger to avoid cramped text */
+	min-width: 240px;
+	height: auto;
 	background: #fff;
-	margin: 17px 30px;
-	padding: 20px 12px;
+	margin: 18px;                 /* more breathing room */
+	padding: 22px 18px;
 	text-align: center;
 	cursor: pointer;
-	box-shadow: 0 0 10px 2px rgba(0, 0, 0, .3);
-	transition: .3s;
-	transform: scale(1);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, .08); /* softer shadow for card separation */
+	transition: transform .18s ease, box-shadow .18s ease;
+	border-radius: 10px;
+	display: inline-block;        /* keep consistent center layout */
+	vertical-align: top;
 }
-.how .box h2 {
-	font-size: 20px;
-	letter-spacing: .6px;
-	color: #525353;
-	margin-top: 15px;
-	padding: 5px;
-}
-.how .box:hover {
-	transform: scale(1.08);
-	box-shadow: 0 3px 10px rgba(0, 0, 0, .6);
-}
-.how .box .icon i {
+.how .box .icon {
+	width: 68px;
+	height: 68px;
+	background: linear-gradient(180deg, #1a8fcc, #0a6fa0);
+	border-radius: 50%;
+	margin: 0 auto 14px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	color: #fff;
 	font-size: 28px;
-	line-height: 80px;
+}
+.how .box h2 {
+	font-size: 1.1rem;
+	color: #112;
+	margin: 8px 0 8px;
+}
+.how .box p {
+	color: #444;
+	font-size: 0.95rem;
+	line-height: 1.45;
+	margin: 6px 0;
+}
+.how .box:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+}
+
+/* Responsive: stack boxes on narrow screens for readability */
+@media (max-width: 780px) {
+	.how .box {
+		width: 92%;
+		max-width: 520px;
+		margin: 14px auto;
+		display: block;
+	}
+	.how h1 { font-size: 1.6rem; }
 }
 
 /* Footer */
@@ -1182,177 +1290,227 @@ ul {
 	}
 }
 
-/* Media queries */
+/* Animate On Scroll (AOS) - subtle enter/slide/zoom effects */
+.aos {
+  --aos-duration: 700ms;
+  --aos-easing: cubic-bezier(.18,.9,.22,1);
+  --aos-delay: 0ms;
+  will-change: transform, opacity;
+  opacity: 0;
+  transform: translateY(18px); /* default slide up offset */
+  transition:
+    transform var(--aos-duration) var(--aos-easing) var(--aos-delay),
+    opacity var(--aos-duration) var(--aos-easing) var(--aos-delay);
+  /* Make sure the animation does not affect layout */
+  pointer-events: auto;
+}
+
+/* When element becomes visible */
+.aos.in-view {
+  opacity: 1;
+  transform: none;
+}
+
+/* Variants */
+.aos.slide-up { transform: translateY(18px); }
+.aos.slide-right { transform: translateX(36px); }
+.aos.slide-left { transform: translateX(-36px); }
+.aos.fade-in { opacity: 0; transform: none; /* just fade */ }
+.aos.zoom-in { transform: scale(.96); }
+
+/* Reset transforms when in view */
+.aos.in-view.slide-up,
+.aos.in-view.slide-left,
+.aos.in-view.slide-right,
+.aos.in-view.fade-in,
+.aos.in-view.zoom-in { transform: none; opacity: 1; }
+
+/* Make the transition slightly faster on small screens and reduce movement */
 @media (max-width: 780px) {
-	.header .nav .logo {
-		margin-left: 10px;
-		padding: 24px 40px;
-	}
-	.header .content {
-		width: 80%;
-		margin: 40px 30px 20px 20px;
-		padding: 20px;
-	}
-	.header .content button {
-		padding: 8px 18px;
-		margin: 20px 0;
-		border: 0;
-		outline: 0;
-	}
-	.header .content .active {
-		width: 110px;
-		margin-left: 20px;
-	}
-	.header .content h1 {
-		font-size: 2.3rem;
-	}
-	.side-link {
-		position: absolute;
-		top: 240px;
-		right: 20px;
-	}
-	.about-section {
-		padding: 20px;
-		margin: 0;
-	}
-	.about-section .sub .para {
-		width: 100%;
-		margin: 40px 0 10px;
-	}
-	.about-section .sub .video-box {
-		width: 100%;
-	}
+  .aos { --aos-duration: 520ms; --aos-delay: 0ms; transform: translateY(12px); }
+  .aos.slide-left, .aos.slide-right { transform: translateX(18px); }
 }
 
-/* New: absolute-positioned right-side photo that does not affect text flow */
+/* Support for per-element stagger via inline CSS variable --aos-delay */
+/* Example: el.style.setProperty('--aos-delay', '120ms'); */
+
+/* Accessibility: reduce motion support (respects user's OS preference) */
+@media (prefers-reduced-motion: reduce) {
+  .aos,
+  .aos.in-view {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* Photo: make the container fully transparent and remove borders/shadows/padding.
+   Keep explicit width via grid column so spacing and alignment remain unchanged. */
 .about-section .sub.abs-photo {
-	position: relative; /* establish containing block for absolute photo */
+	/* larger photo column, slightly larger gap for breathing room */
+	display: grid;
+	grid-template-columns: 1fr 560px; /* increased from 1fr 380px */
+	column-gap: 28px;                 /* slightly larger gap */
+	align-items: center;
+	position: relative;
+	padding-right: 0;
 }
 
-/* make photo independent of flow (fixed-ish on the right) */
-.about-section .sub.abs-photo .photo {
-	position: absolute;
-	top: 40px;                /* vertical offset from top of .sub */
-	right: 4%;                /* distance from right viewport edge */
-	width: 520px;        /* increased size for larger screens */
-	max-width: 40%;      /* keep proportional on very wide viewports */
-	flex: none;               /* do not participate in flex sizing */
-	box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-}
-
-/* ensure the text reserves space so it won't be overlapped by the absolutely positioned image */
+/* keep the text readable but limit width so it doesn't collide with the bigger photo */
 .about-section .sub.abs-photo .para {
-	margin-right: calc(520px + 48px); /* photo width + gutter */
+	width: 100%;
+	max-width: 85ch;  /* slightly narrower to fit with larger photo */
+	margin: 2px 0;
+	padding: 0;
+	box-sizing: border-box;
+	margin-top: -12px;
 }
 
-/* Medium screens: scale the photo down so it doesn't overflow */
+/* transparent photo container but larger and defined height */
+.about-section .sub .photo,
+.about-section .sub.abs-photo .photo {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	width: 560px;      /* match the grid column */
+	height: 520px;     /* large, defined height for prominence */
+	max-width: 100%;
+	display: block;
+	overflow: visible;
+}
+
+/* image fills the container now, using cover so it appears large and fills card */
+.about-section .sub .photo img,
+.about-section .sub.abs-photo .photo img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;               /* fill and crop to maintain aspect */
+	background: transparent !important;
+	display: block;
+}
+
+/* Medium screens: scale photo down while maintaining alignment */
 @media (max-width: 1200px) and (min-width: 781px) {
-	.about-section .sub.abs-photo .photo {
-		width: 420px;
-		max-width: 36%;
+	.about-section .sub.abs-photo {
+		grid-template-columns: 1fr 480px;  /* slightly smaller for medium screens */
+		column-gap: 22px;
 	}
 	.about-section .sub.abs-photo .para {
-		margin-right: calc(420px + 36px);
+		max-width: 64ch;
+	}
+	.about-section .sub .photo,
+	.about-section .sub.abs-photo .photo {
+		width: 480px;
+		height: 420px;
 	}
 }
 
-/* Responsive: on small screens revert photo to document flow and remove the reserved margin */
+/* Small screens: stacked layout remains — full width and reduced height */
 @media (max-width: 780px) {
+	.about-section .sub.abs-photo {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding-right: 0;
+	}
+	.about-section .sub .photo,
 	.about-section .sub.abs-photo .photo {
-		position: static;    /* stack normally under the text */
 		width: 100%;
 		max-width: none;
-		margin: 10px 0 0;
-		margin-top:30px;
+		height: 300px;
+		padding: 0;
+		border-radius: 0;
 	}
-	.about-section .sub.abs-photo .para {
-		margin-right: 0;
+	.about-section .sub .photo img,
+	.about-section .sub.abs-photo .photo img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 }
 
-/* Added: mission / vision / philosophy section */
+/* Mission / Vision / Philosophy cards */
 .mission-section {
   width: 100%;
-  padding: 36px 4%;
-  background: #fff;
+  padding: 56px 4%;           /* more breathing room */
   box-sizing: border-box;
+  background: #fff;
 }
 .mission-inner {
-  max-width: 1200px;              /* increased width to allow larger cards */
+  max-width: 1200px;
   margin: 0 auto;
+  /* responsive grid: cards will wrap as needed */
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;                      /* more breathing room between cards */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
   align-items: start;
 }
+
+/* Card */
 .mission-card {
-  position: relative;                 /* needed for pseudo-element */
-  z-index: 1;
-  background: linear-gradient(180deg, #fafafa, #fff);
-  border-radius: 14px;
-  padding: 28px;
-  /* stronger, layered base shadow */
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 26px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 32px rgba(3, 10, 23, .06);
+  transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s cubic-bezier(.2,.9,.3,1), filter .22s ease;
+  text-align: center;          /* center text inside each box for visual balance */
+  align-items: center;         /* center icon/title */
+  min-height: 210px;           /* keep consistent heights */
+  /* stronger layered shadow for realistic depth */
   box-shadow:
-    0 10px 30px rgba(0,0,0,0.10),
-    0 4px 12px rgba(0,0,0,0.06);
-  text-align: left;
-  color: #222;
-  transition: transform .28s cubic-bezier(.22,.9,.21,1),
-              box-shadow .28s ease,
-              filter .28s ease;
-  will-change: transform, box-shadow;
-  cursor: default;
+    0 22px 48px rgba(7, 22, 34, 0.10),  /* large soft ambient shadow */
+    0 6px 20px rgba(7, 28, 44, 0.06),   /* mid blur for depth */
+    0 1px 0 rgba(255, 255, 255, 0.02);  /* subtle top highlight */
+  position: relative;
+  overflow: visible;
 }
 
-/* subtle blurred glow behind the card to increase perceived depth */
+/* Soft glow behind the card for subtle separation */
 .mission-card::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -12px;
   border-radius: inherit;
+  background: radial-gradient(ellipse at center, rgba(26,143,204,0.06) 0%, rgba(26,143,204,0) 45%);
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(120deg, rgba(144,213,255,0.06), rgba(240,165,230,0.04));
   filter: blur(18px);
-  transform: translateY(8px) scale(0.98);
+  opacity: 0.85;
+  transition: opacity .22s ease;
+}
+
+/* Hover state: lift the card and intensify the shadow */
+.mission-card:hover {
+  transform: translateY(-10px) scale(1.01);
+  box-shadow:
+    0 36px 66px rgba(7, 22, 34, 0.16),
+    0 10px 30px rgba(7, 28, 44, 0.10),
+    0 2px 0 rgba(255, 255, 255, 0.02);
+}
+.mission-card:hover::before {
   opacity: 1;
 }
 
-/* hover: stronger lift + deeper shadow for visible floating effect */
-.mission-card:hover {
-  transform: translateY(-12px) scale(1.04);
-  box-shadow:
-    0 28px 80px rgba(0,0,0,0.20),
-    0 10px 30px rgba(0,0,0,0.12);
-  filter: saturate(1.03);
+/* Focus-visible for keyboard accessibility */
+.mission-card:focus-within,
+.mission-card:focus {
+  outline: 3px solid rgba(10,102,194,0.12);
+  outline-offset: 4px;
 }
 
-/* Responsive: stack cards on smaller screens */
-@media (max-width: 900px) {
-  .mission-inner { grid-template-columns: 1fr; }
-  .mission-section { padding: 24px 3%; }
+/* Reduced-motion preference: scale/transform turned off */
+@media (prefers-reduced-motion: reduce) {
+  .mission-card,
+  .mission-card:hover {
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
-/* Remove box-shadow from the about-section right-side photo */
-.about-section .sub .photo,
-.about-section .sub.abs-photo .photo {
-    box-shadow: none;
-}
-
-/* make the container visually disappear: plain white rectangular background */
-.about-section .sub.abs-photo .photo {
-    background: #fff;
-    border-radius: 0;    /* remove rounding */
-    border: none;        /* remove any visible border */
-    box-shadow: none;    /* make sure any shadow is removed */
-    overflow: hidden;    /* keep image clipped neatly */
-}
-
-.about-section .sub.abs-photo .photo img {
-    /* ensure the image itself fills the white area and displays on a white background */
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: #fff;
-}
+/* ...existing code... */

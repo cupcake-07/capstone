@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Default launch configuration for Chrome (pwa-chrome).
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost (default)",
+            // Adjust URL to match your server; URL encodes spaces as %20.
+            "url": "http://localhost/capstone/landing%20page/index.html",
+            "webRoot": "${workspaceFolder}",
+            // Adjust runtimeExecutable if Chrome is installed elsewhere
+            "runtimeExecutable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            // Use a separate profile directory so already-running Chrome doesn't block the debugger
+            "userDataDir": "${workspaceFolder}/.vscode/chrome",
+            "diagnosticLogging": true,
+            // Optional: start Apache automatically if you add a matching tasks.json
+            "preLaunchTask": "Start XAMPP Apache",
+            // Optional: open the URL when server is ready (requires matching server output)
+            // "serverReadyAction": {
+            //     "action": "openExternally",
+            //     "pattern": "listening on port (\\d+)"
+            // }
+        }
+    ]
+}

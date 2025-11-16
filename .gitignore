@@ -1,0 +1,9 @@
+# Ignore VSCode user profile Chrome data (do not ignore the entire .vscode folder)
+.vscode/chrome/
+.vscode/chrome/**
+
+# Other typical ignores (optional; keep if appropriate)
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
