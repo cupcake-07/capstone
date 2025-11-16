@@ -1241,30 +1241,50 @@ ul {
 	}
 }
 
-/* Added: right-side photo for .about-section .sub */
-.about-section .sub {
-	/* ensure spacing between text and photo (overrides earlier if needed) */
-	gap: 30px;
-	align-items: flex-start;
+/* New: absolute-positioned right-side photo that does not affect text flow */
+.about-section .sub.abs-photo {
+	position: relative; /* establish containing block for absolute photo */
 }
 
-/* photo box on the right */
-.about-section .sub .photo {
-	width: 420px;
-	max-width: 40%;
-	border-radius: 12px;
-	overflow: hidden;
+/* make photo independent of flow (fixed-ish on the right) */
+.about-section .sub.abs-photo .photo {
+	position: absolute;
+	top: 40px;                /* vertical offset from top of .sub */
+	right: 4%;                /* distance from right viewport edge */
+	width: 520px;        /* increased size for larger screens */
+	max-width: 40%;      /* keep proportional on very wide viewports */
+	flex: none;               /* do not participate in flex sizing */
 	box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-	flex: 0 0 auto;
-	background: #f7f7f7;
 }
 
-/* make image cover the box nicely */
-.about-section .sub .photo img {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+/* ensure the text reserves space so it won't be overlapped by the absolutely positioned image */
+.about-section .sub.abs-photo .para {
+	margin-right: calc(520px + 48px); /* photo width + gutter */
+}
+
+/* Medium screens: scale the photo down so it doesn't overflow */
+@media (max-width: 1200px) and (min-width: 781px) {
+	.about-section .sub.abs-photo .photo {
+		width: 420px;
+		max-width: 36%;
+	}
+	.about-section .sub.abs-photo .para {
+		margin-right: calc(420px + 36px);
+	}
+}
+
+/* Responsive: on small screens revert photo to document flow and remove the reserved margin */
+@media (max-width: 780px) {
+	.about-section .sub.abs-photo .photo {
+		position: static;    /* stack normally under the text */
+		width: 100%;
+		max-width: none;
+		margin: 10px 0 0;
+		margin-top:30px;
+	}
+	.about-section .sub.abs-photo .para {
+		margin-right: 0;
+	}
 }
 
 /* Added: mission / vision / philosophy section */
@@ -1328,4 +1348,28 @@ ul {
 @media (max-width: 900px) {
   .mission-inner { grid-template-columns: 1fr; }
   .mission-section { padding: 24px 3%; }
+}
+
+/* Remove box-shadow from the about-section right-side photo */
+.about-section .sub .photo,
+.about-section .sub.abs-photo .photo {
+    box-shadow: none;
+}
+
+/* make the container visually disappear: plain white rectangular background */
+.about-section .sub.abs-photo .photo {
+    background: #fff;
+    border-radius: 0;    /* remove rounding */
+    border: none;        /* remove any visible border */
+    box-shadow: none;    /* make sure any shadow is removed */
+    overflow: hidden;    /* keep image clipped neatly */
+}
+
+.about-section .sub.abs-photo .photo img {
+    /* ensure the image itself fills the white area and displays on a white background */
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #fff;
 }
