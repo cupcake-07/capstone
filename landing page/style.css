@@ -365,7 +365,7 @@ ul {
 	margin: 19px 30px 10px 0;
 	float: left;
 	shape-outside: rect();
-	background: url(Images/M11.jpg) top center/cover no-repeat;
+	background: url(Images/school10.jpg) top center/cover no-repeat;
 }
 .about-section .sub .photo {
 	width: 420px;
@@ -432,40 +432,23 @@ ul {
 	transform: translateY(60px);
 }
 
-/* Marq specific image selectors (preserve backgrounds) */
-.about-section .marq #img1,
-.about-section .marq #img9,
-.about-section .sub .para .img {
-	background: url(Images/M11.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img10,
-.about-section .marq #img2 {
-	background: url(Images/M5.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img11,
-.about-section .marq #img3 {
-	background: url(Images/M3.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img12,
-.about-section .marq #img4 {
-	background: url(Images/M2.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img13,
-.about-section .marq #img5 {
-	background: url(Images/M9.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img14,
-.about-section .marq #img6 {
-	background: url(Images/M1.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img15,
-.about-section .marq #img7 {
-	background: url(Images/M12.jpg) top center/cover no-repeat;
-}
-.about-section .marq #img16,
-.about-section .marq #img8 {
-	background: url(Images/M10.jpeg) center/cover no-repeat;
-}
+/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
+.about-section .marq #img1 { background: url(Images/school14.jpg) top center/cover no-repeat; }
+.about-section .marq #img2 { background: url(Images/school15.jpg) top center/cover no-repeat; }
+.about-section .marq #img3 { background: url(Images/school16.jpg) top center/cover no-repeat; }
+.about-section .marq #img4 { background: url(Images/school18.jpg) top center/cover no-repeat; }
+.about-section .marq #img5 { background: url(Images/school19.jpg) top center/cover no-repeat; }
+.about-section .marq #img6 { background: url(Images/school20.jpg) top center/cover no-repeat; }
+.about-section .marq #img7 { background: url(Images/school21.jpg) top center/cover no-repeat; }
+.about-section .marq #img8 { background: url(Images/school22.jpg) center/cover no-repeat; }
+.about-section .marq #img9 { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
+.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
+.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
+.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
+.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
+.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
+.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
+.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
 
 /* Career section */
 .career-section {
