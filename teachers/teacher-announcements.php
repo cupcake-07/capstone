@@ -78,7 +78,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
             <!--Announcement content-->
             <section class="announcement-container">
-                <h2 class="page-title">Latest Updates (Real-Time)</h2>
+                <h2 class="page-title">Latest Update</h2>
 
                 <!-- Filter bar -->
                 <div class="filter-bar">

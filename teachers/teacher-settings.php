@@ -103,42 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->close();
                 }
             }
-        } elseif ($action === 'update_preferences') {
-            $preferred_subject = trim($_POST['preferred_subject'] ?? '');
-            $grade_preference = $_POST['grade_preference'] ?? '';
-            $class_size_preference = $_POST['class_size_preference'] ?? '';
-            $office_hours = trim($_POST['office_hours'] ?? '');
-
-            // Update in database (maintain backward compatibility)
-            $stmt = $conn->prepare("UPDATE teachers SET subject = ?, grade = ? WHERE id = ?");
-            if ($stmt) {
-                $stmt->bind_param('ssi', $preferred_subject, $grade_preference, $user_id);
-                if ($stmt->execute()) {
-                    // Also update admin teachers file if it exists (now include office_hours & class_size)
-                    $adminTeachersFile = __DIR__ . '/../admin/data/teachers.json';
-                    if (file_exists($adminTeachersFile)) {
-                        $adminTeachersData = json_decode(file_get_contents($adminTeachersFile), true);
-                        if (is_array($adminTeachersData)) {
-                            foreach ($adminTeachersData as &$teacher) {
-                                if (isset($teacher['id']) && intval($teacher['id']) === $user_id) {
-                                    $teacher['subject'] = $preferred_subject;
-                                    $teacher['grade'] = $grade_preference;
-                                    $teacher['office_hours'] = $office_hours;
-                                    $teacher['class_size_preference'] = $class_size_preference;
-                                    break;
-                                }
-                            }
-                            file_put_contents($adminTeachersFile, json_encode($adminTeachersData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-                        }
-                    }
-                    $message = 'Teaching preferences updated successfully!';
-                    $message_type = 'success';
-                } else {
-                    $message = 'Error updating preferences. Please try again.';
-                    $message_type = 'error';
-                }
-                $stmt->close();
-            }
         }
     }
 }
@@ -203,6 +167,199 @@ if ($user_id > 0) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
    
+    <style>
+        :root{
+            --border: #868e96;
+            --muted: #6c757d;
+            --primary: #0d6efd;
+            --danger: #dc3545;
+            --success: #198754;
+            --surface: #ffffff;
+        }
+
+        /* Global inputs / selects / textareas */
+        .settings-form-group input[type="text"],
+        .settings-form-group input[type="email"],
+        .settings-form-group input[type="tel"],
+        .settings-form-group input[type="password"],
+        .settings-form-group select,
+        .settings-form-group textarea,
+        .input-inline input {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            background-color: var(--surface);
+            color: #212529;
+            box-sizing: border-box;
+            width: 100%;
+            transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
+            font-size: 0.95rem;
+        }
+
+        /* Make disabled / readonly fields still look visible */
+        .settings-form-group input[disabled],
+        .settings-form-group input[readonly],
+        .settings-form-group select[disabled],
+        .settings-form-group textarea[disabled] {
+            background-color: #f8f9fa;
+            color: #495057;
+            border-color: #d7dde3;
+            opacity: 1;
+        }
+
+        /* Focus ring for accessibility */
+        .settings-form-group input:focus,
+        .settings-form-group select:focus,
+        .settings-form-group textarea:focus,
+        .input-inline input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 6px rgba(13,110,253,0.08);
+        }
+
+        /* Labels for clarity */
+        .settings-form-group label {
+            font-weight: 600;
+            color: #2b2f36;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        /* For inline inputs with toggle buttons */
+        .input-inline { display: flex; gap: 8px; align-items: center; }
+        .input-inline input { flex: 1; }
+
+        /* Add clearer border/shadow to form sections */
+        .settings-section {
+            border: 1px solid #e3e9ef; /* slightly darker than previous */
+            border-radius: 10px;
+            padding: 18px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(37,46,59,0.03);
+            margin-bottom: 18px;
+        }
+
+        /* OUTER SETTINGS CONTAINER - make the outer box outline visible */
+        .settings-container {
+            border: 2px solid #c8d6e6; /* visible but soft contrast */
+            border-radius: 12px;
+            padding: 18px;
+            background: linear-gradient(180deg, #ffffff, #fbfdff);
+            box-shadow: 0 8px 20px rgba(24, 58, 94, 0.06); /* softer drop shadow */
+            margin: 12px auto; /* ensure some space around the outer box */
+        }
+
+        /* Tabs */
+        .settings-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 2px solid #e9edf2;
+            margin-bottom: 16px;
+            background: transparent;
+        }
+        .settings-tab-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #212529;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .12s ease, border-color .12s ease;
+        }
+        .settings-tab-btn:hover {
+            background: #f8fafc;
+        }
+        .settings-tab-btn.active {
+            background: #fff;
+            border: 1px solid var(--primary);
+            box-shadow: 0 4px 12px rgba(13,110,253,0.06);
+            color: var(--primary);
+        }
+
+        /* Tab content container */
+        .settings-tab-content {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        /* Message box visible border + show/hide; color by type */
+        .message-box {
+            display: none;
+            border: 2px solid #d3d7db;
+            background: #ffffff;
+            padding: 12px 14px;
+            border-radius: 8px;
+            color: #212529;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(37,46,59,0.04);
+        }
+        .message-box.show { display: block; }
+        .message-box.success { border-color: var(--success); background: #f3f9f5; color: #0b5c3c; }
+        .message-box.error { border-color: var(--danger); background: #fff5f5; color: #7a1a1a; }
+
+        /* Buttons */
+        .settings-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            border: 2px solid transparent;
+            transition: all .12s ease;
+        }
+        .settings-btn.primary {
+            background: var(--primary);
+            border-color: rgba(13,110,253,0.95);
+            color: #fff;
+        }
+        .settings-btn.primary:hover { filter: brightness(0.96); }
+        .settings-btn.secondary {
+            background: #ffffff;
+            border-color: #c7cdd3;
+            color: #23272b;
+        }
+        .settings-btn.secondary:hover { background: #f8fafc; }
+
+        /* Stronger word on help text */
+        .settings-form-group .help { color: var(--muted); font-size: 0.875rem; }
+
+        /* Password strength bar */
+        .pwd-strength { padding-top: 8px; }
+        .pwd-strength-bar {
+            width: 0%;
+            height: 6px;
+            background: linear-gradient(90deg, #ff6b6b, #f7b500, #39b54a);
+            border-radius: 6px;
+            transition: width .15s ease;
+            box-shadow: inset 0 -1px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        /* Make toggle button visible */
+        .pwd-toggle {
+            border: 1px solid #d1d6db;
+            background: #ffffff;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        /* Disabled primary button look */
+        .settings-btn[disabled] { opacity: 0.75; cursor: not-allowed; filter: grayscale(0.02) brightness(0.95); }
+
+        /* Mobile-friendly adjustments */
+        @media (max-width: 700px) {
+            .input-inline { flex-direction: column; gap: 6px; }
+            .settings-tabs { overflow-x: auto; }
+            .settings-tab-btn { white-space: nowrap; }
+        }
+    </style>
+   
 </head>
 <body>
     <!--Top Navbar-->
@@ -260,7 +417,6 @@ if ($user_id > 0) {
                 <div class="settings-tabs" role="tablist">
                     <button class="settings-tab-btn active" data-tab="account" role="tab" aria-selected="true">Account</button>
                     <button class="settings-tab-btn" data-tab="security" role="tab">Security</button>
-                    <button class="settings-tab-btn" data-tab="teaching" role="tab">Teaching Preferences</button>
                 </div>
 
                 <!-- Account Settings Tab -->
@@ -349,69 +505,6 @@ if ($user_id > 0) {
                     </div>
                 </div>
 
-                <!-- Teaching Preferences Tab -->
-                <div id="teaching" class="settings-tab-content" role="tabpanel" aria-hidden="true">
-                    <div class="settings-section">
-                        <h3>Teaching Preferences</h3>
-                        <div class="info-card">
-                            ℹ️ Configure your teaching preferences to help the administration better understand your strengths and preferences.
-                        </div>
-                        <form method="POST" action="" id="prefs-form" novalidate>
-                            <input type="hidden" name="action" value="update_preferences">
-                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($CSRF_TOKEN); ?>">
-
-                            <div class="form-row">
-                                <div class="settings-form-group">
-                                    <label for="preferred_subject">Preferred Subject(s)</label>
-                                    <input type="text" id="preferred_subject" name="preferred_subject"
-                                        value="<?php echo htmlspecialchars($teacher_info['subject'] ?? ''); ?>"
-                                        placeholder="e.g., Mathematics, Science">
-                                    <small class="help">Comma-separated subjects are allowed.</small>
-                                </div>
-                                <div class="settings-form-group">
-                                    <label for="grade_preference">Grade Level Preference</label>
-                                    <select id="grade_preference" name="grade_preference">
-                                        <option value="">Select a grade</option>
-                                        <option value="7" <?php echo $teacher_info['grade'] === '7' ? 'selected' : ''; ?>>Grade 7</option>
-                                        <option value="8" <?php echo $teacher_info['grade'] === '8' ? 'selected' : ''; ?>>Grade 8</option>
-                                        <option value="9" <?php echo $teacher_info['grade'] === '9' ? 'selected' : ''; ?>>Grade 9</option>
-                                        <option value="10" <?php echo $teacher_info['grade'] === '10' ? 'selected' : ''; ?>>Grade 10</option>
-                                        <option value="11" <?php echo $teacher_info['grade'] === '11' ? 'selected' : ''; ?>>Grade 11</option>
-                                        <option value="12" <?php echo $teacher_info['grade'] === '12' ? 'selected' : ''; ?>>Grade 12</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-row full">
-                                <div class="settings-form-group">
-                                    <label for="class_size_preference">Preferred Class Size</label>
-                                    <select id="class_size_preference" name="class_size_preference">
-                                        <option value="">Select preference</option>
-                                        <option value="small">Small (under 20 students)</option>
-                                        <option value="medium">Medium (20-30 students)</option>
-                                        <option value="large">Large (30+ students)</option>
-                                        <option value="flexible">Flexible/No preference</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-row full">
-                                <div class="settings-form-group">
-                                    <label for="office_hours">Office Hours (Optional)</label>
-                                    <input type="text" id="office_hours" name="office_hours"
-                                        value="<?php echo htmlspecialchars($teacher_info['office_hours'] ?? ''); ?>"
-                                        placeholder="e.g., Monday & Wednesday 3:00 PM - 4:00 PM">
-                                    <small class="help">Human-readable hours help parents/students know when to reach you.</small>
-                                </div>
-                            </div>
-
-                            <div class="settings-button-group">
-                                <button type="submit" class="settings-btn primary" id="save-prefs">Save Preferences</button>
-                                <button type="reset" class="settings-btn secondary">Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             </section>
         </main>
 
@@ -465,6 +558,17 @@ if ($user_id > 0) {
         // ===== Tabs with persistence =====
         const tabButtons = document.querySelectorAll('.settings-tab-btn');
         const tabContents = document.querySelectorAll('.settings-tab-content');
+
+        // Smooth scroll helper that accounts for a top navbar
+        function scrollToElement(el) {
+            if (!el) return;
+            const navbar = document.querySelector('.navbar');
+            const navHeight = navbar ? navbar.getBoundingClientRect().height : 0;
+            const rect = el.getBoundingClientRect();
+            const top = rect.top + window.pageYOffset - navHeight - 12; // small padding
+            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        }
+
         function activateTab(name) {
             tabButtons.forEach(b => {
                 b.classList.toggle('active', b.getAttribute('data-tab') === name);
@@ -475,11 +579,40 @@ if ($user_id > 0) {
                 c.setAttribute('aria-hidden', c.id === name ? 'false' : 'true');
             });
             try { localStorage.setItem('teacher-settings-tab', name); } catch(e){/*ignore*/ }
+
+            // If security tab is activated, scroll to the change-password form and set focus
+            if (name === 'security') {
+                const pwdForm = document.getElementById('password-form');
+                if (pwdForm) {
+                    // scroll to the form
+                    scrollToElement(pwdForm);
+                    // focus the first focusable element without scrolling again
+                    setTimeout(() => {
+                        const first = pwdForm.querySelector('input, select, textarea, button');
+                        if (first) first.focus({ preventScroll: true });
+                    }, 350); // matches smooth scroll duration
+                }
+            }
         }
-        tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab'))));
+
+        // wire tabs to click handler and call activateTab -> scroll accordingly
+        tabButtons.forEach(btn => btn.addEventListener('click', () => {
+            const name = btn.getAttribute('data-tab');
+            activateTab(name);
+        }));
+
         (function restoreTab(){
             const saved = localStorage.getItem('teacher-settings-tab');
-            if (saved) activateTab(saved);
+            if (saved) {
+                activateTab(saved);
+                // also ensure we scroll if restored tab is security
+                if (saved === 'security') {
+                    const pwdForm = document.getElementById('password-form');
+                    if (pwdForm) {
+                        scrollToElement(pwdForm);
+                    }
+                }
+            }
         })();
 
         // ===== Message handling =====
@@ -547,7 +680,6 @@ if ($user_id > 0) {
         }
         wireForm('profile-form');
         wireForm('password-form');
-        wireForm('prefs-form');
 
         // Update footer year safely
         const yearEl = document.getElementById('year');
