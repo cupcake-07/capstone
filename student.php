@@ -418,26 +418,9 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
 
           <div class="card announcements">
             <h3>Latest Announcements & Events</h3>
-            <ul class="ann-list">
-              <?php
-                // Fetch upcoming school events (latest 2)
-                $upcomingEvents = $conn->query("SELECT event_date, title FROM school_events ORDER BY event_date DESC LIMIT 2");
-                $eventCount = 0;
-                
-                if ($upcomingEvents) {
-                  while ($event = $upcomingEvents->fetch_assoc()) {
-                    $eventCount++;
-                    $eventDate = date('M d, Y', strtotime($event['event_date']));
-                    echo '<li><strong>' . htmlspecialchars($eventDate) . '</strong> — <span style="color: #0369a1; font-weight: 600;">📅</span> ' . htmlspecialchars($event['title']) . '</li>';
-                  }
-                }
-                
-                // Show fallback if no events
-                if ($eventCount === 0) {
-                  echo '<li><strong>Oct 20</strong> — 📅 Parent-Teacher Conference on Oct 20.</li>';
-                  echo '<li><strong>Oct 15</strong> — 📅 School fee due date extended.</li>';
-                }
-              ?>
+            <!-- Replace server-side DB query with client-side loader that uses the same API as teachers -->
+            <ul class="ann-list" id="ann-list">
+              <li class="loading-message">Loading announcements...</li>
             </ul>
             <a href="announcements.php" class="link-more">All announcements & events →</a>
           </div>
@@ -518,6 +501,58 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
         container.appendChild(div);
       }
     })();
+  </script>
+
+  <!-- Add this script near the other scripts (keeps announcements in sync with teacher dashboard) -->
+  <script>
+  (function(){
+    const list = document.getElementById('ann-list');
+    if (!list) return;
+
+    // Fetch announcements via the same API endpoint teachers use.
+    fetch('api/announcements.php?action=list')
+      .then(res => res.json())
+      .then(data => {
+        list.innerHTML = '';
+        if (!data.success || !Array.isArray(data.announcements) || data.announcements.length === 0) {
+          list.innerHTML = '<li class="loading-message">No announcements at this time.</li>';
+          return;
+        }
+
+        let shown = 0;
+        for (const ann of data.announcements) {
+          // Only show announcements intended for students or both
+          const vis = (ann.visibility || '').toString().toLowerCase();
+          if (vis === 'teachers') continue;
+
+          if (!ann.title || shown >= 2) continue;
+
+          const dateText = ann.pub_date && ann.pub_date.trim() ? escapeHtml(ann.pub_date) : '';
+          const icon = ann.type === 'event' ? '📅' : '📢';
+          const li = document.createElement('li');
+          li.style.cssText = 'padding:8px 0;border-bottom:1px solid #f5f5f5;';
+          li.innerHTML = '<strong>' + dateText + '</strong> — <span style="color:#0369a1;font-weight:600;">' + icon + '</span> ' + escapeHtml(ann.title);
+          list.appendChild(li);
+          shown++;
+          if (shown >= 2) break;
+        }
+
+        if (shown === 0) {
+          list.innerHTML = '<li class="loading-message">No announcements for students at this time.</li>';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading announcements:', err);
+        list.innerHTML = '<li class="loading-message">Error loading announcements.</li>';
+      });
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function(m) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
+      });
+    }
+  })();
   </script>
 
 </body>

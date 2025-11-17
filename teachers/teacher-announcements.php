@@ -329,7 +329,6 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             });
         }
 
-        // Form submission handling
         document.addEventListener('DOMContentLoaded', function() {
             // Update year in footer
             var yearEl = document.getElementById('year');
@@ -338,10 +337,35 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             // Load announcements on page load
             loadAnnouncements();
 
+            // Ensure date input cannot select past dates (sets datepicker min)
+            const dateInput = document.getElementById('date');
+            if (dateInput) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.min = `${yyyy}-${mm}-${dd}`;
+            }
+
             const form = document.getElementById('new-announcement-form');
             form.onsubmit = function(e) {
                 e.preventDefault();
-                
+
+                // --- ADDED: Prevent posting announcements with a past date ---
+                const dateVal = document.getElementById('date').value;
+                if (dateVal) {
+                    // normalize both dates to local start-of-day to avoid timezone issues
+                    const selected = new Date(dateVal);
+                    selected.setHours(0,0,0,0);
+                    const todayStart = new Date();
+                    todayStart.setHours(0,0,0,0);
+
+                    if (selected < todayStart) {
+                        alert('The display date cannot be in the past. Please choose today or a future date.');
+                        document.getElementById('date').focus();
+                        return; // stop submission
+                    }
+                }
                 const data = {
                     title: document.getElementById('title').value,
                     content: document.getElementById('content').value,
@@ -349,7 +373,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                     visibility: document.getElementById('visibility').value,
                     date: document.getElementById('date').value
                 };
-                
+
                 fetch('../api/announcements.php?action=create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -97,7 +97,7 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 18px;
-  background: var(--panel);
+  background: #fd4ba7;
   color: var(--border);
   border: var(--dark-blue);
   border-radius: 8px;
@@ -109,7 +109,7 @@
 }
 
 .add-event-btn:hover {
-  background: var(--dark-blue);
+  background: var(--blue);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }

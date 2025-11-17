@@ -16,66 +16,268 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
 
 // Handle AJAX requests for adding/deleting events
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-    header('Content-Type: application/json');
-    
+    // start output buffering so we can clear accidental output (warnings/html) before sending JSON
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
+    @ob_start();
+
+    // helper to send clean JSON and exit
+    $send_json = function($payload) {
+        if (ob_get_length() > 0) @ob_clean();
+        echo json_encode($payload);
+        // ensure nothing else is sent
+        if (ob_get_level() > 0) @ob_end_flush();
+        exit;
+    };
+
     $action = $_POST['action'] ?? '';
-    
+
     if ($action === 'add_event') {
         $eventDate = $_POST['event_date'] ?? '';
         $eventTitle = $_POST['event_title'] ?? '';
         
         if ($eventDate && $eventTitle) {
-            // Check for duplicates
-            $checkStmt = $conn->prepare("SELECT id FROM school_events WHERE event_date = ? AND title = ?");
+            // normalize date to YYYY-MM-DD (strip time) and validate not in the past
+            $normDate = date('Y-m-d', strtotime($eventDate));
+            if ($normDate === false || $normDate === '1970-01-01') {
+                $send_json(['success' => false, 'message' => 'Invalid event date.']);
+            }
+            $today = date('Y-m-d');
+            if ($normDate < $today) {
+                $send_json(['success' => false, 'message' => 'Cannot add an event in the past.']);
+            }
+
+            // Use normalized date for duplicate check and insertion
+            $checkStmt = $conn->prepare("SELECT id FROM school_events WHERE DATE(event_date) = ? AND title = ?");
             if ($checkStmt) {
-                $checkStmt->bind_param('ss', $eventDate, $eventTitle);
+                $checkStmt->bind_param('ss', $normDate, $eventTitle);
                 $checkStmt->execute();
-                $result = $checkStmt->get_result();
-                
-                if ($result->num_rows > 0) {
-                    echo json_encode(['success' => false, 'message' => 'Event with this title already exists on this day.']);
-                    $checkStmt->close();
-                    exit;
+                if (method_exists($checkStmt, 'get_result')) {
+                    $result = $checkStmt->get_result();
+                    if ($result && $result->num_rows > 0) {
+                        $checkStmt->close();
+                        $send_json(['success' => false, 'message' => 'Event with this title already exists on this day.']);
+                    }
+                } else {
+                    $checkStmt->store_result();
+                    if ($checkStmt->num_rows > 0) {
+                        $checkStmt->close();
+                        $send_json(['success' => false, 'message' => 'Event with this title already exists on this day.']);
+                    }
                 }
                 $checkStmt->close();
+            } else {
+                $send_json(['success' => false, 'message' => 'Database error (prepare check).']);
             }
-            
-            // Insert event
+
+            // Insert event using normalized date (store as date string)
             $insertStmt = $conn->prepare("INSERT INTO school_events (event_date, title) VALUES (?, ?)");
             if ($insertStmt) {
-                $insertStmt->bind_param('ss', $eventDate, $eventTitle);
+                $insertStmt->bind_param('ss', $normDate, $eventTitle);
                 if ($insertStmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Event added successfully!']);
+                    $newEventId = $conn->insert_id;
+
+                    // --- CHANGED: create announcement using only columns that exist ---
+                    $tblRes = $conn->query("SHOW TABLES LIKE 'announcements'");
+                    if ($tblRes && $tblRes->num_rows > 0) {
+                        // get actual columns
+                        $colsRes = $conn->query("SHOW COLUMNS FROM announcements");
+                        $existingCols = [];
+                        if ($colsRes) {
+                            while ($c = $colsRes->fetch_assoc()) $existingCols[] = $c['Field'];
+                        }
+
+                        // candidate values (prefer sensible names)
+                        $annTitle = $eventTitle;
+                        $annContent = "School event: {$eventTitle} on {$eventDate}";
+                        $annPubDate = $eventDate;
+                        $annVisibility = 'students';
+                        $annType = 'event';
+                        $annEventId = $newEventId;
+
+                        // mapping of preferred column => value
+                        $map = [
+                            'title' => $annTitle,
+                            'content' => $annContent,
+                            'pub_date' => $annPubDate,
+                            'date' => $annPubDate,
+                            'published_at' => $annPubDate,
+                            'visibility' => $annVisibility,
+                            'type' => $annType,
+                            'event_id' => $annEventId,
+                        ];
+
+                        $colsToInsert = [];
+                        $params = [];
+                        $types = '';
+                        foreach ($map as $col => $val) {
+                            if (in_array($col, $existingCols, true)) {
+                                $colsToInsert[] = $col;
+                                // event_id should be integer if present
+                                if ($col === 'event_id') {
+                                    $params[] = (int)$val;
+                                    $types .= 'i';
+                                } else {
+                                    $params[] = (string)$val;
+                                    $types .= 's';
+                                }
+                            }
+                        }
+
+                        if (count($colsToInsert) > 0) {
+                            $placeholders = implode(',', array_fill(0, count($colsToInsert), '?'));
+                            $colList = '`' . implode('`,`', $colsToInsert) . '`';
+                            $sql = "INSERT INTO announcements ($colList) VALUES ($placeholders)";
+                            $annStmt = $conn->prepare($sql);
+                            if ($annStmt) {
+                                // bind params by reference
+                                $refs = [];
+                                $refs[] = & $types;
+                                for ($i = 0; $i < count($params); $i++) {
+                                    $refs[] = & $params[$i];
+                                }
+                                @ call_user_func_array([$annStmt, 'bind_param'], $refs);
+                                @ $annStmt->execute();
+                                $annStmt->close();
+                            }
+                        }
+                    }
+                    // --- end changed block ---
+
                     $insertStmt->close();
-                    exit;
+                    $send_json(['success' => true, 'message' => 'Event added successfully!', 'id' => $newEventId]);
+                } else {
+                    $err = $conn->error ?: 'unknown';
+                    $insertStmt->close();
+                    $send_json(['success' => false, 'message' => 'Error adding event. DB error: ' . substr($err,0,200)]);
                 }
-                $insertStmt->close();
+            } else {
+                $send_json(['success' => false, 'message' => 'Database error (prepare insert).']);
             }
-            echo json_encode(['success' => false, 'message' => 'Error adding event.']);
-            exit;
         }
-        echo json_encode(['success' => false, 'message' => 'Please enter both date and event title.']);
-        exit;
+        $send_json(['success' => false, 'message' => 'Please enter both date and event title.']);
     }
-    
+
     if ($action === 'delete_event') {
         $eventId = intval($_POST['event_id'] ?? 0);
-        
+
         if ($eventId > 0) {
+            // Fetch event details first
+            $selStmt = $conn->prepare("SELECT event_date, title FROM school_events WHERE id = ? LIMIT 1");
+            $eventDate = null;
+            $eventTitle = null;
+            if ($selStmt) {
+                $selStmt->bind_param('i', $eventId);
+                $selStmt->execute();
+                if (method_exists($selStmt, 'get_result')) {
+                    $res = $selStmt->get_result();
+                    if ($res && $res->num_rows === 1) {
+                        $row = $res->fetch_assoc();
+                        $eventDate = $row['event_date'];
+                        $eventTitle = $row['title'];
+                    }
+                } else {
+                    $selStmt->store_result();
+                    if ($selStmt->num_rows === 1) {
+                        $selStmt->bind_result($edate, $etitle);
+                        $selStmt->fetch();
+                        $eventDate = $edate;
+                        $eventTitle = $etitle;
+                    }
+                }
+                $selStmt->close();
+            }
+
             $deleteStmt = $conn->prepare("DELETE FROM school_events WHERE id = ?");
             if ($deleteStmt) {
                 $deleteStmt->bind_param('i', $eventId);
                 if ($deleteStmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Event deleted.']);
+                    // --- CHANGED: delete matching announcement(s) using available columns ---
+                    if ($eventTitle !== null && $eventDate !== null) {
+                        $tblRes = $conn->query("SHOW TABLES LIKE 'announcements'");
+                        if ($tblRes && $tblRes->num_rows > 0) {
+                            // determine available columns
+                            $colsRes = $conn->query("SHOW COLUMNS FROM announcements");
+                            $existingCols = [];
+                            if ($colsRes) {
+                                while ($c = $colsRes->fetch_assoc()) $existingCols[] = $c['Field'];
+                            }
+
+                            // prefer deleting by event_id if exists, otherwise try title + date + type where possible
+                            if (in_array('event_id', $existingCols, true)) {
+                                $delStmt = $conn->prepare("DELETE FROM announcements WHERE event_id = ? LIMIT 1");
+                                if ($delStmt) {
+                                    $idVal = (int)$eventId;
+                                    $delStmt->bind_param('i', $idVal);
+                                    @ $delStmt->execute();
+                                    $delStmt->close();
+                                }
+                            } else {
+                                // build dynamic where parts
+                                $where = [];
+                                $params = [];
+                                $types = '';
+                                if (in_array('title', $existingCols, true)) {
+                                    $where[] = 'title = ?';
+                                    $params[] = (string)$eventTitle;
+                                    $types .= 's';
+                                }
+                                // prefer 'pub_date' then 'date' then 'published_at'
+                                if (in_array('pub_date', $existingCols, true)) {
+                                    $where[] = 'pub_date = ?';
+                                    $params[] = (string)$eventDate;
+                                    $types .= 's';
+                                } elseif (in_array('date', $existingCols, true)) {
+                                    $where[] = 'date = ?';
+                                    $params[] = (string)$eventDate;
+                                    $types .= 's';
+                                } elseif (in_array('published_at', $existingCols, true)) {
+                                    $where[] = 'published_at = ?';
+                                    $params[] = (string)$eventDate;
+                                    $types .= 's';
+                                }
+
+                                if (in_array('type', $existingCols, true)) {
+                                    $where[] = "type = ?";
+                                    $params[] = 'event';
+                                    $types .= 's';
+                                }
+
+                                if (count($where) > 0) {
+                                    $sql = "DELETE FROM announcements WHERE " . implode(' AND ', $where) . " LIMIT 1";
+                                    $delStmt = $conn->prepare($sql);
+                                    if ($delStmt) {
+                                        $refs = [];
+                                        $refs[] = & $types;
+                                        for ($i = 0; $i < count($params); $i++) {
+                                            $refs[] = & $params[$i];
+                                        }
+                                        @ call_user_func_array([$delStmt, 'bind_param'], $refs);
+                                        @ $delStmt->execute();
+                                        $delStmt->close();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // --- end changed block ---
+
                     $deleteStmt->close();
-                    exit;
+                    $send_json(['success' => true, 'message' => 'Event deleted.']);
+                } else {
+                    $deleteStmt->close();
+                    $send_json(['success' => false, 'message' => 'Error deleting event.']);
                 }
-                $deleteStmt->close();
+            } else {
+                $send_json(['success' => false, 'message' => 'Database error (prepare delete).']);
             }
         }
-        echo json_encode(['success' => false, 'message' => 'Error deleting event.']);
-        exit;
+        $send_json(['success' => false, 'message' => 'Invalid event id.']);
     }
+
+    // fallback
+    $send_json(['success' => false, 'message' => 'Unknown action.']);
 }
 
 // Fetch all events from database
@@ -83,11 +285,14 @@ $eventsData = [];
 $eventsStmt = $conn->query("SELECT id, event_date, title FROM school_events ORDER BY event_date ASC");
 if ($eventsStmt) {
     while ($row = $eventsStmt->fetch_assoc()) {
-        $date = $row['event_date'];
+        // normalize to YYYY-MM-DD to avoid mismatches (strip time portion)
+        $rawDate = $row['event_date'];
+        $date = date('Y-m-d', strtotime($rawDate));
+        if (!$date) continue;
         if (!isset($eventsData[$date])) {
             $eventsData[$date] = [];
         }
-        $eventsData[$date][] = ['id' => $row['id'], 'title' => $row['title']];
+        $eventsData[$date][] = ['id' => (int)$row['id'], 'title' => $row['title']];
     }
 }
 
@@ -230,8 +435,24 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       let currentDate = new Date();
       let selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       
-      // Load events from PHP
+      // Load events from PHP (raw)
       let schoolEvents = <?php echo json_encode($eventsData); ?>;
+
+      // Normalize client-side keys defensively: ensure YYYY-MM-DD keys and only arrays with items remain
+      (function normalizeSchoolEvents() {
+        const raw = schoolEvents || {};
+        const normalized = {};
+        Object.keys(raw).forEach(k => {
+          // extract YYYY-MM-DD if present, else use original key
+          const m = k.match(/\d{4}-\d{2}-\d{2}/);
+          const key = m ? m[0] : k;
+          const val = raw[k];
+          if (Array.isArray(val) && val.length > 0) {
+            normalized[key] = val;
+          }
+        });
+        schoolEvents = normalized;
+      })();
 
       // ...existing helper functions...
 
@@ -289,7 +510,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             dayDiv.classList.add('selected');
           }
 
-          if (schoolEvents[dateKey] && schoolEvents[dateKey].length > 0) {
+          if (Array.isArray(schoolEvents[dateKey]) && schoolEvents[dateKey].length > 0) {
             dayDiv.classList.add('has-event');
             const marker = document.createElement('div');
             marker.classList.add('event-marker');
@@ -368,11 +589,31 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         renderCalendar();
       });
 
+      // set min date for event-date input to today (prevents picking past dates)
+      const dateInput = document.getElementById('event-date');
+      if (dateInput) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const minDate = `${yyyy}-${mm}-${dd}`;
+        dateInput.setAttribute('min', minDate);
+        // if current value is before min, set it to min
+        if (dateInput.value && dateInput.value < minDate) dateInput.value = minDate;
+      }
+
       addEventForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
         const dateKey = eventDateInput.value;
         const title = eventTitleInput.value.trim();
+
+        // client-side past-date check
+        const todayStr = (new Date()).toISOString().slice(0,10);
+        if (!dateKey || dateKey < todayStr) {
+          showMessage('Cannot add an event in the past. Please pick today or a future date.', 'error');
+          return;
+        }
 
         if (dateKey && title) {
           const formData = new FormData();
@@ -385,24 +626,30 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
           })
-          .then(res => res.json())
-          .then(data => {
+          .then(res => res.text())
+          .then(text => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (err) {
+              console.error('Invalid JSON response from server (add):', text);
+              showMessage('Server error: invalid response. Check server logs.', 'error');
+              return;
+            }
             if (data.success) {
               showMessage(data.message, 'success');
               eventTitleInput.value = '';
-              
-              if (!schoolEvents[dateKey]) {
-                schoolEvents[dateKey] = [];
-              }
-              schoolEvents[dateKey].push({ id: Date.now(), title: title });
-              
+
+              if (!schoolEvents[dateKey]) schoolEvents[dateKey] = [];
+              const newId = data.id || Date.now();
+              schoolEvents[dateKey].push({ id: newId, title: title });
               renderCalendar();
             } else {
-              showMessage(data.message, 'error');
+              showMessage(data.message || 'Error adding event.', 'error');
             }
           })
           .catch(err => {
-            console.error('Error:', err);
+            console.error('Fetch error (add):', err);
             showMessage('Error adding event.', 'error');
           });
         } else {
@@ -422,28 +669,34 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
           fetch(window.location.href, {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 'X-Requested_WITH': 'XMLHttpRequest' },
             body: formData
           })
-          .then(res => res.json())
-          .then(data => {
+          .then(res => res.text())
+          .then(text => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (err) {
+              console.error('Invalid JSON response from server (delete):', text);
+              showMessage('Server error: invalid response. Check server logs.', 'error');
+              return;
+            }
             if (data.success) {
               showMessage(data.message, 'success');
-              
+
               if (schoolEvents[dateKey]) {
                 schoolEvents[dateKey] = schoolEvents[dateKey].filter(e => e.id != eventId);
-                if (schoolEvents[dateKey].length === 0) {
-                  delete schoolEvents[dateKey];
-                }
+                if (schoolEvents[dateKey].length === 0) delete schoolEvents[dateKey];
               }
-              
+
               renderCalendar();
             } else {
-              showMessage(data.message, 'error');
+              showMessage(data.message || 'Error deleting event.', 'error');
             }
           })
           .catch(err => {
-            console.error('Error:', err);
+            console.error('Fetch error (delete):', err);
             showMessage('Error deleting event.', 'error');
           });
         }
