@@ -232,6 +232,28 @@ function getStudentGradeCount($conn, $student_id) {
     return $result ? $result->fetch_assoc()['count'] : 0;
 }
 
+function getSectionsForGrade($conn, $grade_level) {
+    $sections = [];
+    $stmt = $conn->prepare("SELECT DISTINCT TRIM(COALESCE(NULLIF(section, ''), 'N/A')) AS section FROM students WHERE grade_level = ? ORDER BY section ASC");
+    if (!$stmt) {
+        return $sections;
+    }
+    $stmt->bind_param('s', $grade_level);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $sections[] = $row['section'];
+    }
+    $stmt->close();
+
+    // If no sections exist for this grade, default to A and B as fallbacks
+    if (empty($sections)) {
+        $sections = ['A', 'B'];
+    }
+
+    return $sections;
+}
+
 // ============================================================================
 // MAIN LOGIC
 // ============================================================================
@@ -300,7 +322,7 @@ $quarters = [1, 2, 3, 4];
       <!-- PAGE HEADER -->
       <header class="header">
         <h1>Grades Management</h1>
-        <p style="color: #666; margin-top: 4px; font-size: 14px;">Add and manage student grades for Grade 1 by section</p>
+        <p style="color: #666; margin-top: 4px; font-size: 14px;">Add and manage student grades by grade and section</p>
       </header>
 
       <!-- MESSAGES -->
@@ -344,7 +366,8 @@ $quarters = [1, 2, 3, 4];
               $studentsBySection = [];
               if (!empty($allStudents)) {
                 foreach ($allStudents as $student) {
-                  $section = $student['section'] ?? 'N/A';
+                  $section = trim($student['section'] ?? 'N/A');
+                  if ($section === '') $section = 'N/A';
                   if (!isset($studentsBySection[$section])) {
                     $studentsBySection[$section] = [];
                   }
@@ -352,17 +375,16 @@ $quarters = [1, 2, 3, 4];
                 }
               }
 
-              // For Grade 1, only show Section A (ensure it exists)
-              if ($gradeLevel === '1') {
-                $studentsBySection = array_intersect_key($studentsBySection, array_flip(['A']));
-                if (empty($studentsBySection['A'])) {
-                  $studentsBySection['A'] = [];
+              // Add all sections that exist for this grade (DB) so they are visible even if empty
+              $sectionsForGrade = getSectionsForGrade($conn, $gradeLevel);
+              foreach ($sectionsForGrade as $sec) {
+                if (!isset($studentsBySection[$sec])) {
+                    $studentsBySection[$sec] = [];
                 }
-              } else {
-                // Ensure at least sections A and B for other grades
-                if (!isset($studentsBySection['A'])) $studentsBySection['A'] = [];
-                if (!isset($studentsBySection['B'])) $studentsBySection['B'] = [];
               }
+              
+              // Sort sections so they appear in a consistent order (A, B, C, ...)
+              ksort($studentsBySection, SORT_NATURAL | SORT_FLAG_CASE);
           ?>
             <div class="grade-level-card" data-grade-level-id="<?php echo $gradeLevelKey; ?>" data-grade-level="<?php echo htmlspecialchars($gradeLevel); ?>" data-is-grade-one="<?php echo ($gradeLevel === '1') ? 'true' : 'false'; ?>">
                <div class="grade-level-header" data-toggle="grade-level">

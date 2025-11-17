@@ -141,7 +141,8 @@
 
 .sections-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  /* reduce the min width so more sections can appear side-by-side on wider screens */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 
