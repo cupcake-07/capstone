@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../config/database.php';
 
-define('DATA_DIR', __DIR__ . '/data');
+define('DATA_DIR', __DIR__ . '/../data'); // move to project-wide data folder (c:\xampp\htdocs\capstone\data)
 define('DATA_FILE', DATA_DIR . '/schedules.json');
 define('TEACHERS_FILE', DATA_DIR . '/teachers.json');
 $GRADES = ['1','2','3','4','5','6'];
@@ -72,16 +72,29 @@ function get_teachers($conn) {
     return $teachers;
 }
 
-function load_all_schedules($grades) {
+function load_all_schedules($grades, $sections) {
+    // Ensure data folder exists
     if (!file_exists(DATA_FILE)) {
         $out = [];
-        foreach ($grades as $g) $out[$g] = default_schedule();
+        foreach ($grades as $g) {
+            foreach ($sections as $s) {
+                $out[$g . '_' . $s] = default_schedule();
+            }
+        }
         return $out;
     }
     $json = file_get_contents(DATA_FILE);
     $data = json_decode($json, true);
-    // ensure defaults for missing grades
-    foreach ($grades as $g) if (!isset($data[$g])) $data[$g] = default_schedule();
+    if (!is_array($data)) $data = [];
+    // ensure defaults for missing grade_section combinations
+    foreach ($grades as $g) {
+        foreach ($sections as $s) {
+            $key = $g . '_' . $s;
+            if (!isset($data[$key]) || !is_array($data[$key])) {
+                $data[$key] = default_schedule();
+            }
+        }
+    }
     return $data;
 }
 
@@ -95,7 +108,7 @@ if (isset($_GET['fetch_schedule']) && $_GET['fetch_schedule']) {
     header('Content-Type: application/json');
     $grade = $_GET['grade'] ?? null;
     $section = $_GET['section'] ?? null;
-    $all = load_all_schedules($GRADES);
+    $all = load_all_schedules($GRADES, $SECTIONS);
     if ($grade && $section && in_array($grade, $GRADES) && in_array($section, $SECTIONS)) {
         $key = $grade . '_' . $section;
         $schedule = isset($all[$key]) ? $all[$key] : default_schedule();
@@ -109,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['grade']) && isset($_P
     $grade = $_POST['grade'];
     $section = $_POST['section'];
     $sched = json_decode($_POST['schedule_json'], true);
-    $all = load_all_schedules($GRADES);
+    $all = load_all_schedules($GRADES, $SECTIONS);
     if (in_array($grade, $GRADES) && in_array($section, $SECTIONS)) {
         // normalize: ensure days keys exist
         foreach ($sched as &$r) {
@@ -134,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['grade']) && isset($_P
 if (isset($_GET['export']) && $_GET['export']) {
     $grade = $_GET['grade'] ?? 'all';
     $section = $_GET['section'] ?? 'all';
-    $all = load_all_schedules($GRADES);
+    $all = load_all_schedules($GRADES, $SECTIONS);
     $rows = [];
     
     if ($grade === 'all' && $section === 'all') {
@@ -224,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modal_action'])) {
 }
 
 // Render page
-$allSchedules = load_all_schedules($GRADES);
+$allSchedules = load_all_schedules($GRADES, $SECTIONS);
 $teachers = get_teachers($conn);
 $selectedGrade = $_GET['grade'] ?? ($GRADES[0]);
 $selectedSection = $_GET['section'] ?? ($SECTIONS[0]);

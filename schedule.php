@@ -32,18 +32,37 @@ if (!empty($_SESSION['user_id'])) {
     }
 }
 
-// helper to load schedule for a grade+section
+// --- REPLACE: helper to load schedule for a grade+section ---
 function load_schedule_for($grade, $section) {
-    $schedules_file = __DIR__ . '/teachers/data/schedules.json';
+    // use shared project-wide data file (same as admin)
+    $schedules_file = __DIR__ . '/data/schedules.json';
     if (!file_exists($schedules_file)) return null;
-    $json = file_get_contents($schedules_file);
+    $json = @file_get_contents($schedules_file);
+    if ($json === false) return null;
     $data = json_decode($json, true);
-    $key = $grade . '_' . $section;
+    if (!is_array($data)) return null;
+
+    // normalize inputs
+    $g = trim((string)$grade);
+    $s = trim((string)$section);
+    if ($g === '') return null;
+    // normalize section to single upper-case letter if present
+    $s = strtoupper($s);
+    if ($s === '' || strtolower($s) === 'n/a') $s = 'A';
+
+    $key = $g . '_' . $s;
     if (isset($data[$key]) && is_array($data[$key])) return $data[$key];
+
+    // try fallback: sometimes sections stored without underscore or different casing
+    foreach ($data as $k => $val) {
+        if (!is_string($k)) continue;
+        if (strcasecmp($k, $key) === 0) return $val;
+    }
+
     return null;
 }
 
-// --- NEW: prefer grade/section from query parameters when provided ---
+// --- SMALL ADJUSTMENT: prefer grade/section from query parameters when provided ---
 if (isset($_GET['grade']) && isset($_GET['section'])) {
     $qg = trim((string)$_GET['grade']);
     $qs = trim((string)$_GET['section']);
@@ -51,6 +70,13 @@ if (isset($_GET['grade']) && isset($_GET['section'])) {
         $student_grade = $qg;
         $student_section = $qs;
     }
+}
+
+// normalize DB values too
+if ($student_grade !== null) $student_grade = trim((string)$student_grade);
+if ($student_section !== null) $student_section = trim((string)$student_section);
+if ($student_section === '' || strtolower($student_section) === 'n/a') {
+    $student_section = 'A';
 }
 
 // --- NEW: load schedule once for reuse in both views ---

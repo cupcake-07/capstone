@@ -45,19 +45,34 @@ if (!$user) {
     exit;
 }
 
-// sanitize for output
+// --- REPLACE: sanitize/display values and add raw/normalized keys for lookups ---
+/*
 $name = htmlspecialchars($user['name'] ?? 'Student');
 $email = htmlspecialchars($user['email'] ?? '');
 $grade = htmlspecialchars($user['grade_level'] ?? 'Not Set');
-
-// --- CHANGED: Stop forcing Grade 1 to Section A; only default to 'A' when DB value is empty ---
 $rawSection = trim((string)($user['section'] ?? ''));
 if ($rawSection === '' || strtolower($rawSection) === 'n/a') {
-    // default to A only when no section set in DB
     $section = 'A';
 } else {
     $section = htmlspecialchars($rawSection);
 }
+*/
+$name = htmlspecialchars($user['name'] ?? 'Student');
+$email = htmlspecialchars($user['email'] ?? '');
+
+// raw values for lookup (not HTML-escaped)
+$gradeKey = trim((string)($user['grade_level'] ?? ''));
+$sectionRaw = trim((string)($user['section'] ?? ''));
+
+// normalize section for lookup and fallback rules
+$normalizedSection = strtoupper($sectionRaw);
+if ($normalizedSection === '' || in_array(strtolower($normalizedSection), ['n/a','na','-','none','tbd'], true)) {
+    $normalizedSection = 'A';
+}
+
+// display-safe values
+$grade = $gradeKey !== '' ? htmlspecialchars($gradeKey) : 'Not Set';
+$section = htmlspecialchars($normalizedSection);
 
 $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
 $isEnrolled = $user['is_enrolled'] ?? 1;
@@ -65,12 +80,26 @@ $statusText = $isEnrolled ? 'Enrolled' : 'Not Enrolled';
 
 // --- ADD: helper to load schedule for specific grade+section ---
 function load_schedule_for($grade, $section) {
-    $schedules_file = __DIR__ . '/teachers/data/schedules.json';
+    $schedules_file = __DIR__ . '/data/schedules.json';
     if (!file_exists($schedules_file)) return null;
-    $json = file_get_contents($schedules_file);
+    $json = @file_get_contents($schedules_file);
+    if ($json === false) return null;
     $data = json_decode($json, true);
-    $key = $grade . '_' . $section;
+    if (!is_array($data)) return null;
+
+    $g = trim((string)$grade);
+    $s = trim((string)$section);
+    if ($g === '') return null;
+    $s = strtoupper($s);
+    if ($s === '' || in_array(strtolower($s), ['n/a','na','-','none','tbd'], true)) $s = 'A';
+    $key = $g . '_' . $s;
     if (isset($data[$key]) && is_array($data[$key])) return $data[$key];
+
+    // try case-insensitive fallback
+    foreach ($data as $k => $val) {
+        if (!is_string($k)) continue;
+        if (strcasecmp($k, $key) === 0 && is_array($val)) return $val;
+    }
     return null;
 }
 
@@ -266,40 +295,21 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
 
           <div class="small-card">
             <h4>Schedule (Today)</h4>
-            <?php
-              // determine weekday key used in teacher schedules (monday..friday)
-              $weekday = strtolower(date('l')); // e.g. Monday
-              $weekday_map = ['monday','tuesday','wednesday','thursday','friday'];
-              $dayKey = in_array($weekday, ['monday','tuesday','wednesday','thursday','friday']) ? $weekday : 'monday';
 
-              $studentSchedule = load_schedule_for($grade, $section);
-              if ($studentSchedule && is_array($studentSchedule)):
-                  $items = [];
-                  foreach ($studentSchedule as $row) {
-                      $time = $row['time'] ?? '';
-                      $entry = $row[$dayKey] ?? ['teacher'=>'','subject'=>''];
-                      $subject = trim($entry['subject'] ?? '');
-                      $teacherName = trim($entry['teacher'] ?? '');
-                      if ($subject !== '' || $teacherName !== '') {
-                          $display = trim(($time ? $time . ' • ' : '') . ($subject ?: $teacherName) . ($teacherName && $subject ? ' • ' . $teacherName : ''));
-                          $items[] = $display;
-                      }
+            <div id="todaySchedule">
+              <noscript>
+                <?php
+                  // Fallback for non-JS users: simple server-side message
+                  $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
+                  if ($studentSchedule && is_array($studentSchedule)) {
+                      echo '<div style="color:#666;">Enable JavaScript to see today’s schedule in your local time. View the full schedule below.</div>';
+                  } else {
+                      echo '<div style="color:#666;">No schedule available for Grade ' . htmlspecialchars($grade) . ' Section ' . htmlspecialchars($section) . '.</div>';
                   }
-                  if (count($items) > 0):
-            ?>
-                    <ul class="schedule">
-                      <?php foreach ($items as $it): ?>
-                        <li><?php echo htmlspecialchars($it); ?></li>
-                      <?php endforeach; ?>
-                    </ul>
-            <?php else: ?>
-                    <div style="color:#666;">No classes scheduled for today in Grade <?php echo htmlspecialchars($grade); ?> Section <?php echo htmlspecialchars($section); ?>.</div>
-            <?php
-                  endif;
-              else:
-            ?>
-                <div style="color:#666;">No schedule available for Grade <?php echo htmlspecialchars($grade); ?> Section <?php echo htmlspecialchars($section); ?>.</div>
-            <?php endif; ?>
+                ?>
+              </noscript>
+              <div class="loading" style="color:#666;">Loading today's schedule...</div>
+            </div>
             <a href="schedule.php?grade=<?php echo urlencode($grade); ?>&section=<?php echo urlencode($section); ?>" class="link-more">View full schedule →</a>
           </div>
         </aside>
@@ -442,7 +452,6 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
     (function(){
       const year = document.getElementById('year');
       if(year) year.textContent = new Date().getFullYear();
-
       document.querySelectorAll('.tab-btn').forEach(btn=>{
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -453,101 +462,63 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
           if(el) el.classList.remove('hidden');
         });
       });
-
-      const avatarInput = document.getElementById('avatarInput');
-      const avatarImage = document.getElementById('avatarImage');
-      const userId = <?php echo $userId; ?>;
-
-      // Fix: proper .then parameter name and safe handling
-      fetch('api/get-avatar.php?user_id=' + userId)
-        .then(response => response.json())
-        .then(data => {
-          if (data && data.avatar) {
-            avatarImage.src = data.avatar;
-          }
-        })
-        .catch(err => console.log('No avatar found'));
-
-      if (avatarInput) {
-        avatarInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const imageData = event.target.result;
-              avatarImage.src = imageData;
-              
-              // Save to database
-              fetch('api/upload-avatar.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, avatar: imageData })
-              })
-              .then(response => response.json())
-              .then(data => {
-                if (data.success) {
-                  console.log('Avatar saved successfully');
-                }
-              })
-              .catch(err => console.error('Error saving avatar:', err));
-            };
-            reader.readAsDataURL(file);
-          }
-        });
-      }
-
-      // --- NEW: Poll server for grade/section updates every 7 seconds ---
-      const badgeEl = document.getElementById('badgeGrade');
-      const profileSectionEl = document.getElementById('profileSection');
-      const roleLineEl = document.getElementById('roleLine');
-
-      function pollStudentInfo() {
-        fetch('api/get-student-info.php', { credentials: 'same-origin' })
-          .then(r => r.json())
-          .then(data => {
-            if (!data || !data.success) return;
-            const newGrade = String(data.grade || '');
-            const newSection = String(data.section || '');
-            // update badge
-            if (newGrade && badgeEl) badgeEl.textContent = 'Grade ' + newGrade;
-            // update profile section value
-            if (newSection && profileSectionEl) profileSectionEl.textContent = newSection;
-            // update role/line (keep student id)
-            if (roleLineEl) {
-              roleLineEl.innerHTML = 'Section ' + (newSection || '<?php echo $section; ?>') + ' • Student ID: <strong><?php echo $studentIdDisplay; ?></strong>';
-            }
-          })
-          .catch(err => {
-            // silent fail
-            // console.log('poll error', err);
-          });
-      }
-
-      // initial poll + interval
-      pollStudentInfo();
-      setInterval(pollStudentInfo, 7000);
-
     })();
-
-    // Toggle subject details when subject row clicked
-    document.addEventListener('click', function (e) {
-      const row = e.target.closest('.subject-row');
-      if (row) {
-        const subject = row.dataset.subject;
-        const details = document.querySelectorAll('.subject-details[data-subject="' + CSS.escape(subject) + '"]');
-        details.forEach(d => d.classList.toggle('hidden'));
-      }
-    });
-
-    // small helper to ensure CSS.escape exists in older browsers
-    if (typeof CSS === 'undefined' || typeof CSS.escape === 'undefined') {
-      // basic polyfill
-      (function(global){
-        var s = /[^\w-]/g;
-        if (!global.CSS) global.CSS = {};
-        global.CSS.escape = function(value){ return String(value).replace(s, '\\$&'); };
-      })(window);
-    }
   </script>
+
+  <script>
+    // Client-side "today" schedule renderer — uses browser local timezone so "today" is accurate
+    (function(){
+      // schedule data embedded from server (safe JSON encoding)
+      const studentSchedule = <?php echo json_encode($studentSchedule ?? [], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+      const gradeDisplay = <?php echo json_encode($grade); ?>;
+      const sectionDisplay = <?php echo json_encode($section); ?>;
+      const container = document.getElementById('todaySchedule');
+      if (!container) return;
+
+      const isMeaningful = v => {
+        v = (v||'').trim();
+        if (!v) return false;
+        const low = v.toLowerCase();
+        return ['n/a','na','-','none','tbd',''].indexOf(low) === -1;
+      };
+
+      const todayName = new Date().toLocaleString(undefined, { weekday: 'long' }).toLowerCase(); // e.g. "tuesday"
+      const dayKey = ['monday','tuesday','wednesday','thursday','friday'].includes(todayName) ? todayName : null;
+
+      let items = [];
+      if (dayKey && Array.isArray(studentSchedule)) {
+        for (const row of studentSchedule) {
+          const time = (row.time || '').trim();
+          const entry = row[dayKey] || { teacher: '', subject: '' };
+          const subject = entry.subject || '';
+          const teacher = entry.teacher || '';
+          if (!isMeaningful(subject) && !isMeaningful(teacher)) continue;
+          let display = '';
+          if (time) display += time + ' • ';
+          display += (isMeaningful(subject) ? subject : teacher);
+          if (isMeaningful(subject) && isMeaningful(teacher)) display += ' • ' + teacher;
+          items.push(display);
+        }
+      }
+
+      container.innerHTML = ''; // clear loading
+      if (items.length > 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'schedule';
+        for (const it of items) {
+          const li = document.createElement('li');
+          li.textContent = it;
+          ul.appendChild(li);
+        }
+        container.appendChild(ul);
+      } else {
+        const div = document.createElement('div');
+        div.style.color = '#666';
+        div.textContent = 'No classes scheduled for today in Grade ' + gradeDisplay + ' Section ' + sectionDisplay + '.';
+        container.appendChild(div);
+      }
+    })();
+  </script>
+
 </body>
 </html>
