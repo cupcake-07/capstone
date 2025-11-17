@@ -8,6 +8,7 @@
         --border: #e6e9ef;
         --love: #62aef9;
         --grey: #252627;
+        --pink: #fd4ba7;
         --radius: 14px;
         --shadow-sm: 0 4px 12px rgba(2, 6, 23, 0.04);
         --shadow-md: 0 10px 30px rgba(11, 17, 24, 0.06);
@@ -251,6 +252,9 @@
         box-sizing: border-box;
     }   
 
+    .header {
+        color: var(--pink) ;
+    }
     .cards {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -276,12 +280,13 @@
     
     .card:hover {
         box-shadow: translateY(-2px);
-        border-color: var(--shadow-md);
+        border-color: var(--pink);
     }
     
     .card-title {
-        color: var(--text-dark);
+        color: var(--panel);
         font-size: 16px;
+        font-weight: bold;
     }
     
     .card-value {
@@ -294,7 +299,7 @@
     .footer {
         background: linear-gradient(180deg, #1a1d20 0%, #121517 100%);
         color: white;
-        padding: 40px 44px 30px;
+        padding: 35px 44px 30px;
         width: 100%; 
         box-sizing: border-box;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -362,10 +367,11 @@
     .footer-links {
         display: flex;
         gap: 16px;
+        justify-content: center;
     }
 
     .footer-links a {
-        padding: 0 10px;
+        padding: 0 5px;
     }
 
     /* ===== RESPONSIVENESS (MOBILE) ===== */
@@ -498,7 +504,7 @@
         color: var(--panel);
     }
     .nav-button {
-        background-color: #FFD700;
+        background-color: #ff65c7;
         color: #000000;
         border: none;
         padding: 10px 15px;
@@ -508,7 +514,7 @@
         transition: background-color 0.2s, transform 0.1s;
     }
     .nav-button:hover {
-        background-color: #FFC700;
+        background-color: #fef35cf2;
         transform: translateY(-1px);
     }
     .calendar-grid {
@@ -524,9 +530,11 @@
     .day-name {
         text-align: center;
         font-weight: 600;
-        color: var(--muted);
+        color: var(--panel);
         padding: 10px 5px;
         font-size: 14px;
+        background-color: transparent !important;
+        background: none !important;
     }
     .calendar-day {
         display: flex;
@@ -541,7 +549,7 @@
         cursor: pointer;
         transition: all 0.2s;
         background-color: var(--bg);
-        border: 1px solid var(--border);
+        border: 1px solid var(--panel);
         position: relative;
         color: var(--panel);
     }
@@ -556,7 +564,7 @@
     }
 
     .calendar-day.today {
-        border: 2px solid var(--green);
+        border: 2px solid var(--panel);
         font-weight: 700;
     }
 
@@ -625,7 +633,7 @@
         font-size: 14px;
     }
     #add-even-form button {
-        background-color: var(--green);
+        background-color: var(--pink);
         color: white;
         border: none;
         padding: 10px 20px;
@@ -636,7 +644,7 @@
         flex-shrink: 0;
     }
     #add-event-form button:hover {
-        background-color: #6a7f69;
+        background-color: #e8f78b;
     }
     #message-box {
         margin-top: 15px;
