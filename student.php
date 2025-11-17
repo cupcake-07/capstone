@@ -50,12 +50,13 @@ $name = htmlspecialchars($user['name'] ?? 'Student');
 $email = htmlspecialchars($user['email'] ?? '');
 $grade = htmlspecialchars($user['grade_level'] ?? 'Not Set');
 
-// Force Grade 1 students to Section A
+// --- CHANGED: Stop forcing Grade 1 to Section A; only default to 'A' when DB value is empty ---
 $rawSection = trim((string)($user['section'] ?? ''));
-if ($grade === '1' || empty($rawSection) || strtolower($rawSection) === 'n/a') {
-  $section = 'A';
+if ($rawSection === '' || strtolower($rawSection) === 'n/a') {
+    // default to A only when no section set in DB
+    $section = 'A';
 } else {
-  $section = htmlspecialchars($rawSection);
+    $section = htmlspecialchars($rawSection);
 }
 
 $studentIdDisplay = htmlspecialchars($user['id'] ?? '');
@@ -230,11 +231,13 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
                 <input id="avatarInput" type="file" class="avatar-input" accept="image/*" />
               </div>
             </div>
-            <div class="badge">Grade <?php echo $grade; ?></div>
+            <!-- ADD id for JS updates -->
+            <div class="badge" id="badgeGrade">Grade <?php echo $grade; ?></div>
           </div>
 
           <h2 class="name"><?php echo $name; ?></h2>
-          <p class="role">Section <?php echo $section; ?> • Student ID: <strong><?php echo $studentIdDisplay; ?></strong></p>
+          <!-- role line will be updated by JS; keep class but use innerHTML in script -->
+          <p class="role" id="roleLine">Section <?php echo $section; ?> • Student ID: <strong><?php echo $studentIdDisplay; ?></strong></p>
 
           <div class="card info">
             <div class="row">
@@ -243,7 +246,8 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
             </div>
             <div class="row">
               <div class="label">Section</div>
-              <div class="value"><?php echo $section; ?></div>
+              <!-- ADD id for JS updates -->
+              <div class="value" id="profileSection"><?php echo $section; ?></div>
             </div>
             <div class="row">
               <div class="label">Status</div>
@@ -454,11 +458,11 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
       const avatarImage = document.getElementById('avatarImage');
       const userId = <?php echo $userId; ?>;
 
-      // Load avatar from database
+      // Fix: proper .then parameter name and safe handling
       fetch('api/get-avatar.php?user_id=' + userId)
         .then(response => response.json())
-        .then data => {
-          if (data.avatar) {
+        .then(data => {
+          if (data && data.avatar) {
             avatarImage.src = data.avatar;
           }
         })
@@ -491,6 +495,38 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
           }
         });
       }
+
+      // --- NEW: Poll server for grade/section updates every 7 seconds ---
+      const badgeEl = document.getElementById('badgeGrade');
+      const profileSectionEl = document.getElementById('profileSection');
+      const roleLineEl = document.getElementById('roleLine');
+
+      function pollStudentInfo() {
+        fetch('api/get-student-info.php', { credentials: 'same-origin' })
+          .then(r => r.json())
+          .then(data => {
+            if (!data || !data.success) return;
+            const newGrade = String(data.grade || '');
+            const newSection = String(data.section || '');
+            // update badge
+            if (newGrade && badgeEl) badgeEl.textContent = 'Grade ' + newGrade;
+            // update profile section value
+            if (newSection && profileSectionEl) profileSectionEl.textContent = newSection;
+            // update role/line (keep student id)
+            if (roleLineEl) {
+              roleLineEl.innerHTML = 'Section ' + (newSection || '<?php echo $section; ?>') + ' • Student ID: <strong><?php echo $studentIdDisplay; ?></strong>';
+            }
+          })
+          .catch(err => {
+            // silent fail
+            // console.log('poll error', err);
+          });
+      }
+
+      // initial poll + interval
+      pollStudentInfo();
+      setInterval(pollStudentInfo, 7000);
+
     })();
 
     // Toggle subject details when subject row clicked

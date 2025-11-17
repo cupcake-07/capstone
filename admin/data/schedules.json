@@ -736,12 +736,12 @@
             "period": "1",
             "time": "8:00 - 8:45",
             "monday": {
-                "teacher": "Maria DB",
-                "subject": "Mathematics"
+                "teacher": "",
+                "subject": ""
             },
             "tuesday": {
-                "teacher": "Cardio Training",
-                "subject": "English"
+                "teacher": "",
+                "subject": ""
             },
             "wednesday": {
                 "teacher": "Cardio Training",
