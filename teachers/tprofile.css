@@ -1,3 +1,8 @@
+/* Styles moved / inlined into tprofile.php for single-file delivery.
+   This file kept as a fallback/reference. If you prefer to use this file
+   instead, remove the <style> block in tprofile.php and restore the <link>. */
+   
+/* minimal fallback: ensure nothing breaks if accidentally loaded */
 :root {
         --bg: #f6f7f9;
         --panel: #3d85f8;

@@ -11,6 +11,7 @@ $name = '';
 $email = '';
 $phone = '';
 $subject = '';
+$address = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'] ?? '';
@@ -19,36 +20,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $subject = $_POST['subject'] ?? '';
+    $address = trim($_POST['address'] ?? '');
 
-    if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
-        $error = 'Name, email, and password are required';
+    if (empty($name) || empty($email) || empty($password) || empty($confirm_password) || empty($address)) {
+        $error = 'Name, email, password, and address are required';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Invalid email format';
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters';
     } elseif ($password !== $confirm_password) {
         $error = 'Passwords do not match';
-    } else {
-        $check = $conn->query("SELECT id FROM teachers WHERE email = '$email' LIMIT 1");
-        if ($check && $check->num_rows > 0) {
-            $error = 'Email already registered';
-        } else {
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO teachers (name, email, password, phone, subject) VALUES (?, ?, ?, ?, ?)");
-            
-            if ($stmt) {
-                $stmt->bind_param('sssss', $name, $email, $hashed_password, $phone, $subject);
-                if ($stmt->execute()) {
-                    $success = 'Account created successfully! Redirecting to login...';
-                    header('refresh:2;url=teacher-login.php');
-                    $name = $email = $phone = $subject = '';
-                } else {
-                    $error = 'Error creating account. Please try again.';
-                }
-                $stmt->close();
-            } else {
-                $error = 'Database error. Please try again.';
+    }
+
+    if (empty($error)) {
+        // Use prepared statement to check email existence
+        $checkStmt = $conn->prepare("SELECT id FROM teachers WHERE email = ? LIMIT 1");
+        if ($checkStmt) {
+            $checkStmt->bind_param('s', $email);
+            $checkStmt->execute();
+            $checkStmt->store_result();
+            if ($checkStmt->num_rows > 0) {
+                $error = 'Email already registered';
             }
+            $checkStmt->close();
+        } else {
+            $error = 'Database error. Please try again.';
+        }
+    }
+
+    if (empty($error)) {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        // Insert the new fields address into teachers table
+        $stmt = $conn->prepare("INSERT INTO teachers (name, email, password, phone, subject, address) VALUES (?, ?, ?, ?, ?, ?)");
+        
+        if ($stmt) {
+            $stmt->bind_param('ssssss', $name, $email, $hashed_password, $phone, $subject, $address);
+            if ($stmt->execute()) {
+                $success = 'Account created successfully! Redirecting to login...';
+                header('refresh:2;url=teacher-login.php');
+                $name = $email = $phone = $subject = $address = '';
+            } else {
+                $error = 'Error creating account. Please try again.';
+            }
+            $stmt->close();
+        } else {
+            $error = 'Database error. Please try again.';
         }
     }
 }
@@ -138,6 +154,24 @@ $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Ed
             color: #1a1a1a;
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #fafafa;
+            color: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-group input[type="date"] {
+            padding: 8px 12px;
         }
 
         .form-group input:focus,
@@ -289,6 +323,12 @@ $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Ed
                         <?php endforeach; ?>
                     </select>
                 </div>
+            </div>
+
+            <!-- New Address Field -->
+            <div class="form-group">
+                <label for="address">Address *</label>
+                <textarea id="address" name="address" placeholder="Enter your address" required><?php echo htmlspecialchars($address ?? ''); ?></textarea>
             </div>
 
             <div class="form-group">

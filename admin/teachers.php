@@ -11,9 +11,19 @@ if ($colRes && $colRes->num_rows > 0) $hasGrade = true;
 $colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'sections'");
 if ($colRes && $colRes->num_rows > 0) $hasSections = true;
 
+// Check whether hire_date/is_hired columns exist and build SELECT accordingly
+$hasHireDate = false;
+$hasIsHired = false;
+$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'hire_date'");
+if ($colRes && $colRes->num_rows > 0) $hasHireDate = true;
+$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'is_hired'");
+if ($colRes && $colRes->num_rows > 0) $hasIsHired = true;
+
 $selectCols = "id, name, email, subject, phone";
 if ($hasGrade) $selectCols .= ", grade";
 if ($hasSections) $selectCols .= ", sections";
+if ($hasHireDate) $selectCols .= ", hire_date";
+if ($hasIsHired) $selectCols .= ", is_hired";
 
 // Fetch all teachers
 $allTeachersResult = $conn->query("SELECT $selectCols FROM teachers ORDER BY name ASC");
@@ -23,6 +33,8 @@ if ($allTeachersResult) {
         // ensure keys exist for rendering
         if (!$hasGrade) $row['grade'] = '';
         if (!$hasSections) $row['sections'] = '';
+        if (!$hasHireDate) $row['hire_date'] = '';
+        if (!$hasIsHired) $row['is_hired'] = '0';
         $allTeachers[] = $row;
     }
 }
@@ -65,6 +77,8 @@ if ($allTeachersResult) {
               <th>Phone</th>
               <th>Grade</th>
               <th>Sections</th>
+              <th>Hire Date</th>
+              <th>Hired</th>
               <th>Manage</th>
             </tr>
           </thead>
@@ -79,13 +93,17 @@ if ($allTeachersResult) {
                   <td><?php echo htmlspecialchars($teacher['phone']); ?></td>
                   <td class="col-grade"><?php echo htmlspecialchars($teacher['grade']); ?></td>
                   <td class="col-sections"><?php echo htmlspecialchars($teacher['sections']); ?></td>
+                  <td class="col-hiredate"><?php echo $teacher['hire_date'] ? htmlspecialchars($teacher['hire_date']) : '—'; ?></td>
+                  <td class="col-ishired"><?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? 'Yes' : '-'; ?></td>
                   <td>
                     <!-- improved manage button with icon -->
-                    <button class="manage-btn" 
+                    <button type="button" class="manage-btn" 
                       data-id="<?php echo htmlspecialchars($teacher['id']); ?>"
                       data-name="<?php echo htmlspecialchars($teacher['name']); ?>"
                       data-grade="<?php echo htmlspecialchars($teacher['grade']); ?>"
                       data-sections="<?php echo htmlspecialchars($teacher['sections']); ?>"
+                      data-hire-date="<?php echo htmlspecialchars($teacher['hire_date']); ?>"
+                      data-is-hired="<?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? '1' : '0'; ?>"
                       aria-label="Manage <?php echo htmlspecialchars($teacher['name']); ?>">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -97,7 +115,7 @@ if ($allTeachersResult) {
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
-              <tr><td colspan="8" style="text-align: center; padding: 20px;">No teachers found</td></tr>
+              <tr><td colspan="10" style="text-align: center; padding: 20px;">No teachers found</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -132,6 +150,23 @@ if ($allTeachersResult) {
           <label for="sections">Sections (comma separated)</label>
           <input type="text" name="sections" id="sections" placeholder="e.g. A, B, C" />
         </div>
+
+        <!-- New Hire controls for admins -->
+        <div class="form-row">
+          <label for="hire_date">Hire Date</label>
+          <!-- disabled by default; JS will enable when "Hired" checked -->
+          <input type="date" name="hire_date" id="hire_date" disabled />
+        </div>
+        <div class="form-row" style="align-items:center;">
+          <label for="is_hired" style="margin-right:8px;">Hired</label>
+          <input type="checkbox" name="is_hired" id="is_hired" value="1" />
+        </div>
+
+        <div class="form-row" style="font-size:12px; color:#666; gap:6px;">
+          <!-- small hint to admin -->
+          <div style="grid-column: 1 / -1;">Note: hire date is only applicable when "Hired" is checked.</div>
+        </div>
+
         <div class="form-actions">
           <button type="button" id="cancelManage" class="btn btn-secondary">Cancel</button>
           <button type="submit" id="saveManage" class="btn btn-primary">
@@ -235,6 +270,8 @@ if ($allTeachersResult) {
 		const teacherIdInput = document.getElementById('teacher_id');
 		const gradeInput = document.getElementById('grade');
 		const sectionsInput = document.getElementById('sections');
+		const hireDateInput = document.getElementById('hire_date');
+		const isHiredInput = document.getElementById('is_hired');
 		const manageTitle = document.getElementById('manageTitle');
 		const closeBtn = document.getElementById('closeManage');
 		const cancelBtn = document.getElementById('cancelManage');
@@ -250,15 +287,45 @@ if ($allTeachersResult) {
 			return;
 		}
 
+		// Toggle hire date enabled state based on is_hired
+		function toggleHireDateField() {
+			if (!hireDateInput || !isHiredInput) return;
+			if (isHiredInput.checked) {
+				hireDateInput.disabled = false;
+				// If no date exists, default to today's date for convenience
+				if (!hireDateInput.value) {
+					const today = new Date().toISOString().slice(0, 10);
+					hireDateInput.value = today;
+				}
+			} else {
+				// Clear and disable when not hired
+				hireDateInput.value = '';
+				hireDateInput.disabled = true;
+			}
+		}
+
+		// Attach the toggle to the checkbox
+		if (isHiredInput) {
+			isHiredInput.addEventListener('change', toggleHireDateField);
+		}
+
 		function openModalFromBtn(btn) {
 			const id = btn.dataset.id || '';
 			const name = btn.dataset.name || '';
 			const grade = btn.dataset.grade || '';
 			const sections = btn.dataset.sections || '';
+			const hireDate = btn.dataset.hireDate || btn.dataset['hireDate'] || ''; // fallback property names
+			const isHired = (btn.dataset.isHired === '1' || btn.dataset.isHired === 'true') ? '1' : '0';
 
 			teacherIdInput.value = id;
 			if (gradeInput) gradeInput.value = grade;
 			if (sectionsInput) sectionsInput.value = sections;
+			if (hireDateInput) hireDateInput.value = hireDate;
+			if (isHiredInput) isHiredInput.checked = (isHired === '1' || isHired === 'true');
+
+			// ensure the hire date input state matches checkbox
+			toggleHireDateField();
+
 			manageTitle.textContent = 'Manage: ' + (name || id);
 			modal.setAttribute('aria-hidden', 'false');
 			// focus first control
@@ -266,6 +333,7 @@ if ($allTeachersResult) {
 			document.addEventListener('keydown', onKeydown);
 		}
 
+		// Close modal function
 		function closeModal() {
 			modal.setAttribute('aria-hidden', 'true');
 			document.removeEventListener('keydown', onKeydown);
@@ -288,6 +356,15 @@ if ($allTeachersResult) {
 			openModalFromBtn(btn);
 		});
 
+		// Fallback: handle direct clicks on manage buttons (if delegation fails for any reason)
+		const manageButtons = document.querySelectorAll('.manage-btn');
+		manageButtons.forEach(function(btn) {
+			btn.addEventListener('click', function(e) {
+				e.preventDefault();
+				openModalFromBtn(btn);
+			});
+		});
+
 		// Close buttons
 		if (closeBtn) closeBtn.addEventListener('click', closeModal);
 		if (cancelBtn) cancelBtn.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
@@ -300,6 +377,18 @@ if ($allTeachersResult) {
 			payload.append('teacher_id', fid);
 			if (gradeInput) payload.append('grade', gradeInput.value);
 			if (sectionsInput) payload.append('sections', sectionsInput.value);
+
+			// only include hire_date if is_hired is checked, otherwise send empty string
+			if (isHiredInput && isHiredInput.checked) {
+				// default to today's date if empty
+				const dateValue = (hireDateInput && hireDateInput.value) ? hireDateInput.value : new Date().toISOString().slice(0,10);
+				payload.append('hire_date', dateValue);
+			} else {
+				payload.append('hire_date', '');
+			}
+
+			// send is_hired as '1' or '0'
+			if (isHiredInput) payload.append('is_hired', isHiredInput.checked ? '1' : '0');
 
 			// disable save UI
 			if (saveBtn) saveBtn.disabled = true;
@@ -322,12 +411,18 @@ if ($allTeachersResult) {
 					if (row) {
 						const gradeCell = row.querySelector('.col-grade');
 						const sectionsCell = row.querySelector('.col-sections');
+						const hireDateCell = row.querySelector('.col-hiredate');
+						const isHiredCell = row.querySelector('.col-ishired');
 						if (gradeCell && gradeInput) gradeCell.textContent = gradeInput.value;
 						if (sectionsCell && sectionsInput) sectionsCell.textContent = sectionsInput.value;
+						if (hireDateCell && hireDateInput) hireDateCell.textContent = hireDateInput.value ? hireDateInput.value : '—';
+						if (isHiredCell && isHiredInput) isHiredCell.textContent = isHiredInput.checked ? 'Yes' : '-';
 						const btn = row.querySelector('.manage-btn');
 						if (btn) {
 							if (gradeInput) btn.dataset.grade = gradeInput.value;
 							if (sectionsInput) btn.dataset.sections = sectionsInput.value;
+							if (hireDateInput) btn.dataset.hireDate = hireDateInput.value ? hireDateInput.value : '';
+							if (isHiredInput) btn.dataset.isHired = isHiredInput.checked ? '1' : '0';
 						}
 					}
 
