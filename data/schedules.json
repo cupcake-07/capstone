@@ -4,8 +4,8 @@
             "period": "1",
             "time": "8:00 - 8:45",
             "monday": {
-                "teacher": "Maria DB",
-                "subject": "English"
+                "teacher": "",
+                "subject": ""
             },
             "tuesday": {
                 "teacher": "Machine Leg Extension",
@@ -126,8 +126,8 @@
             "period": "1",
             "time": "8:00 - 8:45",
             "monday": {
-                "teacher": "Maria DB",
-                "subject": "English"
+                "teacher": "",
+                "subject": ""
             },
             "tuesday": {
                 "teacher": "",

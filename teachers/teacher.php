@@ -14,9 +14,20 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
     exit;
 }
 
-// Fetch total enrolled students
-$totalStudentsResult = $conn->query("SELECT COUNT(*) as count FROM students WHERE is_enrolled = 1");
-$totalStudents = $totalStudentsResult->fetch_assoc()['count'];
+// Fetch total enrolled students (school-wide fallback)
+$schoolTotalResult = $conn->query("SELECT COUNT(*) as count FROM students WHERE is_enrolled = 1");
+$schoolTotal = $schoolTotalResult ? intval($schoolTotalResult->fetch_assoc()['count']) : 0;
+$totalStudents = $schoolTotal; // will be overridden with teacher-specific count if possible
+
+// --- NEW: helper to detect column existence using SHOW COLUMNS (safer) ---
+function column_exists($conn, $table, $column) {
+    $t = $conn->real_escape_string($table);
+    $c = $conn->real_escape_string($column);
+    $res = $conn->query("SHOW COLUMNS FROM `{$t}` LIKE '{$c}'");
+    if (! $res) return false;
+    return $res->num_rows > 0;
+}
+// --- END helper ---
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
@@ -24,12 +35,24 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 function load_teacher_schedules() {
     $allSchedules = [];
     
-    // Primary: Load from admin data directory (authoritative source)
+    // Primary: Load from project-wide data directory (authoritative source written by admin/schedule.php)
+    $projectDataFile = __DIR__ . '/../data/schedules.json';
+    if (file_exists($projectDataFile)) {
+        $projectData = json_decode(file_get_contents($projectDataFile), true);
+        if (is_array($projectData)) {
+            $allSchedules = array_merge($allSchedules, $projectData);
+        }
+    }
+    
+    // Secondary: Load from admin data directory (compatibility)
     $adminDataFile = __DIR__ . '/../admin/data/schedules.json';
     if (file_exists($adminDataFile)) {
         $adminData = json_decode(file_get_contents($adminDataFile), true);
         if (is_array($adminData)) {
-            $allSchedules = array_merge($allSchedules, $adminData);
+            // merge but don't overwrite keys already loaded from project-wide file
+            foreach ($adminData as $key => $sched) {
+                if (!isset($allSchedules[$key])) $allSchedules[$key] = $sched;
+            }
         }
     }
     
@@ -62,55 +85,106 @@ $subjectRaw = '';
 $sectionsListHtml = ''; // NEW: HTML list for multiple sections
 
 if ($teacherId > 0) {
-    $tq = $conn->prepare("SELECT grade, sections, subject FROM teachers WHERE id = ? LIMIT 1");
-    if ($tq) {
-        $tq->bind_param('i', $teacherId);
-        $tq->execute();
-        $tr = $tq->get_result();
-        if ($tr && $tr->num_rows === 1) {
-            $trow = $tr->fetch_assoc();
-            $gradeRaw = trim((string)($trow['grade'] ?? ''));
-            $sectionsRaw = trim((string)($trow['sections'] ?? ''));
-            $subjectRaw = trim((string)($trow['subject'] ?? ''));
+	$tq = $conn->prepare("SELECT grade, sections, subject FROM teachers WHERE id = ? LIMIT 1");
+	if ($tq) {
+		$tq->bind_param('i', $teacherId);
+		$tq->execute();
+		$tr = $tq->get_result();
+		if ($tr && $tr->num_rows === 1) {
+			$trow = $tr->fetch_assoc();
+			$gradeRaw = trim((string)($trow['grade'] ?? ''));
+			$sectionsRaw = trim((string)($trow['sections'] ?? ''));
+			$subjectRaw = trim((string)($trow['subject'] ?? ''));
 
-            // Build Grade & Sections display if available
-            $parts = [];
-            if ($gradeRaw !== '') {
-                $parts[] = 'Grade ' . $gradeRaw;
-            }
-            if ($sectionsRaw !== '') {
-                $sArr = array_map('trim', explode(',', $sectionsRaw));
-                $sArr = array_values(array_filter($sArr, function($v){ return $v !== ''; }));
-                if (!empty($sArr)) {
-                    $parts[] = 'Sections ' . implode(', ', $sArr);
-                }
-            }
-            if (!empty($parts)) {
-                $gradeSectionDisplay = implode(' — ', $parts);
-            }
+			// Build Grade & Sections display if available
+			$parts = [];
+			if ($gradeRaw !== '') {
+				$parts[] = 'Grade ' . $gradeRaw;
+			}
+			if ($sectionsRaw !== '') {
+				$sArr = array_map('trim', explode(',', $sectionsRaw));
+				$sArr = array_values(array_filter($sArr, function($v){ return $v !== ''; }));
+				if (!empty($sArr)) {
+					$parts[] = 'Sections ' . implode(', ', $sArr);
+				}
+			}
+			if (!empty($parts)) {
+				$gradeSectionDisplay = implode(' — ', $parts);
+			}
 
-            // Build sections list HTML for dashboard (links jump to schedule blocks)
-            if (!empty($sArr)) {
-                $sectionsListHtml = '<ul class="my-sections">';
-                foreach ($sArr as $secItem) {
-                    // safe anchor id: grade_section
-                    $anchorId = 'sched_' . preg_replace('/[^A-Za-z0-9_-]/', '', $gradeRaw . '_' . $secItem);
-                    $sectionsListHtml .= '<li><a href="#' . $anchorId . '" class="section-link">Grade ' . htmlspecialchars($gradeRaw) . ' — Section ' . htmlspecialchars($secItem) . '</a></li>';
-                }
-                $sectionsListHtml .= '</ul>';
-            }
+			// Build sections list HTML for dashboard (links jump to schedule blocks)
+			if (!empty($sArr)) {
+				$sectionsListHtml = '<ul class="my-sections">';
+				foreach ($sArr as $secItem) {
+					// safe anchor id: grade_section
+					$anchorId = 'sched_' . preg_replace('/[^A-Za-z0-9_-]/', '', $gradeRaw . '_' . $secItem);
+					$sectionsListHtml .= '<li><a href="#' . $anchorId . '" class="section-link">Grade ' . htmlspecialchars($gradeRaw) . ' — Section ' . htmlspecialchars($secItem) . '</a></li>';
+				}
+				$sectionsListHtml .= '</ul>';
+			}
 
-            // Subjects assigned (existing behavior, now reads from DB)
-            if ($subjectRaw !== '') {
-                $partsS = array_map('trim', explode(',', $subjectRaw));
-                $partsS = array_values(array_filter($partsS, function($v){ return $v !== ''; }));
-                if (!empty($partsS)) {
-                    $subjectsAssigned = count($partsS) . ' subject(s) — ' . implode(', ', array_slice($partsS, 0, 3));
-                }
-            }
-        }
-        $tq->close();
-    }
+			// Subjects assigned (existing behavior, now reads from DB)
+			if ($subjectRaw !== '') {
+				$partsS = array_map('trim', explode(',', $subjectRaw));
+				$partsS = array_values(array_filter($partsS, function($v){ return $v !== ''; }));
+				if (!empty($partsS)) {
+					$subjectsAssigned = count($partsS) . ' subject(s) — ' . implode(', ', array_slice($partsS, 0, 3));
+				}
+			}
+
+			// --- REPLACED: robust teacher-only student count using detected column names ---
+			$totalStudents = 0; // default if no grade/sections info
+
+			// candidate column names for grade and section in students table
+			$gradeCandidates = ['grade','student_grade','level','year_level','grade_level','grade_level_id'];
+			$sectionCandidates = ['section','section_name','class_section','student_section','section_id'];
+
+			$foundGradeCol = null;
+			foreach ($gradeCandidates as $c) {
+				if (column_exists($conn, 'students', $c)) { $foundGradeCol = $c; break; }
+			}
+			$foundSectionCol = null;
+			foreach ($sectionCandidates as $c) {
+				if (column_exists($conn, 'students', $c)) { $foundSectionCol = $c; break; }
+			}
+
+			if ($foundGradeCol !== null && $gradeRaw !== '') {
+				$gradeEsc = $conn->real_escape_string($gradeRaw);
+
+				// build section list array from teacher.sections (comma-separated)
+				$sArrLocal = [];
+				if ($sectionsRaw !== '') {
+					$sArrLocal = array_map('trim', explode(',', $sectionsRaw));
+					$sArrLocal = array_values(array_filter($sArrLocal, function($v){ return $v !== ''; }));
+				}
+
+				if (!empty($sArrLocal) && $foundSectionCol !== null) {
+					// escape and quote each section for safe IN list
+					$escapedSections = array_map(function($v) use ($conn) {
+						return "'" . $conn->real_escape_string($v) . "'";
+					}, $sArrLocal);
+					$sectionList = implode(',', $escapedSections);
+
+					$sql = "SELECT COUNT(*) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}' AND `{$foundSectionCol}` IN ({$sectionList})";
+				} else {
+					$sql = "SELECT COUNT(*) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}'";
+				}
+
+				$res = $conn->query($sql);
+				if ($res) {
+					$totalStudents = intval($res->fetch_assoc()['cnt']);
+				} else {
+					// query failed (e.g. unexpected schema) — keep 0 or fallback as desired
+					$totalStudents = 0;
+				}
+			} else {
+				// no grade column found or teacher has no grade assigned — show 0
+				$totalStudents = 0;
+			}
+			// --- END robust count ---
+		}
+		$tq->close();
+	}
 }
 // --- END: replace simplified teacher info ---
 

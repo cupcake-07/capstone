@@ -101,6 +101,10 @@ function load_all_schedules($grades, $sections) {
 function save_schedules($schedules) {
     if (!is_dir(DATA_DIR)) mkdir(DATA_DIR, 0755, true);
     file_put_contents(DATA_FILE, json_encode($schedules, JSON_PRETTY_PRINT));
+    // Also write a compatibility copy under admin/data/schedules.json so older readers still find schedules
+    $adminDataDir = __DIR__ . '/data';
+    if (!is_dir($adminDataDir)) mkdir($adminDataDir, 0755, true);
+    file_put_contents($adminDataDir . '/schedules.json', json_encode($schedules, JSON_PRETTY_PRINT));
 }
 
 // Handle AJAX fetch_schedule request

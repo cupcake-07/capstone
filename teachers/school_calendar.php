@@ -669,7 +669,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
           fetch(window.location.href, {
             method: 'POST',
-            headers: { 'X-Requested_WITH': 'XMLHttpRequest' },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
           })
           .then(res => res.text())

@@ -109,7 +109,7 @@
 }
 
 .add-event-btn:hover {
-  background: var(--blue);
+ background: #fd4ba7;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
