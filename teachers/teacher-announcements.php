@@ -27,67 +27,6 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <link rel="stylesheet" href="announcement.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* Override any announcement.css conflicts with teacher.css sidebar */
-        .side {
-            background: var(--primary-black);
-            width: var(--sidebar-width);
-            padding: 20px 0;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-            overflow-y: auto;
-            position: fixed;
-            top: var(--navbar-height);
-            left: 0;
-            height: calc(100vh - var(--navbar-height));
-            z-index: 1000;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-right: 2px solid #FFD700;
-        }
-
-        .nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            margin-top: 28px;
-            margin-bottom: 28px;
-        }
-
-        .nav a {
-            padding: 14px 20px;
-            color: #999999;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
-        }
-
-        .nav a:hover {
-            background: var(--secondary-black);
-            color: var(--primary-yellow);
-            border-left-color: var(--primary-yellow);
-        }
-
-        .nav a.active {
-            background: var(--secondary-black);
-            color: var(--primary-yellow);
-            border-left-color: var(--primary-yellow);
-        }
-
-        .side-foot {
-            padding: 16px 20px;
-            color: #777777;
-            font-size: 12px;
-            border-top: 1px solid var(--secondary-black);
-            margin-top: 20px;
-        }
-
-        .side-foot strong {
-            color: #ffffff;
-        }
-    </style>
         
 </head>
 <body>
