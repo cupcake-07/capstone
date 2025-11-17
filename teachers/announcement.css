@@ -1,26 +1,37 @@
 :root {
+        --bg: #f6f8fb;
+        --panel: #3d85f8;
+        --green: #7a7f91;
+        --yellow: #d4e589;
+        --muted: #7b8388;
+        --card: #ffffff;
+        --border: #e6e9ef;
+        --love: #62aef9;
+        --grey: #252627;
+        --pink: #fd4ba7;
+        --radius: 14px;
+        --shadow-sm: 0 4px 12px rgba(2, 6, 23, 0.04);
+        --shadow-md: 0 10px 30px rgba(11, 17, 24, 0.06);
+        --shadow-lg: 0 20px 50px rgba(2, 6, 23, 0.12);
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        --sidebar-width: 280px; 
+        --navbar-height: 64px;
 
-  --panel: #3d85f8;
-  --green: #7a7f91;
-  --yellow: #d4e589;
-  --muted: #7b8388;
-  --card: #ffffff;
-  --border: #e6e9ef;
-  --love: #49a3fc;
-  --grey: #252627;
-  --pink: #fd4ba7;
-  --dark-blue: #091f5e;
-  --light-pink: #fb6bb6;
-}
+    }
 
     * {
      box-sizing: border-box;
     }
 
     html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
+        font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+        background: var(--bg);
+        color: var(--grey);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+        width: 100%;
+        min-height: 100vh; /* Ensure body takes full height */
     }
 
     body {
@@ -35,20 +46,20 @@
     }
 
     /* ===== NAVBAR (TOP BAR) ===== */
-    .navbar {
-        background: linear-gradient(180deg, #0d0d0d 0%, #000000 100%);
+     .navbar {
+        background: linear-gradient(180deg, var(--panel) 0%, #fd4ba7 100%);
         color: #ffffff;
         padding: 16px 44px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        border-bottom: 2px solid #d3b615;
+        box-shadow: var(--shadow-lg);
+        border-bottom: 1px solid rgba(176, 176, 142, 0.1);
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        z-index: 1100;
+        z-index: 100;
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         height: var(--navbar-height);
@@ -79,15 +90,15 @@
     
     .navbar-title {
         font-weight: 700;
-        font-size: 18px;
+        font-size: 14px;
         margin: 0;
     }
     
-    .navbar-subtitle {
+   .navbar-subtitle {
         font-weight: 400;
         font-size: 14px;
         margin: 0;
-        color: var(--muted);
+        color: #401454
     }
 
     .navbar-actions {
@@ -142,7 +153,7 @@
 
     .side {
         width: var(--sidebar-width);
-        background: #0d0d0d;
+        background: linear-gradient(180deg, var(--love) 0%, #3d71a4 100%);
         color: #ffffff;
         padding: 28px 20px;
         display: flex;
@@ -153,8 +164,8 @@
         left: 0;
         height: calc(100vh - var(--navbar-height));
         z-index: 1000;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
-        border-right: 2px solid #FFD700;
+        box-shadow: 2px 0 8px rgba(2, 6, 23, 0.1);
+        border-right: 1px solid rgba(218, 218, 24, 0.1);
         overflow-y: auto;
         transition: all 0.3s ease;
         backdrop-filter: blur(10px);
@@ -221,16 +232,16 @@
     }
     
     .nav a:hover {
-        background: rgba(255, 215, 0, 0.15);
-        color: #FFD700;
+        background: linear-gradient(95deg, var(--yellow) 0%, rgba(255, 255, 255, 0.273)); 
+        color: #ffffff;
         transform: translateX(4px);
     }
     
     .nav a.active {
-        background: #FFD700;
-        color: #000000;
+       background: linear-gradient(90deg, var(--yellow) 0%, rgba(255, 255, 255, 0.382) 100%);
+        color: ffffff;
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        box-shadow: inset 0 2px 8px rgba(218, 218, 24, 0.1);
     }
 
     .side-foot {
@@ -364,7 +375,7 @@
         right: 50px;
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
+        background: linear-gradient(180deg, var(--love) 0%, #3d71a4 100%);
         color: #000000;
         font-size: 36px;
         font-weight: 700;

@@ -17,110 +17,128 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 $user_id = intval($_SESSION['user_id'] ?? 0);
 
+// Ensure CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$CSRF_TOKEN = $_SESSION['csrf_token'];
+
 // Handle form submissions
 $message = '';
 $message_type = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    
-    if ($action === 'update_profile') {
-        $email = $_POST['email'] ?? '';
-        $phone = $_POST['phone'] ?? '';
-        
-        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $stmt = $conn->prepare("UPDATE teachers SET email = ?, phone = ? WHERE id = ?");
+    // CSRF check
+    $posted_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $posted_token)) {
+        $message = 'Invalid request (CSRF token mismatch). Please refresh and try again.';
+        $message_type = 'error';
+    } else {
+        $action = $_POST['action'] ?? '';
+
+        if ($action === 'update_profile') {
+            $email = $_POST['email'] ?? '';
+            $phone_raw = $_POST['phone'] ?? '';
+            $phone = preg_replace('/\D+/', '', $phone_raw); // keep digits only
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $message = 'Please enter a valid email address.';
+                $message_type = 'error';
+            } elseif ($phone !== '' && (strlen($phone) < 7 || strlen($phone) > 15)) {
+                $message = 'Please enter a valid phone number (7-15 digits).';
+                $message_type = 'error';
+            } else {
+                $stmt = $conn->prepare("UPDATE teachers SET email = ?, phone = ? WHERE id = ?");
+                if ($stmt) {
+                    $stmt->bind_param('ssi', $email, $phone, $user_id);
+                    if ($stmt->execute()) {
+                        $message = 'Profile updated successfully!';
+                        $message_type = 'success';
+                    } else {
+                        $message = 'Error updating profile. Please try again.';
+                        $message_type = 'error';
+                    }
+                    $stmt->close();
+                }
+            }
+        } elseif ($action === 'change_password') {
+            $current_password = $_POST['current_password'] ?? '';
+            $new_password = $_POST['new_password'] ?? '';
+            $confirm_password = $_POST['confirm_password'] ?? '';
+            
+            if (strlen($new_password) < 6) {
+                $message = 'Password must be at least 6 characters long.';
+                $message_type = 'error';
+            } elseif ($new_password !== $confirm_password) {
+                $message = 'New passwords do not match.';
+                $message_type = 'error';
+            } else {
+                // Verify current password and update
+                $stmt = $conn->prepare("SELECT password FROM teachers WHERE id = ?");
+                if ($stmt) {
+                    $stmt->bind_param('i', $user_id);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    if ($result && $result->num_rows === 1) {
+                        $row = $result->fetch_assoc();
+                        if (password_verify($current_password, $row['password'])) {
+                            $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
+                            $update_stmt = $conn->prepare("UPDATE teachers SET password = ? WHERE id = ?");
+                            if ($update_stmt) {
+                                $update_stmt->bind_param('si', $hashed_password, $user_id);
+                                if ($update_stmt->execute()) {
+                                    $message = 'Password changed successfully!';
+                                    $message_type = 'success';
+                                } else {
+                                    $message = 'Error changing password. Please try again.';
+                                    $message_type = 'error';
+                                }
+                                $update_stmt->close();
+                            }
+                        } else {
+                            $message = 'Current password is incorrect.';
+                            $message_type = 'error';
+                        }
+                    }
+                    $stmt->close();
+                }
+            }
+        } elseif ($action === 'update_preferences') {
+            $preferred_subject = trim($_POST['preferred_subject'] ?? '');
+            $grade_preference = $_POST['grade_preference'] ?? '';
+            $class_size_preference = $_POST['class_size_preference'] ?? '';
+            $office_hours = trim($_POST['office_hours'] ?? '');
+
+            // Update in database (maintain backward compatibility)
+            $stmt = $conn->prepare("UPDATE teachers SET subject = ?, grade = ? WHERE id = ?");
             if ($stmt) {
-                $stmt->bind_param('ssi', $email, $phone, $user_id);
+                $stmt->bind_param('ssi', $preferred_subject, $grade_preference, $user_id);
                 if ($stmt->execute()) {
-                    $message = 'Profile updated successfully!';
+                    // Also update admin teachers file if it exists (now include office_hours & class_size)
+                    $adminTeachersFile = __DIR__ . '/../admin/data/teachers.json';
+                    if (file_exists($adminTeachersFile)) {
+                        $adminTeachersData = json_decode(file_get_contents($adminTeachersFile), true);
+                        if (is_array($adminTeachersData)) {
+                            foreach ($adminTeachersData as &$teacher) {
+                                if (isset($teacher['id']) && intval($teacher['id']) === $user_id) {
+                                    $teacher['subject'] = $preferred_subject;
+                                    $teacher['grade'] = $grade_preference;
+                                    $teacher['office_hours'] = $office_hours;
+                                    $teacher['class_size_preference'] = $class_size_preference;
+                                    break;
+                                }
+                            }
+                            file_put_contents($adminTeachersFile, json_encode($adminTeachersData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                        }
+                    }
+                    $message = 'Teaching preferences updated successfully!';
                     $message_type = 'success';
                 } else {
-                    $message = 'Error updating profile. Please try again.';
+                    $message = 'Error updating preferences. Please try again.';
                     $message_type = 'error';
                 }
                 $stmt->close();
             }
-        } else {
-            $message = 'Please enter a valid email address.';
-            $message_type = 'error';
-        }
-    } elseif ($action === 'change_password') {
-        $current_password = $_POST['current_password'] ?? '';
-        $new_password = $_POST['new_password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-        
-        if (strlen($new_password) < 6) {
-            $message = 'Password must be at least 6 characters long.';
-            $message_type = 'error';
-        } elseif ($new_password !== $confirm_password) {
-            $message = 'New passwords do not match.';
-            $message_type = 'error';
-        } else {
-            // Verify current password and update
-            $stmt = $conn->prepare("SELECT password FROM teachers WHERE id = ?");
-            if ($stmt) {
-                $stmt->bind_param('i', $user_id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result && $result->num_rows === 1) {
-                    $row = $result->fetch_assoc();
-                    if (password_verify($current_password, $row['password'])) {
-                        $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
-                        $update_stmt = $conn->prepare("UPDATE teachers SET password = ? WHERE id = ?");
-                        if ($update_stmt) {
-                            $update_stmt->bind_param('si', $hashed_password, $user_id);
-                            if ($update_stmt->execute()) {
-                                $message = 'Password changed successfully!';
-                                $message_type = 'success';
-                            } else {
-                                $message = 'Error changing password. Please try again.';
-                                $message_type = 'error';
-                            }
-                            $update_stmt->close();
-                        }
-                    } else {
-                        $message = 'Current password is incorrect.';
-                        $message_type = 'error';
-                    }
-                }
-                $stmt->close();
-            }
-        }
-    } elseif ($action === 'update_preferences') {
-        $preferred_subject = $_POST['preferred_subject'] ?? '';
-        $grade_preference = $_POST['grade_preference'] ?? '';
-        $class_size_preference = $_POST['class_size_preference'] ?? '';
-        $office_hours = $_POST['office_hours'] ?? '';
-        
-        // Update in database
-        $stmt = $conn->prepare("UPDATE teachers SET subject = ?, grade = ? WHERE id = ?");
-        if ($stmt) {
-            $stmt->bind_param('ssi', $preferred_subject, $grade_preference, $user_id);
-            if ($stmt->execute()) {
-                // Also update admin teachers file if it exists
-                $adminTeachersFile = __DIR__ . '/../admin/data/teachers.json';
-                if (file_exists($adminTeachersFile)) {
-                    $adminTeachersData = json_decode(file_get_contents($adminTeachersFile), true);
-                    if (is_array($adminTeachersData)) {
-                        foreach ($adminTeachersData as &$teacher) {
-                            if (isset($teacher['id']) && intval($teacher['id']) === $user_id) {
-                                $teacher['subject'] = $preferred_subject;
-                                $teacher['grade'] = $grade_preference;
-                                break;
-                            }
-                        }
-                        file_put_contents($adminTeachersFile, json_encode($adminTeachersData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-                    }
-                }
-                
-                $message = 'Teaching preferences updated successfully!';
-                $message_type = 'success';
-            } else {
-                $message = 'Error updating preferences. Please try again.';
-                $message_type = 'error';
-            }
-            $stmt->close();
         }
     }
 }
@@ -184,258 +202,7 @@ if ($user_id > 0) {
     <link rel="stylesheet" href="teacher.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* Override sidebar styling */
-        .side {
-            background: var(--primary-black);
-            width: var(--sidebar-width);
-            padding: 20px 0;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-            overflow-y: auto;
-            position: fixed;
-            top: var(--navbar-height);
-            left: 0;
-            height: calc(100vh - var(--navbar-height));
-            z-index: 1000;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-right: 2px solid #FFD700;
-        }
-
-        .nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            margin-top: 28px;
-            margin-bottom: 28px;
-        }
-
-        .nav a {
-            padding: 14px 20px;
-            color: #999999;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
-        }
-
-        .nav a:hover {
-            background: var(--secondary-black);
-            color: var(--primary-yellow);
-            border-left-color: var(--primary-yellow);
-        }
-
-        .nav a.active {
-            background: var(--secondary-black);
-            color: var(--primary-yellow);
-            border-left-color: var(--primary-yellow);
-        }
-
-        .side-foot {
-            padding: 16px 20px;
-            color: #777777;
-            font-size: 12px;
-            border-top: 1px solid var(--secondary-black);
-            margin-top: 20px;
-        }
-
-        .side-foot strong {
-            color: #ffffff;
-        }
-
-        /* Settings specific styles */
-        .settings-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .settings-section {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-        }
-
-        .settings-section h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--panel);
-            margin-top: 0;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--yellow);
-            display: inline-block;
-        }
-
-        .settings-form-group {
-            margin-bottom: 20px;
-        }
-
-        .settings-form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--panel);
-        }
-
-        .settings-form-group input,
-        .settings-form-group select,
-        .settings-form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: Inter, system-ui, sans-serif;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            box-sizing: border-box;
-        }
-
-        .settings-form-group input:focus,
-        .settings-form-group select:focus,
-        .settings-form-group textarea:focus {
-            outline: none;
-            border-color: var(--yellow);
-            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
-        }
-
-        .settings-form-group input:disabled {
-            background-color: #f5f5f5;
-            color: #999;
-            cursor: not-allowed;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .form-row.full {
-            grid-template-columns: 1fr;
-        }
-
-        .settings-button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .settings-btn {
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-            font-size: 14px;
-        }
-
-        .settings-btn.primary {
-            background: var(--yellow);
-            color: #000;
-        }
-
-        .settings-btn.primary:hover {
-            background: #FFC700;
-            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-        }
-
-        .settings-btn.secondary {
-            background: var(--bg);
-            color: var(--panel);
-            border-color: var(--border);
-        }
-
-        .settings-btn.secondary:hover {
-            background: #e8e8e8;
-        }
-
-        .message-box {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            display: none;
-        }
-
-        .message-box.show {
-            display: block;
-        }
-
-        .message-box.success {
-            background: #e6ffe6;
-            color: #006600;
-            border: 1px solid #99ff99;
-        }
-
-        .message-box.error {
-            background: #ffe6e6;
-            color: #cc0000;
-            border: 1px solid #ff9999;
-        }
-
-        .settings-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .settings-tab-btn {
-            padding: 12px 20px;
-            background: none;
-            border: none;
-            font-weight: 600;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 14px;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .settings-tab-btn:hover {
-            color: var(--panel);
-        }
-
-        .settings-tab-btn.active {
-            color: var(--yellow);
-            border-bottom-color: var(--yellow);
-        }
-
-        .settings-tab-content {
-            display: none;
-        }
-
-        .settings-tab-content.active {
-            display: block;
-        }
-
-        .info-card {
-            background: #f9f9f9;
-            border-left: 4px solid var(--yellow);
-            padding: 12px 16px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        @media (max-width: 900px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .settings-section {
-                padding: 16px;
-            }
-        }
-    </style>
+   
 </head>
 <body>
     <!--Top Navbar-->
@@ -466,8 +233,7 @@ if ($user_id > 0) {
             <nav class="nav">
                 <a href="teacher.php">Dashboard</a>
                 <a href="tprofile.php">Profile</a>
-                <a href="student_schedule.php">Schedule</a>        
-                <a href="attendance.php">Attendance</a>
+                <a href="student_schedule.php">Schedule</a>         
                 <a href="listofstudents.php">Lists of students</a>
                 <a href="grades.php">Grades</a>
                 <a href="school_calendar.php">School Calendar</a>
@@ -485,22 +251,26 @@ if ($user_id > 0) {
             </header>
 
             <section class="settings-container">
-                <div id="message" class="message-box"></div>
+                <div id="message" class="message-box" role="status" aria-live="polite">
+                    <button id="msg-close" class="msg-close" aria-label="Dismiss message">✕</button>
+                    <div id="message-text"></div>
+                </div>
 
                 <!-- Settings Tabs -->
-                <div class="settings-tabs">
-                    <button class="settings-tab-btn active" data-tab="account">Account</button>
-                    <button class="settings-tab-btn" data-tab="security">Security</button>
-                    <button class="settings-tab-btn" data-tab="teaching">Teaching Preferences</button>
+                <div class="settings-tabs" role="tablist">
+                    <button class="settings-tab-btn active" data-tab="account" role="tab" aria-selected="true">Account</button>
+                    <button class="settings-tab-btn" data-tab="security" role="tab">Security</button>
+                    <button class="settings-tab-btn" data-tab="teaching" role="tab">Teaching Preferences</button>
                 </div>
 
                 <!-- Account Settings Tab -->
-                <div id="account" class="settings-tab-content active">
+                <div id="account" class="settings-tab-content active" role="tabpanel">
                     <div class="settings-section">
                         <h3>Account Information</h3>
-                        <form method="POST" action="">
+                        <form method="POST" action="" id="profile-form" novalidate>
                             <input type="hidden" name="action" value="update_profile">
-                            
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($CSRF_TOKEN); ?>">
+
                             <div class="form-row">
                                 <div class="settings-form-group">
                                     <label for="teacher_name">Full Name</label>
@@ -516,15 +286,17 @@ if ($user_id > 0) {
                                 <div class="settings-form-group">
                                     <label for="email">Email Address</label>
                                     <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($teacher_info['email'] ?? ''); ?>" required>
+                                    <small class="help">We'll use this for notifications and password resets.</small>
                                 </div>
                                 <div class="settings-form-group">
                                     <label for="phone">Phone Number</label>
-                                    <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($teacher_info['phone'] ?? ''); ?>">
+                                    <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($teacher_info['phone'] ?? ''); ?>" pattern="[0-9]{7,15}" title="Digits only, 7 to 15 characters" maxlength="15">
+                                    <small class="help">Digits only, 7–15 characters (e.g., 09171234567).</small>
                                 </div>
                             </div>
 
                             <div class="settings-button-group">
-                                <button type="submit" class="settings-btn primary">Save Changes</button>
+                                <button type="submit" class="settings-btn primary" id="save-profile">Save Changes</button>
                                 <button type="reset" class="settings-btn secondary">Cancel</button>
                             </div>
                         </form>
@@ -532,30 +304,45 @@ if ($user_id > 0) {
                 </div>
 
                 <!-- Security Settings Tab -->
-                <div id="security" class="settings-tab-content">
+                <div id="security" class="settings-tab-content" role="tabpanel" aria-hidden="true">
                     <div class="settings-section">
                         <h3>Change Password</h3>
-                        <form method="POST" action="">
+                        <form method="POST" action="" id="password-form" novalidate>
                             <input type="hidden" name="action" value="change_password">
-                            
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($CSRF_TOKEN); ?>">
+
                             <div class="settings-form-group">
                                 <label for="current_password">Current Password</label>
-                                <input type="password" id="current_password" name="current_password" required>
+                                <div class="input-inline">
+                                    <input type="password" id="current_password" name="current_password" required>
+                                    <button type="button" class="settings-btn secondary pwd-toggle" data-toggle="pwd" data-target="current_password" aria-label="Toggle current password">Show</button>
+                                </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="settings-form-group">
                                     <label for="new_password">New Password</label>
-                                    <input type="password" id="new_password" name="new_password" required>
+                                    <div class="input-inline">
+                                        <input type="password" id="new_password" name="new_password" required minlength="6" aria-describedby="pwd-help pwd-strength">
+                                        <button type="button" class="settings-btn secondary pwd-toggle" data-toggle="pwd" data-target="new_password" aria-label="Toggle new password">Show</button>
+                                    </div>
+                                    <small id="pwd-help" class="help">At least 6 characters. Use letters, numbers & symbols for a stronger password.</small>
+
+                                    <div id="pwd-strength" class="pwd-strength" aria-hidden="false">
+                                        <div id="pwd-strength-bar" class="pwd-strength-bar"></div>
+                                    </div>
                                 </div>
                                 <div class="settings-form-group">
                                     <label for="confirm_password">Confirm Password</label>
-                                    <input type="password" id="confirm_password" name="confirm_password" required>
+                                    <div class="input-inline">
+                                        <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                                        <button type="button" class="settings-btn secondary pwd-toggle" data-toggle="pwd" data-target="confirm_password" aria-label="Toggle confirm password">Show</button>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="settings-button-group">
-                                <button type="submit" class="settings-btn primary">Update Password</button>
+                                <button type="submit" class="settings-btn primary" id="save-password">Update Password</button>
                                 <button type="reset" class="settings-btn secondary">Cancel</button>
                             </div>
                         </form>
@@ -563,21 +350,23 @@ if ($user_id > 0) {
                 </div>
 
                 <!-- Teaching Preferences Tab -->
-                <div id="teaching" class="settings-tab-content">
+                <div id="teaching" class="settings-tab-content" role="tabpanel" aria-hidden="true">
                     <div class="settings-section">
                         <h3>Teaching Preferences</h3>
                         <div class="info-card">
                             ℹ️ Configure your teaching preferences to help the administration better understand your strengths and preferences.
                         </div>
-                        <form method="POST" action="">
+                        <form method="POST" action="" id="prefs-form" novalidate>
                             <input type="hidden" name="action" value="update_preferences">
-                            
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($CSRF_TOKEN); ?>">
+
                             <div class="form-row">
                                 <div class="settings-form-group">
                                     <label for="preferred_subject">Preferred Subject(s)</label>
-                                    <input type="text" id="preferred_subject" name="preferred_subject" 
-                                        value="<?php echo htmlspecialchars($teacher_info['subject'] ?? ''); ?>" 
+                                    <input type="text" id="preferred_subject" name="preferred_subject"
+                                        value="<?php echo htmlspecialchars($teacher_info['subject'] ?? ''); ?>"
                                         placeholder="e.g., Mathematics, Science">
+                                    <small class="help">Comma-separated subjects are allowed.</small>
                                 </div>
                                 <div class="settings-form-group">
                                     <label for="grade_preference">Grade Level Preference</label>
@@ -609,14 +398,15 @@ if ($user_id > 0) {
                             <div class="form-row full">
                                 <div class="settings-form-group">
                                     <label for="office_hours">Office Hours (Optional)</label>
-                                    <input type="text" id="office_hours" name="office_hours" 
+                                    <input type="text" id="office_hours" name="office_hours"
                                         value="<?php echo htmlspecialchars($teacher_info['office_hours'] ?? ''); ?>"
                                         placeholder="e.g., Monday & Wednesday 3:00 PM - 4:00 PM">
+                                    <small class="help">Human-readable hours help parents/students know when to reach you.</small>
                                 </div>
                             </div>
 
                             <div class="settings-button-group">
-                                <button type="submit" class="settings-btn primary">Save Preferences</button>
+                                <button type="submit" class="settings-btn primary" id="save-prefs">Save Preferences</button>
                                 <button type="reset" class="settings-btn secondary">Cancel</button>
                             </div>
                         </form>
@@ -672,37 +462,96 @@ if ($user_id > 0) {
     </div>
 
     <script>
-        // Tab switching functionality
-        document.querySelectorAll('.settings-tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tabName = this.getAttribute('data-tab');
-                
-                // Remove active class from all buttons and content
-                document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.settings-tab-content').forEach(content => content.classList.remove('active'));
-                
-                // Add active class to clicked button and corresponding content
-                this.classList.add('active');
-                document.getElementById(tabName).classList.add('active');
+        // ===== Tabs with persistence =====
+        const tabButtons = document.querySelectorAll('.settings-tab-btn');
+        const tabContents = document.querySelectorAll('.settings-tab-content');
+        function activateTab(name) {
+            tabButtons.forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-tab') === name);
+                b.setAttribute('aria-selected', b.getAttribute('data-tab') === name ? 'true' : 'false');
             });
-        });
+            tabContents.forEach(c => {
+                c.classList.toggle('active', c.id === name);
+                c.setAttribute('aria-hidden', c.id === name ? 'false' : 'true');
+            });
+            try { localStorage.setItem('teacher-settings-tab', name); } catch(e){/*ignore*/ }
+        }
+        tabButtons.forEach(btn => btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab'))));
+        (function restoreTab(){
+            const saved = localStorage.getItem('teacher-settings-tab');
+            if (saved) activateTab(saved);
+        })();
 
-        // Message display handling
+        // ===== Message handling =====
+        const msgBox = document.getElementById('message');
+        const msgText = document.getElementById('message-text');
+        document.getElementById('msg-close').addEventListener('click', () => msgBox.classList.remove('show'));
+
         <?php if ($message): ?>
-            (function() {
-                const messageBox = document.getElementById('message');
-                messageBox.textContent = '<?php echo addslashes($message); ?>';
-                messageBox.classList.add('show', '<?php echo $message_type; ?>');
-                
-                // Auto-hide message after 5 seconds
-                setTimeout(function() {
-                    messageBox.classList.remove('show');
-                }, 5000);
+            (function(){
+                msgText.textContent = '<?php echo addslashes($message); ?>';
+                msgBox.classList.add('show', '<?php echo $message_type; ?>');
+                // auto-hide
+                setTimeout(()=> msgBox.classList.remove('show'), 7000);
             })();
         <?php endif; ?>
 
-        // Update year in footer
-        document.getElementById('year').textContent = new Date().getFullYear();
+        // ===== Password toggle & strength =====
+        document.querySelectorAll('[data-toggle="pwd"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.target);
+                if (!target) return;
+                if (target.type === 'password') {
+                    target.type = 'text';
+                    btn.textContent = 'Hide';
+                } else {
+                    target.type = 'password';
+                    btn.textContent = 'Show';
+                }
+            });
+        });
+
+        const strengthBar = document.getElementById('pwd-strength-bar');
+        function calcStrength(pw) {
+            let score = 0;
+            if (pw.length >= 6) score += 1;
+            if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
+            if (/\d/.test(pw)) score += 1;
+            if (/[^A-Za-z0-9]/.test(pw)) score += 1;
+            return Math.min(100, (score / 4) * 100);
+        }
+        const newPwdInput = document.getElementById('new_password');
+        newPwdInput?.addEventListener('input', (e) => {
+            const val = e.target.value || '';
+            const pct = calcStrength(val);
+            strengthBar.style.width = pct + '%';
+            if (pct < 34) strengthBar.style.background = '#ff6b6b';
+            else if (pct < 67) strengthBar.style.background = '#f7b500';
+            else strengthBar.style.background = '#39b54a';
+        });
+
+        // ===== Simple client-side validation & disable on submit =====
+        function wireForm(id) {
+            const form = document.getElementById(id);
+            if (!form) return;
+            form.addEventListener('submit', function(e){
+                // native validity
+                if (!form.checkValidity()) {
+                    // let browser show built-in errors
+                    return;
+                }
+                // disable primary button to prevent double submit
+                const primary = form.querySelector('.settings-btn.primary');
+                if (primary) primary.disabled = true;
+            });
+        }
+        wireForm('profile-form');
+        wireForm('password-form');
+        wireForm('prefs-form');
+
+        // Update footer year safely
+        const yearEl = document.getElementById('year');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
     </script>
 </body>
 </html>

@@ -597,6 +597,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                 <a href="listofstudents.php">Lists of students</a>
                 <a href="grades.php">Grades</a>
                 <a href="school_calendar.php">School Calendar</a>
+                <a href="teacher-announcements.php">Announcements</a>
                 
                 <a href="teacherslist.php">Teachers</a>
                 <a href="teacher-settings.php">Settings</a>
