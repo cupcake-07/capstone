@@ -344,92 +344,391 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
 <link rel="stylesheet" href="teacher.css">
 <style>
 /* minimal styles for teacher/subject inputs */
-.schedule-table { width:100%; border-collapse:collapse; margin-top:12px; background:white; }
-.schedule-table th, .schedule-table td { padding:8px; border:1px solid #ddd; vertical-align:top; text-align:left; }
-.day-cell { display:flex; gap:6px; flex-direction:column; }
-.small { width:100%; box-sizing:border-box; padding:6px; }
-.row-controls { margin:10px 0; display:flex; gap:12px; }
+    .schedule-table { 
+        width:100%; 
+        border-collapse:collapse; 
+        margin-top:12px; 
+        background:white;
+    }
+    .schedule-table th, .schedule-table td { 
+        padding:8px; 
+        border:1px solid #ddd; 
+        vertical-align:top; 
+        text-align:left;
+        border-radius:10px; 
+    }
+    .schedule-table th {
+        color: #fd4ba7;
+        border: 2px solid #31061cff;
+    }
+    .day-cell { 
+        display:flex;
+        gap:6px; 
+        flex-direction:column; 
+    }   
+    .small { 
+        width:100%; 
+        box-sizing:border-box;
+        padding:6px; 
+    }
+    .row-controls { 
+        margin:10px 0; 
+        display:flex; 
+        gap:12px; 
+    }
 
 /* Improved Controls Styling */
-.schedule-actions { background:white; padding:24px; border-radius:8px; border:1px solid #e5e5e5; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-.schedule-actions h2 { margin:0 0 20px 0; font-size:28px; font-weight:700; color:#1a1a1a; }
+    .schedule-actions { 
+        background:white; 
+        padding:24px; 
+        border-radius:8px; 
+        border:1px solid #e5e5e5; 
+        margin-bottom:20px; 
+        box-shadow:0 2px 8px rgba(0,0,0,0.04); 
+    }
+    .schedule-actions h2 { 
+        margin:0 0 20px 0; 
+        font-size:28px; 
+        font-weight:700; 
+        color:#1a1a1a; 
+    }
+    .controls { 
+        display:flex; 
+        gap:16px; 
+        align-items:center; 
+        flex-wrap:wrap; 
+        justify-content:space-between; 
+    }
+    /* Select Fields */
+    .controls label { 
+        font-weight:600; 
+        color:#1a1a1a; 
+        font-size:14px; 
+        display:flex; 
+        align-items:center; 
+        gap:8px; 
+    }
+    .controls select { 
+        padding:10px 14px; 
+        border:1.5px solid #d0d0d0; 
+        border-radius:6px; 
+        font-size:14px; 
+        font-family:inherit; 
+        background:white; 
+        color:#1a1a1a; 
+        cursor:pointer; 
+        transition:all 0.2s ease; 
+        min-width:140px; 
+    }
+    .controls select:hover { 
+        border-color:#1a1a1a; 
+    }
+    .controls select:focus { 
+        outline:none; 
+        border-color:#1a1a1a; 
+        box-shadow:0 0 0 3px rgba(26,26,26,0.1); 
+    }
+    /* Button Group Container */
+    .button-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
 
-.controls { display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:space-between; }
+    /* Primary Button Style */
+    .btn {
+        background: #1a1a1a;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .btn:hover {
+        background: #000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
+    .btn:active {
+        transform: translateY(0);
+    }
 
-/* Select Fields */
-.controls label { font-weight:600; color:#1a1a1a; font-size:14px; display:flex; align-items:center; gap:8px; }
-.controls select { padding:10px 14px; border:1.5px solid #d0d0d0; border-radius:6px; font-size:14px; font-family:inherit; background:white; color:#1a1a1a; cursor:pointer; transition:all 0.2s ease; min-width:140px; }
-.controls select:hover { border-color:#1a1a1a; }
-.controls select:focus { outline:none; border-color:#1a1a1a; box-shadow:0 0 0 3px rgba(26,26,26,0.1); }
+    /* Secondary Button Style */
+    .btn-secondary {
+        background: white;
+        color: #1a1a1a;
+        border: 1.5px solid #1a1a1a;
+    }
+    .btn-secondary:hover {
+        background: #f5f5f5;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-/* Button Group Container */
-.button-group { display:flex; gap:10px; align-items:center; }
+    /* Manage Link */
+    .manage-link {
+        margin-left: auto;
+    }
+    .manage-link a {
+        color: #1a1a1a;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .manage-link a:hover {
+        background: #f0f0f0;
+        text-decoration: underline;
+    }
 
-/* Primary Button Style */
-.btn { background:#1a1a1a; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
-.btn:hover { background:#000; box-shadow:0 4px 12px rgba(0,0,0,0.15); transform:translateY(-1px); }
-.btn:active { transform:translateY(0); }
+    /* Row Controls (Add/Save buttons) */
+    .row-controls {
+        background: #f9f9f9;
+        padding: 16px;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        margin-bottom: 20px;
+    }
+    .row-controls .btn {
+        font-size: 14px;
+        padding: 11px 22px;
+    }
 
-/* Secondary Button Style */
-.btn-secondary { background:white; color:#1a1a1a; border:1.5px solid #1a1a1a; }
-.btn-secondary:hover { background:#f5f5f5; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal.active {
+        display: flex;
+    }
+    .modal-content {
+        background-color: white;
+        padding: 0;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 700px;
+        height: 70vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+    }
+    .modal-close:hover {
+        background: #f0f0f0;
+        color: #000;
+    }
+    .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    .modal-message {
+        padding: 12px;
+        margin-bottom: 16px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .modal-message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
 
-/* Manage Link */
-.manage-link { margin-left:auto; }
-.manage-link a { color:#1a1a1a; text-decoration:none; font-size:13px; font-weight:600; cursor:pointer; padding:10px 16px; border-radius:6px; transition:all 0.2s ease; display:inline-flex; align-items:center; gap:6px; }
-.manage-link a:hover { background:#f0f0f0; text-decoration:underline; }
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e0e0e0;
+        flex-wrap: wrap;
+    }
+    .tab-button {
+        padding: 12px 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        border-bottom: 3px solid transparent;
+        color: #666;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+    .tab-button.active {
+        color: #1a1a1a;
+        border-bottom-color: #1a1a1a;
+    }
+    .tab-button:hover {
+        color: #1a1a1a;
+    }
+    .tab-content {
+        display: none;
+        min-height: 300px;
+    }
+    .tab-content.active {
+        display: block;
+    }
 
-/* Row Controls (Add/Save buttons) */
-.row-controls { background:#f9f9f9; padding:16px; border-radius:6px; border:1px solid #e5e5e5; margin-bottom:20px; }
-.row-controls .btn { font-size:14px; padding:11px 22px; }
+    /* Form */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: 13px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
 
-/* Modal styles */
-.modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
-.modal.active { display:flex; }
-.modal-content { background-color:white; padding:0; border-radius:8px; width:90%; max-width:700px; height:70vh; display:flex; flex-direction:column; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
-.modal-header { padding:20px 24px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-.modal-header h2 { margin:0; font-size:20px; font-weight:600; }
-.modal-close { background:none; border:none; font-size:24px; cursor:pointer; color:#666; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease; border-radius:4px; }
-.modal-close:hover { background:#f0f0f0; color:#000; }
-.modal-body { padding:24px; overflow-y:auto; flex:1; }
-.modal-message { padding:12px; margin-bottom:16px; border-radius:4px; font-size:13px; }
-.modal-message.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-.tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid #e0e0e0; flex-wrap:wrap; }
-.tab-button { padding:12px 16px; background:none; border:none; cursor:pointer; font-weight:600; border-bottom:3px solid transparent; color:#666; white-space:nowrap; transition:all 0.2s ease; }
-.tab-button.active { color:#1a1a1a; border-bottom-color:#1a1a1a; }
-.tab-button:hover { color:#1a1a1a; }
-.tab-content { display:none; min-height:300px; }
-.tab-content.active { display:block; }
-.form-group { margin-bottom:16px; }
-.form-group label { display:block; font-weight:600; margin-bottom:6px; font-size:13px; }
-.form-group input { width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; box-sizing:border-box; }
-.btn-add { background:#1a1a1a; color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; transition:all 0.2s ease; }
-.btn-add:hover { background:#000; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-.btn-danger { background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s ease; }
-.btn-danger:hover { background:#c82333; box-shadow:0 2px 8px rgba(220,53,69,0.2); }
-.teachers-list { list-style:none; padding:0; }
-.teachers-list li { padding:12px; background:#f9f9f9; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #e5e5e5; }
-.teacher-info { flex:1; }
-.teacher-name { font-weight:600; color:#1a1a1a; font-size:14px; }
-.teacher-meta { font-size:12px; color:#666; margin-top:4px; }
-.teacher-source { display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:600; margin-left:8px; }
-.teacher-source.registered { background:#d4edda; color:#155724; }
-.teacher-source.local { background:#e2e3e5; color:#383d41; }
-.teacher-count { font-size:12px; color:#666; }
+    /* Buttons */
+    .btn-add {
+        background: #1a1a1a;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+    .btn-add:hover {
+        background: #000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    .btn-danger:hover {
+        background: #c82333;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+    }
 
-@media (max-width: 768px) {
-    .controls { flex-direction:column; align-items:flex-start; }
-    .button-group { width:100%; flex-wrap:wrap; }
-    .manage-link { margin-left:0; margin-top:8px; width:100%; }
-    .controls label { width:100%; }
-    .controls select { width:100%; }
-}
+    /* Teachers List */
+    .teachers-list {
+        list-style: none;
+        padding: 0;
+    }
+    .teachers-list li {
+        padding: 12px;
+        background: #f9f9f9;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e5e5e5;
+    }
+    .teacher-info {
+        flex: 1;
+    }
+    .teacher-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 14px;
+    }
+    .teacher-meta {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    }
+    .teacher-source {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+    }
+    .teacher-source.registered {
+    background: #d4edda;
+    color: #155724;
+    }
+    .teacher-source.local {
+    background: #e2e3e5;
+    color: #383d41;
+    }
+    .teacher-count {
+    font-size: 12px;
+    color: #666;
+    }
+    @media (max-width: 768px) {
+        .controls { flex-direction:column; align-items:flex-start; }
+        .button-group { width:100%; flex-wrap:wrap; }
+        .manage-link { margin-left:0; margin-top:8px; width:100%; }
+        .controls label { width:100%; }
+        .controls select { width:100%; }
+    }
 </style>
 </head>
 <body>
 <nav class="navbar">
     <div class="navbar-brand">
-        <div class="navbar-logo">GGF</div>
+        <div class="navbar-logo">
+            <img src="g2flogo.png" class="logo-image"/>
+        </div>
         <div class="navbar-text">
             <div class="navbar-title">Glorious God's Family</div>
             <div class="navbar-subtitle">Christian School</div>
@@ -438,9 +737,8 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
     <div class="navbar-actions">
         <div class="user-menu">
             <span><?php echo $user_name ?? 'Teacher'; ?></span>
-            <a href="teacher-logout.php" class="logout-btn" title="Logout">
-                <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
-                    Logout
+            <a href="teacher-logout.php" class="logout-btn" title="Logout"><button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+            <img src="loginswitch.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
                 </button>
             </a>
         </div>
