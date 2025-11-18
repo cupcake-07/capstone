@@ -62,7 +62,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Student');
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-        <a href="logout.php" class="logout-btn" title="Logout">
+       <button class="btn-icon">⋮</button>
          
         </a>
       </div>

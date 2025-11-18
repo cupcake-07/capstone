@@ -716,7 +716,7 @@ body {
 }
 
 .time-slot {
-  color: var(--green);
+  color: blue
   font-weight: 700;
   width: 80px;
 }

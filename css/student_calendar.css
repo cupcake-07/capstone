@@ -164,7 +164,7 @@
   height: 6px;
   background: var(--light-pink);
   border-radius: 50%;
-  box-shadow: 0 0 0 2px white;
+  box-shadow: 0 0 0 2px rgb(173, 171, 161);
 }
 
 .add-event-btn {
