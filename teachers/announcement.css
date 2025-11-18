@@ -71,19 +71,6 @@
         align-items: center;
     }
 
-    .navbar-logo {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        color: #000000;
-        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
-    }
-
     .navbar-text {
         flex: 1;
     }
@@ -178,20 +165,6 @@
         align-items: center;
         margin-bottom: 6px;
     }
-
-    .logo {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        color: #000000;
-        font-size: 18px;
-        box-shadow: 0 8px 24px rgba(255, 215, 0, 0.4);
-    }
     
     .brand-text {
         flex: 1;
@@ -270,6 +243,7 @@
     .announcement-container {
         max-width: 1000px;
         margin: 0 auto 50px;
+        box-shadow: var(--grey);
     }
 
     .page-title {
@@ -294,7 +268,7 @@
     .announcement-item {
         padding: 12px;
         margin: 8px 0;
-        background: #f9f9f9;
+        background: #cc7070;
         border-left: 4px solid #1a73e8;
         border-radius: 8px;
         transition: all 0.2s ease;
@@ -375,13 +349,13 @@
         right: 50px;
         width: 60px;
         height: 60px;
-        background: linear-gradient(180deg, var(--love) 0%, #3d71a4 100%);
-        color: #000000;
+        background: linear-gradient(180deg, var(--love) 0%, var(--pink) 100%);
+        color: #ffffff;
         font-size: 36px;
         font-weight: 700;
         border: none;
         border-radius: 50%;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
         cursor: pointer;
         transition: all 0.2s ease;
         z-index: 900;
@@ -393,7 +367,7 @@
 
     .announcement-button:hover {
         transform: scale(1.05) translateY(-2px);
-        box-shadow: 0 12px 24px rgba(255, 215, 0, 0.4);
+        box-shadow: 0 12px 24px rgba(255, 0, 132, 0.4);
     }
 
     /* ===== MODAL STYLES ===== */
@@ -568,131 +542,7 @@
         .main {
             padding: 20px;
         }
-        .footer {
-            padding: 30px 20px 20px;
-            width: 100%;
-            margin-left: 0;
-        }
-        .footer-content {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        .footer-section {
-            text-align: center;
-        }
-        .social-links {
-            justify-content: center;
-        }
-        .navbar-actions {
-            gap: 5px;
-        }
-        .user-menu span {
-            /* Hide 'Teacher' role text on mobile to save space */
-            display: none;
-        }
-        .footer-bottom {
-            font-size: 12px;
-            margin-top: 10px;
-            flex-direction: column;
-            gap: 12px;
-        }
-        /* Move floating button slightly up */
-        .announcement-button {
-            bottom: 30px; 
-            right: 20px;
-        }
     }
-
-    /* ===== PAGE WRAPPER & LAYOUT ===== */
-        /* ===== FOOTER ===== */
-    .footer {
-        background: #0d0d0d;
-        color: white;
-        padding: 40px 44px 30px;
-        width: 100%;
-        margin-left: 0;
-        box-sizing: border-box;
-        border-top: 2px solid #FFD700;
-        flex-shrink: 0;
-    }
-    
-    .footer-content {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); 
-        gap: 40px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    .footer-section h3 {
-        color: #FFD700;
-        margin-bottom: 20px;
-        font-size: 18px;
-    }
-    
-    .footer-section ul {
-        list-style: none;
-        padding: 0;
-    }
-    
-    .footer-section ul li {
-        margin-bottom: 10px;
-        font-size: 14px;
-    }
-    
-    .footer-section a {
-        color: white;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    
-    .footer-section a:hover {
-        color: var(--yellow);
-    }
-    
-    .social-links {
-        display: flex;
-        gap: 15px;
-    }
-    
-    .social-links svg {
-        width: 24px;
-        height: 24px;
-        color: white;
-        transition: color 0.2s;
-    }
-    
-    .social-links a:hover svg {
-        color: var(--yellow);
-    }
-
-    .footer-bottom {
-        text-align: center;
-        margin-top: 35px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        font-size: 13px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .footer-links {
-        display: flex;
-        gap: 16px;
-    }
-
-    .footer-links a {
-        padding: 0 10px;
-        color: #fff;
-        text-decoration: none;
-        transition: opacity 0.2s ease;
-    }
-
-    .footer-links a:hover {
-        opacity: 1;
-    }
-
     /* ===== FILTER UI ===== */
     .filter-bar {
         display: flex;
@@ -711,7 +561,7 @@
         cursor: pointer;
         transition: background 0.2s, transform 0.2s;
     }
-    .filter-toggle:hover { background: #121517; transform: translateY(-2px); }
+    .filter-toggle:hover { background: var(--pink); transform: translateY(-2px); }
 
     .filter-panel {
         display: none; /* Hidden by default; shown when .open is added */
@@ -767,12 +617,12 @@
     }
     .filter-actions button:hover { background: #e2e4e7; transform: translateY(-2px); }
     .filter-actions button#filter-apply {
-        background: #FFD700;
-        color: #000000;
-        border-color: #FFD700;
+        background: var(--pink);
+        color: white;
+        border-color: var(--love);
     }
     .filter-actions button#filter-apply:hover {
-        background: #FFC700;
+        background: var(--panel);
     }
 
     @media (max-width: 680px) {
