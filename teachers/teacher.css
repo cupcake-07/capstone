@@ -9,6 +9,7 @@
         --love: #62aef9;
         --grey: #252627;
         --pink: #fd4ba7;
+
         --radius: 14px;
         --shadow-sm: 0 4px 12px rgba(2, 6, 23, 0.04);
         --shadow-md: 0 10px 30px rgba(11, 17, 24, 0.06);
@@ -564,7 +565,7 @@
     }
 
     .calendar-day.today {
-        border: 2px solid var(--panel);
+        border: 2px solid var(--light-pink);
         font-weight: 700;
     }
 
@@ -578,7 +579,7 @@
     }
 
     .calendar-day.has-event {
-        background-color: #fff8e6; /* Light yellow background */
+        background-color: #bee0ff; /* Light yellow background */
     }
 
     .calendar-day.selected .event-marker {

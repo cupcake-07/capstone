@@ -406,7 +406,9 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
   <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
-      <div class="navbar-logo">GGF</div>
+      <div class="navbar-logo">
+        <img src="g2flogo.png" class="logo-image"/>
+      </div>
       <div class="navbar-text">
         <div class="navbar-title">Glorious God's Family</div>
         <div class="navbar-subtitle">Christian School</div>
@@ -416,8 +418,8 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
         <a href="teacher-logout.php" class="logout-btn" title="Logout">
-          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
-            Logout
+          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+            <img src="loginswitch.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
           </button>
         </a>
       </div>
@@ -484,45 +486,6 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     </main>
 
     <!-- FIXED: Clean footer and scripts -->
-    <footer class="footer">
-      <div class="footer-content">
-        <div class="footer-section">
-          <h3>Contact Us</h3>
-          <p>123 Faith Avenue</p>
-          <p>Your City, ST 12345</p>
-          <p>Phone: (555) 123-4567</p>
-          <p>Email: info@gloriousgod.edu</p>
-        </div>
-        <div class="footer-section">
-          <h3>Connect With Us</h3>
-          <div class="social-links">
-            <a href="#" aria-label="Facebook">
-              <!-- svg icon -->
-            </a>
-            <a href="#" aria-label="Instagram">
-              <!-- svg icon -->
-            </a>
-            <a href="#" aria-label="Twitter">
-              <!-- svg icon -->
-            </a>
-          </div>
-        </div>
-        <div class="footer-section">
-          <h3>System Info</h3>
-          <p>Schoolwide Management System</p>
-          <p>Version 1.0.0</p>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
-        <div class="footer-links">
-          <a href="privacy.php">Privacy Policy</a> |
-          <a href="terms.php">Terms of Service</a>
-        </div>
-      </div>
-    </footer>
-
     <script>
       // Load announcements from API
       function loadAnnouncements() {
