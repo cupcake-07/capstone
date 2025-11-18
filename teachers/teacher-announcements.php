@@ -33,7 +33,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <!--Top Navbar-->
     <nav class="navbar">
         <div class="navbar-brand">
-            <div class="navbar-logo">GGF</div>
+            <div class="navbar-logo">
+                <img src="g2flogo.png" class="logo-image"/>
+            </div>
             <div class="navbar-text">
                 <div class="navbar-title">Glorious God's Family</div>
                 <div class="navbar-subtitle">Christian School</div>
@@ -43,8 +45,8 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             <div class="user-menu">
                 <span><?php echo $user_name; ?></span>
                 <a href="teacher-logout.php" class="logout-btn" title="Logout">
-                    <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
-                        Logout
+                    <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+                        <img src="loginswitch.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
                     </button>
                 </a>
             </div>
@@ -168,51 +170,6 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                 </form>
             </div>
         </div>
-
-        <!--Footer-->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>Contact Us</h3>
-                    <p>123 Faith Avenue</p>
-                    <p>Your City, ST 12345</p>
-                    <p>Phone: (555) 123-4567</p>
-                    <p>Email: info@gloriousgod.edu</p>
-                </div>
-                <div class="footer-section">
-                    <h3>Connect With Us</h3>
-                    <div class="social-links">
-                        <a href="#" aria-label="Facebook">
-                            <svg xlmns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-facebook">
-                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                            </svg>
-                        </a>
-                        <a href="#" aria-label="Instagram">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram">
-                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.5" y1="6.5" y2="6.5"/>
-                            </svg>
-                        </a>
-                        <a href="#" aria-label="Twitter">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-twitter">
-                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h3>System Info</h3>
-                    <p>Schoolwide Management System</p>
-                    <p>Version 1.0.0</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
-                <div class="footer-links">
-                    <a href="privacy.php">Privacy Policy</a> |
-                    <a href="terms.php">Terms of Service</a>
-                </div>
-            </div>
-        </footer>
     </div>
 
     <script>
