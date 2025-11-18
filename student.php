@@ -333,7 +333,7 @@ if ($isEnrolled && $enrolledColumn) {
   <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
-      <div class="navbar-logo">GGF</div>
+      <img src="g2flogo.png" alt="Glorious God's Family Logo" style="height: 40px; margin-left:-20px"  />
       <div class="navbar-text">
         <div class="navbar-title">Glorious God's Family</div>
         <div class="navbar-subtitle">Christian School</div>

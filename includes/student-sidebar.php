@@ -87,7 +87,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
   .nav-title {
     font-size: 12px;
     font-weight: 600;
-    color: #dada18;
+    color: #ffffffff;
     margin: 0 0 12px 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -110,7 +110,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     background: rgba(218, 218, 24, 0.15);
     color: #dada18;
     font-weight: 600;
-    border-left: 3px solid #dada18;
+    
     padding-left: calc(15px - 3px);
   }
 
@@ -119,7 +119,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     align-items: center;
     gap: 12px;
     padding: 10px 15px;
-    color: #aaa;
+    color: #ffffffff;
     text-decoration: none;
     border-radius: 4px;
     transition: all 0.2s ease;
@@ -127,8 +127,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
   }
 
   .nav-link:hover {
-    background: rgba(218, 218, 24, 0.1);
-    color: #dada18;
+   background: linear-gradient(95deg, var(--yellow) 0%, rgba(255, 255, 255, 0.273));
+    color: #ffffffff;
   }
 
   .nav-icon {
