@@ -38,6 +38,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="nav-label">Announcements</span>
           </a>
         </li>
+        <li class="nav-item <?php echo ($current_page === 'student_calendar.php') ? 'active' : ''; ?>">
+          <a href="student_calendar.php" class="nav-link">
+            <span class="nav-icon">📆</span>
+            <span class="nav-label">School Calendar</span>
+          </a>
+        </li>
       </ul>
     </div>
 
@@ -58,6 +64,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </li>
       </ul>
     </div>
+
+    <div class="side-foot">Logged in as <strong>Student</strong></div>
   </nav>
 </aside>
 
