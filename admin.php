@@ -136,6 +136,7 @@ $user = getAdminSession();
 				<a href="admin/schedule.php">Schedule</a>
 				<a href="admin/teachers.php">Teachers</a>
 				<a href="admin/reports.php">Reports</a>
+				<a href="admin/AccountBalance.php">Account Balance</a>
 				<a href="admin/settings.php">Settings</a>
 				<a href="logout.php?type=admin">Logout</a>
 			</nav>

@@ -286,7 +286,7 @@ if ($result) {
 .small { width:100%; box-sizing:border-box; padding:6px; }
 
 .schedule-actions { background:white; padding:24px; border-radius:8px; border:1px solid #e5e5e5; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-.schedule-actions h2 { margin:0 0 20px 0; font-size:28px; font-weight:700; color:#1a1a1a; }
+.schedule-actions h2 { margin:0 0 20px 0; font-size:28px; font-weight:700; color:t }
 
 .controls { display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:space-between; }
 

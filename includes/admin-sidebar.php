@@ -10,6 +10,7 @@
 		<a href="schedule.php">Schedule</a>
 		<a href="teachers.php">Teachers</a>
 		<a href="reports.php">Reports</a>
+		<a href="AccountBalance.php">Account Balance</a>
 		<a href="settings.php">Settings</a>
 		<a href="../logout.php?type=admin">Logout</a>
 	</nav>
