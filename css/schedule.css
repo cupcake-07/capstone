@@ -1,0 +1,610 @@
+/* Enhanced grid and layout improvements */
+* { box-sizing: border-box; }
+
+body { 
+    background:#f5f7fa; 
+    font-weight:500; /* Make letters generally thicker */
+}
+
+.schedule-table { 
+    width:100%; 
+    border-collapse:collapse; 
+    margin-top:16px; 
+    background:white; 
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    border:2px solid #24292e;
+}
+
+.schedule-table th { 
+    background:#f8f9fa;
+    padding:14px;
+    border:2px solid #24292e;
+    vertical-align:middle;
+    text-align:left;
+    font-weight:700; /* increase header weight */
+    font-size:13px;
+    color:#24292e;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+}
+
+.schedule-table td { 
+    padding:12px 14px;
+    border:2px solid #24292e;
+    vertical-align:top;
+    text-align:left;
+    background:white;
+    font-weight:600; /* make cell text thicker for readability */
+}
+
+.schedule-table tbody tr { transition:background-color 0.2s ease; }
+.schedule-table tbody tr:hover { background:#fafbfc; }
+
+.day-cell { 
+    display:flex; 
+    gap:8px; 
+    flex-direction:column; 
+}
+
+.small { 
+    width:100%; 
+    box-sizing:border-box; 
+    padding:8px 10px;
+    border:2px solid #24292e;
+    border-radius:4px;
+    font-size:13px;
+    font-family:inherit;
+    background:white;
+    color:#24292e;
+    transition:all 0.2s ease;
+    font-weight:600; /* thicker form inputs and selects */
+}
+
+.small:hover { border-color:#0366d6; }
+.small:focus { 
+    outline:none; 
+    border-color:#0366d6;
+    box-shadow:0 0 0 3px rgba(3,102,214,0.1);
+}
+
+.schedule-actions { 
+    background:white; 
+    padding:24px; 
+    border-radius:8px; 
+    border:2px solid #24292e; 
+    margin-bottom:24px; 
+    box-shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+
+.schedule-actions h2 { 
+    margin:0 0 24px 0; 
+    font-size:24px; 
+    font-weight:700; 
+    color:#24292e;
+}
+
+.controls { 
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:20px;
+    align-items:center;
+}
+
+.controls-left {
+    display:grid;
+    grid-template-columns:auto 1fr auto 1fr;
+    gap:16px;
+    align-items:center;
+}
+
+.controls label { 
+    font-weight:700; /* emphasize labels */
+    color:#24292e; 
+    font-size:13px; 
+    white-space:nowrap;
+}
+
+.controls select { 
+    padding:10px 12px;
+    border:2px solid #24292e;
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    background:white;
+    color:#24292e;
+    cursor:pointer;
+    transition:all 0.2s ease;
+    min-width:160px;
+}
+
+.controls select:hover { 
+    border-color:#0366d6;
+    background:#fafbfc;
+}
+
+.controls select:focus { 
+    outline:none; 
+    border-color:#0366d6;
+    box-shadow:0 0 0 3px rgba(3,102,214,0.1);
+}
+
+.button-group { 
+    display:flex; 
+    gap:12px; 
+    align-items:center;
+}
+
+.btn { 
+    background:#238636; 
+    color:white; 
+    border:none; 
+    padding:10px 16px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    font-weight:700; /* bolder action buttons */
+    font-size:12px; 
+    transition:all 0.2s ease; 
+    display:inline-flex; 
+    align-items:center; 
+    gap:8px; 
+    text-decoration:none;
+    white-space:nowrap;
+}
+
+.btn:hover { 
+    background:#2ea043;
+    box-shadow:0 3px 12px rgba(35,134,54,0.2);
+    transform:translateY(-1px);
+}
+
+.btn:active { 
+    transform:translateY(0);
+    box-shadow:0 1px 6px rgba(35,134,54,0.2);
+}
+
+.btn-secondary { 
+    background:white; 
+    color:#238636; 
+    border:1.5px solid #238636;
+}
+
+.btn-secondary:hover { 
+    background:#f6f8fa;
+    box-shadow:0 3px 12px rgba(35,134,54,0.15);
+}
+
+.manage-link a { 
+    color:#0366d6; 
+    text-decoration:none; 
+    font-size:12px; 
+    font-weight:600; 
+    cursor:pointer; 
+    padding:8px 12px; 
+    border-radius:6px; 
+    transition:all 0.2s ease; 
+    display:inline-flex; 
+    align-items:center; 
+    gap:6px;
+}
+
+.manage-link a:hover { 
+    background:#f6f8fa;
+    color:#0256c7;
+}
+
+.row-controls { 
+    background:#f6f8fa; 
+    padding:16px; 
+    border-radius:6px; 
+    border:2px solid #24292e; 
+    margin-bottom:20px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+
+.row-controls .btn { font-size:13px; padding:10px 16px; }
+
+.modal { 
+    display:none; 
+    position:fixed; 
+    z-index:1000; 
+    left:0; 
+    top:0; 
+    width:100%; 
+    height:100%; 
+    background-color:rgba(0,0,0,0.6); 
+    align-items:center; 
+    justify-content:center;
+    padding:20px;
+}
+
+.modal.active { display:flex; }
+
+.modal-content { 
+    background-color:white; 
+    padding:0; 
+    border-radius:8px; 
+    width:100%;
+    max-width:720px; 
+    height:75vh; 
+    display:flex; 
+    flex-direction:column; 
+    box-shadow:0 8px 32px rgba(0,0,0,0.15);
+    border:2px solid #24292e;
+}
+
+.modal-header { 
+    padding:20px 24px; 
+    border-bottom:2px solid #24292e; 
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+    flex-shrink:0;
+    background:#f6f8fa;
+}
+
+.modal-header h2 { 
+    margin:0; 
+    font-size:18px; 
+    font-weight:700; /* bolder modal heading */
+    color:#24292e;
+}
+
+.modal-close { 
+    background:none; 
+    border:none; 
+    font-size:24px; 
+    cursor:pointer; 
+    color:#666; 
+    padding:0; 
+    width:32px; 
+    height:32px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    transition:all 0.2s ease; 
+    border-radius:4px;
+}
+
+.modal-close:hover { 
+    background:#e1e4e8; 
+    color:#24292e;
+}
+
+.modal-body { 
+    padding:24px; 
+    overflow-y:auto; 
+    flex:1;
+}
+
+.modal-message { 
+    padding:12px 16px; 
+    margin-bottom:20px; 
+    border-radius:6px; 
+    font-size:13px;
+    border-left:4px solid;
+}
+
+.modal-message.success { 
+    background:#dafbe1; 
+    color:#033a16;
+    border-left-color:#238636;
+}
+
+.tabs { 
+    display:flex; 
+    gap:0; 
+    margin-bottom:20px; 
+    border-bottom:3px solid #24292e; 
+    flex-wrap:wrap;
+}
+
+.tab-button { 
+    padding:12px 16px; 
+    background:none; 
+    border:none; 
+    cursor:pointer; 
+    font-weight:700; /* stronger tab labels */
+    border-bottom:3px solid transparent; 
+    color:#586069; 
+    white-space:nowrap; 
+    transition:all 0.2s ease;
+    font-size:13px;
+}
+
+.tab-button.active { 
+    color:#24292e; 
+    border-bottom-color:#238636;
+}
+
+.tab-button:hover { 
+    color:#24292e;
+    background:#f6f8fa;
+}
+
+.tab-content { 
+    display:none; 
+    min-height:300px;
+}
+
+.tab-content.active { display:block; }
+
+.form-group { 
+    margin-bottom:16px;
+}
+
+.form-group label { 
+    display:block; 
+    font-weight:700; 
+    margin-bottom:8px; 
+    font-size:13px;
+    color:#24292e;
+}
+
+.form-group input { 
+    width:100%; 
+    padding:10px 12px;
+    border:2px solid #24292e;
+    border-radius:6px;
+    box-sizing:border-box;
+    font-size:13px;
+    font-family:inherit;
+    transition:all 0.2s ease;
+}
+
+.form-group input:hover { border-color:#0366d6; }
+.form-group input:focus { 
+    outline:none;
+    border-color:#0366d6;
+    box-shadow:0 0 0 3px rgba(3,102,214,0.1);
+}
+
+.btn-add { 
+    background:#238636; 
+    color:white; 
+    border:none; 
+    padding:10px 16px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    font-weight:700; /* bolder action buttons */
+    font-size:12px; 
+    transition:all 0.2s ease;
+}
+
+.btn-add:hover { 
+    background:#2ea043;
+    box-shadow:0 3px 12px rgba(35,134,54,0.2);
+}
+
+.btn-danger { 
+    background:#da3633; 
+    color:white; 
+    border:none; 
+    padding:6px 12px; 
+    border-radius:4px; 
+    cursor:pointer; 
+    font-weight:600; 
+    font-size:12px; 
+    transition:all 0.2s ease;
+}
+
+.btn-danger:hover { 
+    background:#f85149;
+    box-shadow:0 2px 8px rgba(218,54,51,0.2);
+}
+
+.teachers-list { 
+    list-style:none; 
+    padding:0;
+    display:grid;
+    gap:12px;
+}
+
+.teachers-list li { 
+    padding:14px;
+    background:#f6f8fa;
+    border-radius:6px;
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center;
+    border:2px solid #24292e;
+    transition:all 0.2s ease;
+}
+
+.teachers-list li:hover { 
+    background:#ffffff;
+    border-color:#d1d5da;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.teacher-info { flex:1; }
+
+.teacher-name { 
+    font-weight:700; /* emphasize teacher names */
+    color:#24292e; 
+    font-size:14px;
+}
+
+.teacher-meta { 
+    font-size:12px; 
+    color:#586069; 
+    margin-top:4px;
+    font-weight:600; /* slightly bolder meta text */
+}
+
+.teacher-source { 
+    display:inline-block; 
+    padding:3px 10px; 
+    border-radius:3px; 
+    font-size:11px; 
+    font-weight:600; 
+    margin-left:8px;
+}
+
+.teacher-source.registered { 
+    background:#ddf4ff; 
+    color:#0969da;
+}
+
+.teacher-source.local { 
+    background:#e8eaed; 
+    color:#3c444d;
+}
+
+.teacher-count { 
+    font-size:12px; 
+    color:#586069;
+    margin-left:6px;
+}
+
+/* Success message styling */
+.success-message {
+    color:#033a16;
+    background:#dafbe1;
+    border:1px solid:#b3f3a9;
+    padding:12px 16px;
+    border-radius:6px;
+    margin-bottom:16px;
+    font-weight:500;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+/* Ensure the "Time" column is wider so time ranges are never truncated */
+.schedule-table th:nth-child(2),
+.schedule-table td:nth-child(2) {
+    /* give the Time column more room on desktop */
+    width: 260px;
+    min-width: 180px;
+    max-width: 340px;
+}
+
+/* Ensure selects inside the "Time" column keep their full text visible */
+.schedule-table td:nth-child(2) select,
+.schedule-table th:nth-child(2) select {
+    min-width: 220px;        /* small minimum width for readability */
+    width: 100%;             /* fill the time cell */
+    max-width: 100%;
+    white-space: nowrap;     /* do not wrap long time strings */
+    padding-right: 36px;     /* leave space for native drop-down arrow */
+    line-height: 1.2;        /* a tighter line-height to avoid vertical clipping */
+    font-variant-numeric: tabular-nums; /* helps numeric alignment if available */
+    overflow: hidden;        /* keep browser rendering consistent */
+    text-overflow: ellipsis; /* if it must, gracefully truncate */
+}
+
+/* Provide a sensible min width for all table selects so elements don't become tiny */
+.schedule-table select.small,
+.schedule-table select {
+    min-width: 120px;
+    font-size: 13px;
+}
+
+/* Responsive adjustments so time controls remain visible on smaller screens */
+@media (max-width: 1024px) {
+    .schedule-table th:nth-child(2),
+    .schedule-table td:nth-child(2) {
+        width: 230px;
+        min-width: 160px;
+    }
+    .schedule-table td:nth-child(2) select {
+        min-width: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .schedule-table th:nth-child(2),
+    .schedule-table td:nth-child(2) {
+        width: 180px;
+        min-width: 140px;
+    }
+    .schedule-table td:nth-child(2) select {
+        min-width: 140px;
+        font-size: 12px; /* small devices benefit from slightly smaller text */
+        padding-right: 30px;
+    }
+}
+
+/* On very narrow mobile, keep the time readable */
+@media (max-width: 480px) {
+    .schedule-table th:nth-child(2),
+    .schedule-table td:nth-child(2) {
+        width: 140px;
+        min-width: 120px;
+    }
+    .schedule-table td:nth-child(2) select {
+        min-width: 120px;
+        font-size: 11px;
+        padding-right: 28px;
+    }
+}
+
+/* Minor tweak: avoid overflow hiding from rounded corners (if you want the drop shadows to show)
+   but keep the radius. This prevents inputs from getting clipped by overflow hidden. */
+.schedule-table {
+    overflow: visible; /* changed from hidden to visible to avoid clipping long inputs/menus */
+}
+
+@media (max-width: 1024px) {
+    .controls-left {
+        grid-template-columns:auto 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .controls { 
+        grid-template-columns:1fr;
+        gap:16px;
+    }
+    
+    .controls-left {
+        grid-template-columns:1fr;
+        gap:12px;
+    }
+    
+    .controls label { width:100%; }
+    .controls select { width:100%; }
+    
+    .button-group { 
+        width:100%;
+        flex-direction:column;
+    }
+    
+    .button-group .btn { width:100%; justify-content:center; }
+    
+    .schedule-table th, .schedule-table td {
+        padding:10px 8px;
+        font-size:12px;
+    }
+    
+    .small { padding:6px 8px; font-size:12px; }
+    
+    .modal-content { 
+        height:90vh;
+        max-width:95vw;
+    }
+    
+    .row-controls {
+        flex-direction:column;
+    }
+    
+    .row-controls .btn { width:100%; justify-content:center; }
+}
+
+@media (max-width: 480px) {
+    .schedule-actions { padding:16px; }
+    .modal-body { padding:16px; }
+    .modal-header { padding:16px; }
+    
+    .schedule-table th, .schedule-table td {
+        padding:8px 6px;
+        font-size:11px;
+    }
+    
+    .small { padding:6px; font-size:11px; }
+}
