@@ -355,7 +355,7 @@ $quarters = [1, 2, 3, 4];
         <div class="grade-levels-container">
           <?php
             // Ensure grades are always rendered in order and avoid duplicates.
-            $orderedGrades = ['1','2','3','4','5','6'];
+            $orderedGrades = ['K1', 'K2', '1','2','3','4','5','6'];
             foreach ($orderedGrades as $gradeLevel):
               // Use students from the prepared map or empty array if none
               $allStudents = isset($studentsByGradeLevel[$gradeLevel]) ? $studentsByGradeLevel[$gradeLevel] : [];
@@ -389,7 +389,15 @@ $quarters = [1, 2, 3, 4];
             <div class="grade-level-card" data-grade-level-id="<?php echo $gradeLevelKey; ?>" data-grade-level="<?php echo htmlspecialchars($gradeLevel); ?>" data-is-grade-one="<?php echo ($gradeLevel === '1') ? 'true' : 'false'; ?>">
                <div class="grade-level-header" data-toggle="grade-level">
                  <div class="grade-level-info">
-                  <h3>Grade <?php echo htmlspecialchars($gradeLevel); ?></h3>
+                  <h3><?php 
+                    if ($gradeLevel === 'K1') {
+                      echo 'Kinder 1';
+                    } elseif ($gradeLevel === 'K2') {
+                      echo 'Kinder 2';
+                    } else {
+                      echo 'Grade ' . htmlspecialchars($gradeLevel);
+                    }
+                  ?></h3>
                    <div class="grade-level-stats">
                      <span class="stat-badge">Students: <?php echo count($allStudents); ?></span>
                      <span class="stat-badge">Grades: <?php echo $gradeLevelStats['count']; ?></span>
