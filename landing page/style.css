@@ -471,64 +471,78 @@ ul {
 	display: inline-block;
 	cursor: pointer;
 }
+/* Replace the oblong box with a round (square-sized) avatar box */
 .about-section .marq .box {
-	width: 80px;
-	height: 180px;
-	margin: 0 21px;
+	/* changed: equal width/height for perfect circle */
+	width: 140px;
+	height: 140px;
+	margin: 0 12px;
 	border-radius: 50%;
-	letter-spacing: .5px;
 	display: inline-block;
 	cursor: pointer;
 	border: 2px solid #00bfff;
-	transition: .4s;
+	transition: transform .25s ease, box-shadow .25s ease;
 	overflow: hidden;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover; /* ensure image fills the circle */
+	box-sizing: border-box;
+	/* preserve any custom background defined for each ID (they'll override background-image) */
 }
+
+/* Hover and focus states remain but kept subtle */
 .about-section .marq .box:hover {
 	transform: scale(1.14);
-	box-shadow: 0 3px 12px rgba(0, 0, 0, .8);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
 }
+
+/* Overlay covers circular thumbnail; keep the same show/hide animation */
 .about-section .marq .box .over {
 	width: 100%;
 	height: 100%;
-	background: rgba(0, 0, 0, .8);
+	background: rgba(0, 0, 0, .45);
 	text-align: center;
-	padding: 8px 5px;
-	transition: .6s;
-	transform: translateY(75%);
-}
-.about-section .marq .box:hover .over {
-	transform: translateY(0);
-}
-.about-section .marq .box .over h4 {
-	border: 0;
-	color: #fff;
-	font-family: calibri;
-	font-weight: 50px;
-	letter-spacing: 1px;
-	transform: translateY(0);
-	transition: 1s;
-}
-.about-section .marq .box:hover .over h4 {
-	transform: translateY(60px);
+	padding: 8px;
+	transition: transform .6s ease, opacity .3s ease;
+	transform: translateY(70%); /* hidden state, can be adjusted */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	border-radius: 50%; /* make overlay circular too */
+	pointer-events: none; /* ensures hover still reaches the box */
 }
 
-/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
-.about-section .marq #img1 { background: url(Images/school14.jpg) top center/cover no-repeat; }
-.about-section .marq #img2 { background: url(Images/school15.jpg) top center/cover no-repeat; }
-.about-section .marq #img3 { background: url(Images/school16.jpg) top center/cover no-repeat; }
-.about-section .marq #img4 { background: url(Images/school18.jpg) top center/cover no-repeat; }
-.about-section .marq #img5 { background: url(Images/school19.jpg) top center/cover no-repeat; }
-.about-section .marq #img6 { background: url(Images/school20.jpg) top center/cover no-repeat; }
-.about-section .marq #img7 { background: url(Images/school21.jpg) top center/cover no-repeat; }
-.about-section .marq #img8 { background: url(Images/school22.jpg) center/cover no-repeat; }
-.about-section .marq #img9 { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
-.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
-.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
-.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
-.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
-.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
-.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
-.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
+/* On hover, slide overlay into view */
+.about-section .marq .box:hover .over {
+	transform: translateY(0);
+	pointer-events: auto;
+}
+
+/* make overlay headings nicely centered within the circle */
+.about-section .marq .box .over h4,
+.about-section .marq .box .over h5 {
+	margin: 0;
+	color: #fff;
+	font-family: calibri;
+	font-size: 14px;
+	text-align: center;
+	line-height: 1.1;
+	padding: 6px; /* small padding for readability */
+}
+
+/* Responsive: smaller circular thumbnails on narrow viewports */
+@media (max-width: 780px) {
+	.about-section .marq .box {
+		width: 80px;
+		height: 80px;
+		margin: 0 8px;
+	}
+	.about-section .marq .box .over h4,
+	.about-section .marq .box .over h5 {
+		font-size: 12px;
+	}
+}
 
 /* Career section */
 .career-section {
@@ -1513,4 +1527,21 @@ ul {
   }
 }
 
-/* ...existing code... */
+/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
+/* Keep these exact rules (do not remove) so each box has the right background image */
+.about-section .marq #img1  { background: url(Images/school14.jpg) top center/cover no-repeat; }
+.about-section .marq #img2  { background: url(Images/school15.jpg) top center/cover no-repeat; }
+.about-section .marq #img3  { background: url(Images/school16.jpg) top center/cover no-repeat; }
+.about-section .marq #img4  { background: url(Images/school18.jpg) top center/cover no-repeat; }
+.about-section .marq #img5  { background: url(Images/school19.jpg) top center/cover no-repeat; }
+.about-section .marq #img6  { background: url(Images/school20.jpg) top center/cover no-repeat; }
+.about-section .marq #img7  { background: url(Images/school21.jpg) top center/cover no-repeat; }
+.about-section .marq #img8  { background: url(Images/school22.jpg) center/cover no-repeat; }
+.about-section .marq #img9  { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
+.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
+.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
+.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
+.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
+.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
+.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
+.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
