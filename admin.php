@@ -113,6 +113,50 @@ if ($recentTeachersResult) {
     }
 }
 
+// Calculate student grade level counts (include Kinder 1 & Kinder 2)
+// categories keys kept in a specific order to map to chart labels later
+$gradeLevelCounts = [
+    'Kinder 1' => 0,
+    'Kinder 2' => 0,
+    'Grade 1'  => 0,
+    'Grade 2'  => 0,
+    'Grade 3'  => 0,
+    'Grade 4'  => 0,
+    'Grade 5'  => 0,
+    'Grade 6'  => 0
+];
+
+$glResult = $conn->query("SELECT grade_level, COUNT(*) as count FROM students GROUP BY grade_level");
+if ($glResult) {
+    while ($row = $glResult->fetch_assoc()) {
+        $raw = trim($row['grade_level'] ?? '');
+        $count = (int) $row['count'];
+
+        // more flexible matching for kinder/grade variants:
+        // examples matched:
+        //  - Kinder 1, Kinder1, K1, KG 1, k1a, Kinder 1 A  -> Kinder 1
+        //  - Kinder 2, K2, KG2                            -> Kinder 2
+        //  - Grade 1, grade1, G1, 1, 1A                   -> Grade 1
+        $low = strtolower($raw);
+
+        // Check kinder variants first to avoid matching the '1' in "Kinder 1" as Grade 1
+        if (preg_match('/\b(k|kinder|kg)[^\d]*1\b/i', $low)) {
+            $gradeLevelCounts['Kinder 1'] += $count;
+        } elseif (preg_match('/\b(k|kinder|kg)[^\d]*2\b/i', $low)) {
+            $gradeLevelCounts['Kinder 2'] += $count;
+        } elseif (
+            preg_match('/\bgrade[^\d]*([1-6])\b/i', $low, $m) ||
+            preg_match('/\bg[^\d]*([1-6])\b/i', $low, $m) ||
+            preg_match('/(?<!\d)([1-6])(?=\D|$)/', $low, $m) // catches "1", "1A", "1-B", etc.
+        ) {
+            $n = (int)$m[1];
+            $gradeLevelCounts['Grade ' . $n] += $count;
+        } else {
+            // Unknown / Not Set grade levels are ignored here
+        }
+    }
+}
+
 $user = getAdminSession();
 ?>
 <!doctype html>
@@ -406,20 +450,25 @@ $user = getAdminSession();
 		}
 	});
 
-	// Grade Distribution Chart (grade-level counts 1..6)
+	// Grade Distribution Chart (includes Kinder 1 & Kinder 2)
 	(function renderGradeLevelCounts() {
 		const canvas = document.getElementById('gradeChart');
 		if (!canvas) return;
 		const ctx = canvas.getContext('2d');
-		const labels = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
-		const colors = ['#1ABC9C','#3498DB','#F39C12','#E74C3C','#9B59B6','#34495E'];
+
+		// Match ordering with the PHP $gradeLevelCounts array
+		const labels = ['Kinder 1','Kinder 2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+		const colors = ['#1ABC9C','#2ECC71','#3498DB','#F39C12','#E74C3C','#9B59B6','#34495E','#E67E22'];
+
+		// Use server-side computed counts
+		const serverCounts = <?php echo json_encode(array_values($gradeLevelCounts)); ?>;
 
 		const chart = new Chart(ctx, {
 			type: 'doughnut',
 			data: {
 				labels,
 				datasets: [{
-					data: [0,0,0,0,0,0],
+					data: serverCounts,
 					backgroundColor: colors,
 					borderColor: '#fff',
 					borderWidth: 2
@@ -432,25 +481,7 @@ $user = getAdminSession();
 			}
 		});
 
-		// Fetch counts from API
-		fetch('api/student-grade-counts.php', { credentials: 'same-origin' })
-			.then(r => {
-				if (!r.ok) throw new Error('Network response not ok: ' + r.status);
-				return r.json();
-			})
-			.then(payload => {
-				if (!payload || !payload.success || !Array.isArray(payload.data)) {
-					console.warn('student-grade-counts API returned unexpected payload', payload);
-					return;
-				}
-				// payload.data expected as [count1, count2, ..., count6]
-				const counts = payload.data.map(n => Number(n || 0));
-				chart.data.datasets[0].data = counts;
-				chart.update();
-			})
-			.catch(err => {
-				console.error('Failed to fetch student grade counts:', err);
-			});
+		// No client-side fetch required; serverCounts already applied
 	})();
 	</script>
 </body>
