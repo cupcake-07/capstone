@@ -86,10 +86,10 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         }
 
         .content-wrapper h1 {
-            font-size: 28px;
+            font-size: 35px;
             font-weight: 700;
             margin-bottom: 24px;
-            color:var(--pink);
+            color: #fd4ba7;
         }
 
         .search-section {
@@ -170,7 +170,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         .teacher-card h3 {
             font-size: 16px;
             font-weight: 700;
-            color: #0f172a;
+            color: #3d85f8;
             margin-bottom: 12px;
         }
 
@@ -216,7 +216,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <!-- NAVBAR -->
     <nav class="navbar">
         <div class="navbar-brand">
-            <div class="navbar-logo">GGF</div>
+            <div class="navbar-logo">
+                <img src="g2flogo.png" class="logo-image"/>
+            </div>
             <div class="navbar-text">
                 <div class="navbar-title">Glorious God's Family</div>
                 <div class="navbar-subtitle">Christian School</div>
@@ -226,8 +228,8 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             <div class="user-menu">
                 <span><?php echo $user_name; ?></span>
                 <a href="teacher-logout.php" class="logout-btn" title="Logout">
-                    <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
-                        Logout
+                    <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+                        <img src="loginswitch.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
                     </button>
                 </a>
             </div>
@@ -293,6 +295,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                 </div>
             </div>
         </main>
+
     </div>
 
 </body>
