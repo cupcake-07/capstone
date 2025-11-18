@@ -205,6 +205,19 @@ if ($hasGradeColumn && $gradeColumnName) {
 }
 // ---------------------------------------------------------------------------
 
+// ----- New: compute totals for overall analytics (sum of computed rows) -----
+$totalAllocatedAll = 0.0;
+$totalPaidAll = 0.0;
+$totalBalanceAll = 0.0;
+if (!empty($balances)) {
+    foreach ($balances as $r) {
+        $totalAllocatedAll += (float)($r['total_fees'] ?? 0);
+        $totalPaidAll += (float)($r['total_payments'] ?? 0);
+        $totalBalanceAll += (float)($r['balance'] ?? 0);
+    }
+}
+// ---------------------------------------------------------------------------
+
 // Render full page using the same HTML/CSS structure as admin.php
 ?>
 <!doctype html>
@@ -217,6 +230,7 @@ if ($hasGradeColumn && $gradeColumnName) {
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 	<style>
 	/* Export CSV button consistent with admin.php */
 	.btn-export{
@@ -560,6 +574,18 @@ if ($hasGradeColumn && $gradeColumnName) {
 		/* Keep the pagination/space consistent with top actions */
 		.topbar + .mobile-nav { margin-top: 6px; }
 	}
+
+	/* analytics mini dashboard */
+	.analytics {
+		display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
+	}
+	.analytics .stat {
+		background:#fff; padding:12px; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
+	}
+	.analytics .stat h4 { margin:0; font-size: 0.85rem; color:#666; font-weight:600; }
+	.analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
+	.analytics .stat.red .val { color:#b21f2d; }
+	.analytics .stat.green .val { color:#10b981; }
 	</style>
 </head>
 <body>
@@ -604,11 +630,29 @@ if ($hasGradeColumn && $gradeColumnName) {
 				</div>
 			</header>
 
-			<!-- NEW: Mobile navigation bar that mirrors the sidebar links (visible only on small screens) -->
-			<nav id="mobileNav" class="mobile-nav" aria-label="Mobile navigation" role="navigation"></nav>
-
+			<!-- NEW: analytics mini dashboard -->
 			<section class="content">
 				<div class="container-fluid">
+					<div class="analytics">
+						<div class="stat">
+							<h4>Allocated Total</h4>
+							<div class="val">₱<?php echo number_format((float)$totalAllocatedAll, 2); ?></div>
+						</div>
+						<div class="stat">
+							<h4>Total Paid</h4>
+							<div class="val green">₱<?php echo number_format((float)$totalPaidAll, 2); ?></div>
+						</div>
+						<div class="stat">
+							<h4>Not Paid</h4>
+							<div class="val red">₱<?php echo number_format((float)$totalBalanceAll, 2); ?></div>
+						</div>
+
+						<!-- small visual chart area -->
+						<div style="flex:1 1 320px; min-width:260px; display:flex;align-items:center; justify-content:center; background:#fff; padding:12px; border-radius:8px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);">
+							<canvas id="accountBalanceChart" style="width:100%; height:110px;"></canvas>
+						</div>
+					</div>
+
 					<div class="card">
 						<div class="card-header">
 							<h3 class="card-title">Students balances (excluding Other Fees & Scholarships)</h3>
@@ -710,6 +754,48 @@ if ($hasGradeColumn && $gradeColumnName) {
 			</div>
 		</div>
 	</div>
+
+	<!-- CHART.js for the mini analytics chart -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script>
+	document.getElementById('year').textContent = new Date().getFullYear();
+
+	// Render the mini doughnut chart: paid vs outstanding
+	(function() {
+		const totalPaid = <?php echo json_encode((float)$totalPaidAll, JSON_NUMERIC_CHECK); ?>;
+		const totalAllocated = <?php echo json_encode((float)$totalAllocatedAll, JSON_NUMERIC_CHECK); ?>;
+		const outstanding = Math.max(totalAllocated - totalPaid, 0);
+
+		const ctx = document.getElementById('accountBalanceChart').getContext('2d');
+		new Chart(ctx, {
+			type: 'doughnut',
+			data: {
+				labels: ['Paid', 'Not Paid'],
+				datasets: [{
+					data: [totalPaid, outstanding],
+					backgroundColor: ['#16a34a', '#ef4444'],
+					hoverBackgroundColor: ['#10b981', '#f87171'],
+					borderWidth: 0
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				cutout: '70%',
+				plugins: {
+					legend: { display: false },
+					tooltip: {
+						callbacks: {
+							label: function(ctx) {
+								return ctx.label + ': ₱' + Number(ctx.parsed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+							}
+						}
+					}
+				}
+			}
+		});
+	})();
+	</script>
 
 	<script>
 	// Simple export CSV helper for the page (adapt server side export endpoint)
