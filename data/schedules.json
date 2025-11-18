@@ -2,18 +2,18 @@
     "1_A": [
         {
             "period": "1",
-            "time": "8:00 - 8:45",
+            "time": "7:00 AM - 8:00 AM",
             "monday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "teacher2",
+                "subject": "Mathematics"
             },
             "tuesday": {
                 "teacher": "Machine Leg Extension",
                 "subject": "Social Studies"
             },
             "wednesday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "teacher2",
+                "subject": "English"
             },
             "thursday": {
                 "teacher": "",

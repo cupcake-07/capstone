@@ -261,7 +261,7 @@
     .header h1 {
         font-size: 28px;
         font-weight: 800;
-        color: var(--panel);
+        color: rgb(245, 41, 201);
         margin-bottom: 20px;
     }
     

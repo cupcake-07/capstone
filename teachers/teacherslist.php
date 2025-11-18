@@ -89,7 +89,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 24px;
-            color: #0f172a;
+            color:var(--pink);
         }
 
         .search-section {

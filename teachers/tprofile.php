@@ -150,11 +150,11 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                 <a href="teacher.php">Dashboard</a>
                 <a href="tprofile.php" class="active">Profile</a>
                 <a href="student_schedule.php">Schedule</a>
-                <a href="attendance.php">Attendance</a>
+               
                 <a href="listofstudents.php">Lists of students</a>
                 <a href="grades.php">Grades</a>
                 <a href="school_calendar.php">School Calendar</a>
-                <a href="announcements.php">Announcements</a>
+                <a href="teacher-announcements.php">Announcements</a>
                 <a href="teacherslist.php">Teachers</a>
                 <a href="teacher-settings.php">Settings</a>
             </nav>

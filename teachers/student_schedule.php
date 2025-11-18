@@ -468,7 +468,7 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         <!-- Students list view -->
         <div class="schedule-container">
             <div class="schedule-actions">
-                <h2>List of Students</h2>
+                <h2 style="color: var(--pink);">List of Students</h2>
                 <div class="controls" style="justify-content:space-between;align-items:center;">
                     <div style="display:flex; gap:12px; align-items:center;">
                         <label style="font-weight:600;">Total Students:</label>
