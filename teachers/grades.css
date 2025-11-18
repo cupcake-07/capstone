@@ -30,7 +30,7 @@
 
 .stat-card {
   background: none;
-  color: black;
+  color: rgb(38, 64, 121);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -53,8 +53,8 @@
 
 .stat-badge {
   display: inline-block;
-  background: rgba(252, 211, 77, 0.15);
-  color: var(--secondary-yellow);
+  background: none;
+  color:rgb(223, 55, 172);
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 11px;
@@ -92,8 +92,8 @@
 
 /* Grade Level Header */
 .grade-level-header {
-  background: var(--primary-black);
-  color: var(--primary-yellow);
+  background: none;
+  color: rgb(38, 64, 121);
   padding: 16px 20px;
   cursor: pointer;
   display: flex;
@@ -103,7 +103,7 @@
 }
 
 .grade-level-header:hover {
-  background: var(--secondary-black);
+  background: none;
 }
 
 .grade-level-info h3 {
@@ -162,8 +162,8 @@
 
 /* Section Header */
 .section-header {
-  background: var(--secondary-black);
-  color: var(--primary-yellow);
+  background: none;
+  color: var#fd4ba7;
   padding: 12px 16px;
   cursor: pointer;
   display: flex;
@@ -173,14 +173,14 @@
 }
 
 .section-header:hover {
-  background: var(--primary-black);
+  background:linear-gradient(90deg, var(--yellow) 0%, rgba(170, 56, 161, 0.382) 100%);
 }
 
 .section-info h4 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: var(--muted);
+ color: rgb(5, 30, 85);
   margin-bottom: 6px;
 }
 
@@ -192,7 +192,7 @@
 
 /* Section stats badges use neutral accent */
 .section-stats .stat-badge {
-  background: var(--accent-badge);
+  background:white;
   color: var(--accent-badge-text);
   padding: 2px 8px;
   font-size: 11px;
@@ -360,8 +360,8 @@
 
 /* Modal header uses black */
 .grade-modal-header {
-  background: var(--primary-black);
-  color: var(--primary-yellow);
+  background: none;
+  color: rgb(38, 64, 121);
   padding: 20px;
   display: flex;
   justify-content: space-between;
@@ -372,7 +372,7 @@
 .modal-close {
   background: none;
   border: none;
-  color: var(--primary-yellow);
+  color: black;
   font-size: 28px;
   cursor: pointer;
   padding: 0;
@@ -413,7 +413,7 @@
 
 .quarter-tab.active {
   background: var(--primary-black);
-  color: var(--primary-yellow);
+  color: white;
   border-color: var(--primary-black);
 }
 
@@ -432,7 +432,7 @@
 .subject-input-group label {
   font-weight: 600;
   font-size: 13px;
-  color: var(--text-dark);
+  color: rgb(179, 51, 51)
 }
 
 .subject-score-input {
@@ -443,8 +443,8 @@
 }
 
 .average-box {
-  background: var(--primary-black);
-  color: var(--primary-yellow);
+  background: white;
+  color: rgb(38, 64, 121);
   padding: 16px;
   border-radius: 8px;
   display: flex;
@@ -466,7 +466,7 @@
   flex: 1;
   padding: 12px 16px;
   background: var(--primary-black);
-  color: var(--primary-yellow);
+  color: white;
   border: none;
   border-radius: 8px;
   font-weight: 700;
@@ -540,7 +540,7 @@
 .subject-input-group label {
   margin: 0;
   font-size: 13px;
-  color: var(--muted);
+  color: black;
   font-weight: 600;
   white-space: nowrap;
 }

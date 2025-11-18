@@ -435,17 +435,17 @@ $quarters = [1, 2, 3, 4];
                                tabindex="0"
                                style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
                             <div class="student-info" style="flex: 1;">
-                              <div class="student-name" style="font-weight: 600; color: #2c3e50; font-size: 14px;"><?php echo htmlspecialchars($student['name']); ?></div>
-                              <div class="student-email" style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                              <div class="student-name" style="font-weight: 600; color: #20405fff; font-size: 14px;"><?php echo htmlspecialchars($student['name']); ?></div>
+                              <div class="student-email" style="font-size: 12px; color: #000000ff; margin-top: 2px;">
                                 <?php echo htmlspecialchars($student['email']); ?> 
-                                <span style="margin-left: 8px; color: #999;">• Grade <?php echo $displayGrade; ?> • Section <?php echo $displaySection; ?></span>
+                                <span style="margin-left: 8px; color: #000000ff;">• Grade <?php echo $displayGrade; ?> • Section <?php echo $displaySection; ?></span>
                               </div>
                             </div>
 
                             <div style="display: flex; align-items: center; gap: 20px; margin-left: 16px;">
                               <div style="text-align: center;">
-                                <div style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;">Average</div>
-                                <div style="font-size: 18px; font-weight: 700; color: var(--muted);"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
+                                <div style="font-size: 10px; font-weight: 600; color:black; text-transform: uppercase; margin-bottom: 2px;">Average</div>
+                                <div style="font-size: 18px; font-weight: 700; color: black;"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
                               </div>
                             </div>
                           </div>
