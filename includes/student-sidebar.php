@@ -64,7 +64,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <style>
   .sidebar {
     width: 250px;
-    background: #1a1a1a;
+    background: #3d71a4;
     border-right: 1px solid #333;
     padding: 20px 0;
     overflow-y: auto;

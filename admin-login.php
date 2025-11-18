@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 font-family: 'Inter', sans-serif;
                 font-size: 18px;                /* increased base font size */
                 line-height: 1.45;
-                background: linear-gradient(135deg, #0b0b0b 0%, #4a4a4a 100%);
+                background: linear-gradient(135deg, #2535c7ff 0%, #b43f91ff 100%);
                 min-height: 100vh;
                 display: flex;
                 align-items: center;
@@ -59,17 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 padding: 24px;
             }
             .login-container {
-                background: #ffffff;
-                padding: 48px;                 /* larger padding */
-                border-radius: 10px;
-                box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-                width: 100%;
-                max-width: 520px;              /* slightly wider */
-                border: 1px solid #e0e0e0;
+                 background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 400px;
             }
             .login-container h1 {
                 text-align: center;
-                color: #111;
+                color: #ad49a5ff;
                 margin-bottom: 12px;
                 font-size: 28px;               /* larger heading */
                 font-weight: 700;
@@ -115,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .btn-login {
                 width: 100%;
                 padding: 14px;                /* larger button */
-                background: #0b0b0b;
+                background: #b83fa3ff;
                 color: #ffffff;
                 border: none;
                 border-radius: 6px;
@@ -123,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 font-weight: 700;
                 cursor: pointer;
             }
-            .btn-login:hover { background: #2b2b2b; }
+            .btn-login:hover { background: #4f65e0ff; }
             .error {
                 background: #fff6f6;
                 color: #a00000;

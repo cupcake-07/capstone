@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            background: linear-gradient(135deg, #2535c7ff 0%, #b43f91ff 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .login-container h1 {
             text-align: center;
-            color: #1a1a1a;
+            color: #bc6ac7ff;
             margin-bottom: 8px;
             font-size: 24px;
             font-weight: 700;
@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-login {
             width: 100%;
             padding: 12px;
-            background: #1a1a1a;
+            background: #b83fa3ff;
             color: white;
             border: none;
             border-radius: 4px;
@@ -186,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .btn-login:hover {
-            background: #000;
+            background: #4f65e0ff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
@@ -244,16 +244,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="navbar-brand">
-            <div class="navbar-logo">GGF</div>
-            <div class="navbar-text">
-                <div class="navbar-title">Glorious God's Family</div>
-                <div class="navbar-subtitle">Christian School</div>
-            </div>
-        </div>
-    </nav>
+   
+    
 
     <div class="main-content">
         <div class="login-container">
