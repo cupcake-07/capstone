@@ -23,21 +23,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $student_id = isset($_POST['student_id']) ? intval($_POST['student_id']) : 0;
-$grade_level = isset($_POST['grade_level']) ? trim($_POST['grade_level']) : null;
+$grade_level_input = trim(isset($_POST['grade_level']) ? $_POST['grade_level'] : '');
 $section = isset($_POST['section']) ? strtoupper(trim($_POST['section'])) : null;
+
+// --- Normalization & allowed list (NEW) ---
+$allowedGrades = ['K1', 'K2', '1', '2', '3', '4', '5', '6'];
+
+// Normalize common textual inputs to internal codes
+$normalizedGrade = null;
+$gl = strtoupper(trim($grade_level_input));
+if (in_array($gl, $allowedGrades, true)) {
+    $normalizedGrade = $gl;
+} else {
+    // Accept "Kinder 1", "Kinder 2" (case-insensitive) and variants
+    $map = [
+        'KINDER 1' => 'K1',
+        'KINDER1'  => 'K1',
+        'KINDER 2' => 'K2',
+        'KINDER2'  => 'K2',
+    ];
+    $glNoSpaces = strtoupper(str_replace(' ', '', $grade_level_input));
+    if (isset($map[$gl]) || isset($map[$glNoSpaces])) {
+        $normalizedGrade = $map[$gl] ?? $map[$glNoSpaces];
+    }
+}
 
 if ($student_id <= 0) {
 	echo json_encode(['success' => false, 'message' => 'Invalid student id']);
 	exit;
 }
 
-// basic validation for grade and section
-if ($grade_level === null || !preg_match('/^[1-6]$/', (string)$grade_level)) {
-	echo json_encode(['success' => false, 'message' => 'Invalid grade level']);
-	exit;
+if (!$normalizedGrade) {
+    echo json_encode(['success' => false, 'message' => 'Invalid grade level']);
+    exit;
 }
-if ($section === null || !preg_match('/^[A-Z]$/', $section)) {
-	echo json_encode(['success' => false, 'message' => 'Invalid section']);
+
+if (!in_array($normalizedGrade, $allowedGrades, true)) {
+	echo json_encode(['success' => false, 'message' => 'Invalid grade level']);
 	exit;
 }
 
@@ -48,7 +70,7 @@ if (!$updateStmt) {
 	echo json_encode(['success' => false, 'message' => 'Database error']);
 	exit;
 }
-$updateStmt->bind_param('isi', $grade_level, $section, $student_id);
+$updateStmt->bind_param('ssi', $normalizedGrade, $section, $student_id);
 $ok = $updateStmt->execute();
 if ($ok === false) {
 	error_log('Execute failed: ' . $updateStmt->error);

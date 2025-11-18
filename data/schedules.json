@@ -8,8 +8,8 @@
                 "subject": "Mathematics"
             },
             "tuesday": {
-                "teacher": "Machine Leg Extension",
-                "subject": "Social Studies"
+                "teacher": "",
+                "subject": ""
             },
             "wednesday": {
                 "teacher": "teacher2",
@@ -80,8 +80,8 @@
                 "subject": ""
             },
             "tuesday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Cardio Training",
+                "subject": "Arts"
             },
             "wednesday": {
                 "teacher": "",
@@ -2806,6 +2806,982 @@
         }
     ],
     "6_D": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K1_A": [
+        {
+            "period": "1",
+            "time": "6:00 AM - 7:00 AM",
+            "monday": {
+                "teacher": "Cardio Training",
+                "subject": "English"
+            },
+            "tuesday": {
+                "teacher": "teacher1",
+                "subject": "Physical Education"
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K1_B": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K1_C": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K1_D": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K2_A": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K2_B": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K2_C": [
+        {
+            "period": "1",
+            "time": "8:00 - 8:45",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "2",
+            "time": "8:50 - 9:35",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "3",
+            "time": "9:40 - 10:25",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "4",
+            "time": "10:30 - 11:15",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "period": "5",
+            "time": "11:20 - 12:05",
+            "monday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
+    "K2_D": [
         {
             "period": "1",
             "time": "8:00 - 8:45",

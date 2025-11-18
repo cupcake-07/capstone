@@ -10,7 +10,19 @@ require_once __DIR__ . '/../config/database.php';
 define('DATA_DIR', __DIR__ . '/../data'); // move to project-wide data folder (c:\xampp\htdocs\capstone\data)
 define('DATA_FILE', DATA_DIR . '/schedules.json');
 define('TEACHERS_FILE', DATA_DIR . '/teachers.json');
-$GRADES = ['1','2','3','4','5','6'];
+$GRADES = ['K1','K2','1','2','3','4','5','6']; // add kinder grades
+
+$GRADE_LABELS = [
+    'K1' => 'Kinder 1',
+    'K2' => 'Kinder 2',
+    '1'  => 'Grade 1',
+    '2'  => 'Grade 2',
+    '3'  => 'Grade 3',
+    '4'  => 'Grade 4',
+    '5'  => 'Grade 5',
+    '6'  => 'Grade 6',
+];
+
 $SECTIONS = ['A', 'B', 'C', 'D'];
 
 $SUBJECTS = [
@@ -369,7 +381,8 @@ if ($result) {
                     <select id="gradeSelect">
                         <option value="all">All Grades</option>
                         <?php foreach ($GRADES as $g): ?>
-                            <option value="<?php echo $g ?>" <?php echo ($selectedGrade===$g?'selected':'') ?>>Grade <?php echo $g ?></option>
+                            <?php $label = isset($GRADE_LABELS[$g]) ? $GRADE_LABELS[$g] : ('Grade ' . $g); ?>
+                            <option value="<?php echo htmlspecialchars($g) ?>" <?php echo ($selectedGrade===$g?'selected':'') ?>><?php echo htmlspecialchars($label) ?></option>
                         <?php endforeach; ?>
                     </select>
 
@@ -403,7 +416,14 @@ if ($result) {
                     <p style="margin:0; font-size:14px;">📋 Select both a Grade and Section to edit schedule, or view all schedules below.</p>
                 </div>
                 <?php foreach ($allSchedules as $key => $sched): ?>
-                    <h3 style="margin-top:24px; margin-bottom:12px; color:#1a1a1a;"><?php echo htmlspecialchars($key) ?></h3>
+                    <?php
+                        // Try to display friendly grade+section title if possible
+                        $parts = explode('_', $key);
+                        $kgrade = $parts[0] ?? '';
+                        $ksection = $parts[1] ?? '';
+                        $friendly = (isset($GRADE_LABELS[$kgrade]) ? $GRADE_LABELS[$kgrade] : ('Grade ' . $kgrade)) . ' - Section ' . htmlspecialchars($ksection);
+                    ?>
+                    <h3 style="margin-top:24px; margin-bottom:12px; color:#1a1a1a;"><?php echo htmlspecialchars($friendly) ?></h3>
                     <table class="schedule-table">
                         <thead>
                             <tr><th>Period</th><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr>

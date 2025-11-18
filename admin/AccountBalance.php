@@ -327,6 +327,239 @@ if ($hasGradeColumn && $gradeColumnName) {
 		cursor: pointer;
 	}
 	.grade-sort-select[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+	/* Mobile / responsive overrides */
+	@media (max-width: 900px) {
+		/* Use column layout on small screens */
+		.app {
+			flex-direction: column;
+			min-height: 100vh;
+		}
+
+		/* Make sidebar sit on top as a horizontal strip that keeps nav accessible */
+		.sidebar {
+			width: 100%;
+			position: relative;
+			order: 0;
+			flex: 0 0 auto;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			gap: 12px;
+			padding: 8px 12px;
+			box-sizing: border-box;
+		}
+		.sidebar .brand {
+			min-width: auto;
+			flex: 0 0 auto;
+			margin-right: 8px;
+		}
+		.sidebar .brand span { display: none; } /* keep brand short on mobile */
+
+		/* Render nav as horizontally scrollable buttons instead of vertical sidebar */
+		.sidebar nav {
+			display: flex;
+			flex-wrap: nowrap;
+			gap: 6px;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			flex: 1 1 auto;
+			padding: 4px 0;
+			box-sizing: border-box;
+		}
+		.sidebar nav a {
+			padding: 6px 8px;
+			font-size: 0.85rem;
+			white-space: nowrap;
+			border-radius: 6px;
+			display: inline-block;
+		}
+
+		/* Main content stretches below */
+		.main {
+			width: 100%;
+			order: 1;
+			margin-top: 8px;
+			box-sizing: border-box;
+		}
+
+		/* Make the topbar wrap - actions stack as needed */
+		.topbar {
+			padding: 10px 12px;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+		.topbar h1 { font-size: 1.1rem; margin: 0; }
+
+		.top-actions {
+			display: flex;
+			gap: 8px;
+			margin-left: auto;
+			flex-wrap: wrap;
+		}
+
+		/* Table adjustments: smaller font, compact padding, horizontal scroll */
+		.card-body.table-responsive {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
+		.table {
+			min-width: 760px; /* allow horizontal scroll when needed */
+			font-size: 0.88rem;
+		}
+		.table thead th, .table tbody td {
+			padding: 6px 8px;
+			white-space: nowrap;
+		}
+
+		/* Reduce card padding and border radius on mobile */
+		.card {
+			margin: 8px;
+			box-sizing: border-box;
+		}
+
+		/* Make footer and explanation padding smaller */
+		.footer, .explanation {
+			font-size: 0.9rem;
+			padding: 8px 12px;
+		}
+
+		/* Modal responsiveness */
+		.modal {
+			width: calc(100% - 32px);
+			max-width: 480px;
+			margin: 0 16px;
+		}
+		.modal .row { margin-bottom: 8px; }
+		.modal input[type='number'] { font-size: 0.95rem; }
+
+		/* Buttons become more compact */
+		.btn-export, .btn-manage, .btn-sort {
+			padding: 6px 10px;
+			font-size: 0.85rem;
+		}
+		.grade-sort-select {
+			padding: 6px 8px;
+			font-size: 0.85rem;
+		}
+	}
+
+	/* Smaller devices - favor touch/compact size */
+	@media (max-width: 480px) {
+		.topbar h1 { font-size: 1rem; }
+		.sidebar nav a { font-size: 0.85rem; padding: 6px 8px; }
+		.table { font-size: 0.82rem; min-width: 680px; }
+		.table thead th, .table tbody td { padding: 5px 6px; }
+		.modal { width: calc(100% - 20px); padding: 16px; }
+		.modal .row { margin-bottom: 6px; }
+	}
+
+	/* Accessibility: ensure focus outlines visible on mobile */
+	@media (max-width: 900px) {
+		.sidebar nav a:focus, .grade-sort-select:focus, .btn-sort:focus {
+			outline: 2px solid rgba(0, 123, 255, 0.18);
+			outline-offset: 2px;
+		}
+	}
+
+	/* Mobile sidebar - off-canvas behavior */
+	.sidebar {
+		transition: transform 0.25s ease;
+	}
+	/* Default for desktop keeps existing design; below overrides for small screens */
+	@media (max-width: 900px) {
+		/* Hide the sidebar off-canvas initially */
+		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 280px;
+			transform: translateX(-105%); /* hide */
+			z-index: 2200;
+			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+		}
+		/* When open, bring it in view */
+		body.sidebar-open .sidebar {
+			transform: translateX(0);
+		}
+
+		/* Overlay for when sidebar is open */
+		.sidebar-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.45);
+			z-index: 2100;
+		}
+		body.sidebar-open .sidebar-overlay {
+			display: block;
+		}
+
+		/* Make main full width when sidebar hidden */
+		.main {
+			width: 100%;
+			margin-left: 0;
+		}
+
+		/* Hamburger toggle style */
+		.sidebar-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: transparent;
+			border: 1px solid rgba(0,0,0,0.06);
+			font-size: 1.05rem;
+			cursor: pointer;
+			margin-right: 8px;
+		}
+		/* Keep it accessible and visible on small screens only */
+		.sidebar-toggle { display: inline-flex; }
+	}
+	@media (min-width: 901px) {
+		.sidebar-toggle { display: none; }
+		.sidebar-overlay { display: none; }
+	}
+
+	/* Mobile nav (mirrors the sidebar links on small screens) */
+	.mobile-nav {
+		display: none;
+	}
+	@media (max-width: 900px) {
+		.mobile-nav {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			padding: 8px 12px;
+			background: #fff;
+			border-bottom: 1px solid #e8e8e8;
+		}
+		.mobile-nav a {
+			display: inline-block;
+			padding: 6px 10px;
+			border-radius: 6px;
+			background: transparent;
+			color: #222;
+			font-weight: 600;
+			white-space: nowrap;
+			text-decoration: none;
+			border: 1px solid transparent;
+		}
+		.mobile-nav a.active {
+			background: #111827;
+			color: #fff;
+			border-color: #111827;
+		}
+		/* Keep the pagination/space consistent with top actions */
+		.topbar + .mobile-nav { margin-top: 6px; }
+	}
 	</style>
 </head>
 <body>
@@ -346,8 +579,14 @@ if ($hasGradeColumn && $gradeColumnName) {
 			<div class="sidebar-foot">Logged in as <strong><?php echo htmlspecialchars($user['name'] ?? 'Admin'); ?></strong></div>
 		</aside>
 
+		<!-- Add overlay right after aside -->
+		<div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
 		<main class="main">
 			<header class="topbar">
+				<!-- Add mobile toggle button inside the topbar. Visible only on small screens. -->
+				<button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
 				<h1>Account balance</h1>
 				<div class="top-actions">
 					<!-- Export -->
@@ -364,6 +603,9 @@ if ($hasGradeColumn && $gradeColumnName) {
 					</select>
 				</div>
 			</header>
+
+			<!-- NEW: Mobile navigation bar that mirrors the sidebar links (visible only on small screens) -->
+			<nav id="mobileNav" class="mobile-nav" aria-label="Mobile navigation" role="navigation"></nav>
 
 			<section class="content">
 				<div class="container-fluid">
@@ -668,6 +910,101 @@ if ($hasGradeColumn && $gradeColumnName) {
 
 			rows.forEach(r => tbody.appendChild(r));
 		});
+	})();
+
+	// New: Toggle sidebar (mobile)
+	(function() {
+		const toggle = document.getElementById('sidebarToggle');
+		const overlay = document.getElementById('sidebarOverlay');
+		const body = document.body;
+
+		if (!toggle || !overlay) return;
+
+		function openSidebar() {
+			body.classList.add('sidebar-open');
+			overlay.setAttribute('aria-hidden', 'false');
+			// set focus to first nav link for accessibility
+			const firstLink = document.querySelector('.sidebar nav a');
+			if (firstLink) {
+				setTimeout(() => firstLink.focus(), 120);
+			}
+			// optionally lock body scroll on small devices when sidebar is open
+			document.documentElement.style.overflow = 'hidden';
+		}
+		function closeSidebar() {
+			body.classList.remove('sidebar-open');
+			overlay.setAttribute('aria-hidden', 'true');
+			document.documentElement.style.overflow = '';
+			// return focus to toggle
+			toggle.focus();
+		}
+		toggle.addEventListener('click', function() {
+			if (body.classList.contains('sidebar-open')) {
+				closeSidebar();
+			} else {
+				openSidebar();
+			}
+		});
+		overlay.addEventListener('click', closeSidebar);
+
+		// Close sidebar when a nav link is clicked (mobile)
+		document.querySelectorAll('.sidebar nav a').forEach(a => {
+			a.addEventListener('click', () => {
+				if (window.matchMedia('(max-width: 900px)').matches) {
+					closeSidebar();
+				}
+			});
+		});
+
+		// Close with Esc key for accessibility
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape' && body.classList.contains('sidebar-open')) {
+				closeSidebar();
+			}
+		});
+	})();
+
+	// NEW: Clone sidebar links into the mobile nav and wire interactions (keeps active state and closes sidebar on click)
+	(function() {
+		const mobileNav = document.getElementById('mobileNav');
+		if (!mobileNav) return;
+
+		function syncMobileNav() {
+			// Clear existing items
+			mobileNav.innerHTML = '';
+
+			// Source links from the sidebar nav
+			const sidebarLinks = document.querySelectorAll('.sidebar nav a');
+			if (!sidebarLinks.length) return;
+
+			sidebarLinks.forEach(function(link) {
+				// Clone the link element (keeps href, text, and classes)
+				const clone = link.cloneNode(true);
+				clone.classList.remove('active'); // we will reapply below to ensure consistency
+				if (link.classList.contains('active')) clone.classList.add('active');
+
+				// When a mobile link is clicked, close the off-canvas sidebar (if open) and allow navigation
+				clone.addEventListener('click', function() {
+					// close off-canvas sidebar (for mobile)
+					if (document.body.classList.contains('sidebar-open')) {
+						document.body.classList.remove('sidebar-open');
+						const overlay = document.getElementById('sidebarOverlay');
+						if (overlay) overlay.setAttribute('aria-hidden', 'true');
+						document.documentElement.style.overflow = '';
+						const toggle = document.getElementById('sidebarToggle');
+						if (toggle) toggle.focus();
+					}
+				});
+
+				// Append to the mobile nav
+				mobileNav.appendChild(clone);
+			});
+		}
+
+		// Run once on DOM load
+		document.addEventListener('DOMContentLoaded', syncMobileNav);
+
+		// If you ever dynamically change links, call syncMobileNav() again; for static sidebar this is enough.
 	})();
 	</script>
 </body>
