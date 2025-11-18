@@ -8,6 +8,136 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once 'config/database.php';
 
+// --- NEW: helpers (guarded) ------------------------------------------------
+if (!function_exists('tableExists')) {
+    function tableExists($conn, $table) {
+        $t = $conn->real_escape_string($table);
+        $res = $conn->query("SHOW TABLES LIKE '{$t}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
+if (!function_exists('columnExists')) {
+    function columnExists($conn, $table, $column) {
+        $t = $conn->real_escape_string($table);
+        $c = $conn->real_escape_string($column);
+        $res = $conn->query("SHOW COLUMNS FROM `{$t}` LIKE '{$c}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
+if (!function_exists('detectPaymentsTimestampColumn')) {
+    function detectPaymentsTimestampColumn($conn) {
+        $candidates = ['created_at','paid_at','payment_date','date','timestamp','paid_on'];
+        foreach ($candidates as $col) {
+            if (columnExists($conn, 'payments', $col)) return $col;
+        }
+        return null;
+    }
+}
+if (!function_exists('detectPaymentsAmountColumn')) {
+    function detectPaymentsAmountColumn($conn) {
+        $candidates = ['amount','paid_amount','payment_amount','amt'];
+        foreach ($candidates as $col) {
+            if (columnExists($conn, 'payments', $col)) return $col;
+        }
+        return null;
+    }
+}
+// ---------------------------------------------------------------------------
+
+// (GET STUDENT ID)
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+$studentId = intval($_SESSION['user_id']);
+
+// Build payment rows: date + amount only, prefer fees -> payments relation and exclude categories
+$paymentsList = [];
+$feesExists = tableExists($conn, 'fees');
+$paymentsExists = tableExists($conn, 'payments');
+$paymentsTs = detectPaymentsTimestampColumn($conn) ?? 'created_at';
+$paymentsAmtCol = detectPaymentsAmountColumn($conn) ?? 'amount';
+$excludeCategories = ["Other Fees", "Other Fee", "Scholarships", "Scholarship"];
+
+if ($paymentsExists && $feesExists && columnExists($conn, 'payments', 'fee_id')) {
+    $sql = "SELECT p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            WHERE f.student_id = ?
+              AND f.category NOT IN ('" . implode("','", array_map(function($s){ return addslashes($s); }, $excludeCategories)) . "')
+            ORDER BY p.{$paymentsTs} DESC";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $studentId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($r = $res->fetch_assoc()) {
+            $paymentsList[] = $r;
+        }
+        $stmt->close();
+    }
+} elseif ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
+    // Fallback: payments by student_id (can't exclude fees categories)
+    $sql = "SELECT p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
+            FROM payments p
+            WHERE p.student_id = ?
+            ORDER BY p.{$paymentsTs} DESC";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $studentId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($r = $res->fetch_assoc()) {
+            $paymentsList[] = $r;
+        }
+        $stmt->close();
+    }
+} else {
+    // No payments or fees table -> paymentsList stays empty
+}
+
+// --- NEW: Compute current balance mirroring admin AccountBalance.php logic ---
+if (!defined('FIXED_TOTAL_FEE')) define('FIXED_TOTAL_FEE', 15000.00);
+
+$totalFees = (float)FIXED_TOTAL_FEE;
+$studentPaid = 0.0;
+$studentBalance = $totalFees;
+
+// if payments exist and are linked to fees, exclude categories; else sum by student_id
+if ($paymentsExists && $feesExists && columnExists($conn, 'payments', 'fee_id')) {
+    $sql = "SELECT IFNULL(SUM(p.{$paymentsAmtCol}), 0) AS total_payments
+            FROM payments p
+            JOIN fees f2 ON p.fee_id = f2.id
+            WHERE f2.student_id = ?
+              AND f2.category NOT IN ('" . implode("','", array_map(function($s){ return addslashes($s); }, $excludeCategories)) . "')
+              AND p.{$paymentsAmtCol} IS NOT NULL";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $studentId);
+        $stmt->execute();
+        $stmt->bind_result($sumPayments);
+        if ($stmt->fetch()) {
+            $studentPaid = (float)$sumPayments;
+        }
+        $stmt->close();
+    }
+} elseif ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
+    $sql = "SELECT IFNULL(SUM(p.{$paymentsAmtCol}), 0) AS total_payments FROM payments p WHERE p.student_id = ? AND p.{$paymentsAmtCol} IS NOT NULL";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $studentId);
+        $stmt->execute();
+        $stmt->bind_result($sumPayments);
+        if ($stmt->fetch()) {
+            $studentPaid = (float)$sumPayments;
+        }
+        $stmt->close();
+    }
+} else {
+    $studentPaid = 0.0;
+}
+
+$studentBalance = round($totalFees - $studentPaid, 2);
+$studentBalanceFormatted = '₱' . number_format($studentBalance, 2);
+$totalFeesFormatted = '₱' . number_format($totalFees, 2);
+// --- END NEW CODE ---
+
 if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -56,27 +186,18 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
       <section class="profile-grid" style="grid-template-columns: 1fr;">
         <section class="content">
           <!-- ...existing content from account.html... -->
-          <div class="card small-grid">
+          <div class="card small-grid" style="grid-template-columns: repeat(2, 1fr);">
             <div class="mini-card" style="background: linear-gradient(180deg, #0b1220 0%, #0d1114 100%); color: #ffffff; border: 1px solid rgba(218, 218, 24, 0.2);">
               <div class="mini-head" style="color: #ffffff;">Current Balance</div>
-              <div class="mini-val" style="color: #ffffff;">₱1,250.00</div>
-              <a class="mini-link" href="#" style="color: var(--yellow);">Pay Now</a>
+              <div class="mini-val" style="color: #ffffff;"><?php echo htmlspecialchars($studentBalanceFormatted); ?></div>
+              
             </div>
             <div class="mini-card">
               <div class="mini-head">Tuition Due</div>
-              <div class="mini-val">₱15,000</div>
-              <p class="muted">Due: Dec 15, 2025</p>
+              <div class="mini-val"><?php echo htmlspecialchars($totalFeesFormatted); ?></div>
+              
             </div>
-            <div class="mini-card">
-              <div class="mini-head">Other Fees</div>
-              <div class="mini-val">₱2,500</div>
-              <p class="muted">Lab & Activity</p>
-            </div>
-            <div class="mini-card">
-              <div class="mini-head">Scholarships</div>
-              <div class="mini-val">50%</div>
-              <p class="muted">Merit-based</p>
-            </div>
+            <!-- Removed Other Fees and Scholarships per design update -->
           </div>
 
           <div class="card large">
@@ -88,30 +209,34 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                    <th>Status</th>
+                    <th class="text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Oct 10, 2025</td>
-                    <td>Tuition Payment Q1</td>
-                    <td>₱7,500</td>
-                    <td><span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">Paid</span></td>
-                  </tr>
-                  <tr>
-                    <td>Sep 15, 2025</td>
-                    <td>Activity Fees</td>
-                    <td>₱1,250</td>
-                    <td><span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">Paid</span></td>
-                  </tr>
-                  <tr>
-                    <td>Aug 20, 2025</td>
-                    <td>Lab Materials</td>
-                    <td>₱800</td>
-                    <td><span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">Paid</span></td>
-                  </tr>
+                  <?php if (!empty($paymentsList)): ?>
+                      <?php foreach ($paymentsList as $p): 
+                          $paidAt = htmlspecialchars($p['paid_at'] ?? '');
+                          // Format date if usable
+                          $dateText = '-';
+                          $ts = strtotime($paidAt);
+                          if ($ts !== false && $ts !== -1) {
+                              $dateText = date('M d, Y', $ts);
+                          } elseif ($paidAt !== '') {
+                              $dateText = htmlspecialchars($paidAt);
+                          }
+                          $amountVal = number_format((float)($p['amount'] ?? 0), 2);
+                          $amountText = '₱' . $amountVal;
+                      ?>
+                      <tr>
+                          <td><?php echo $dateText; ?></td>
+                          <td class="text-right"><?php echo $amountText; ?></td>
+                      </tr>
+                      <?php endforeach; ?>
+                  <?php else: ?>
+                      <tr>
+                          <td colspan="2" class="text-center">No payment history found.</td>
+                      </tr>
+                  <?php endif; ?>
                 </tbody>
               </table>
             </div>

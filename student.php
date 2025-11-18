@@ -8,6 +8,36 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once 'config/database.php';
 
+// --- NEW: helper functions (defined once, guarded) -------------------------
+if (!function_exists('columnExists')) {
+    function columnExists($conn, $table, $column) {
+        $t = $conn->real_escape_string($table);
+        $c = $conn->real_escape_string($column);
+        $res = $conn->query("SHOW COLUMNS FROM `{$t}` LIKE '{$c}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
+if (!function_exists('tableExists')) {
+    function tableExists($conn, $table) {
+        $t = $conn->real_escape_string($table);
+        $res = $conn->query("SHOW TABLES LIKE '{$t}'");
+        return ($res && $res->num_rows > 0);
+    }
+}
+if (!function_exists('getEnrollmentColumn')) {
+    function getEnrollmentColumn($conn) {
+        // Candidate columns in order of preference - adjust if schema differs
+        $candidates = ['enrolled_at','date_enrolled','joined_at','created_at','date_registered','registered_at','enrollment_date'];
+        foreach ($candidates as $col) {
+            if (columnExists($conn, 'students', $col)) {
+                return $col;
+            }
+        }
+        return null;
+    }
+}
+// -------------------------------------------------------------------------
+
 // Redirect to login if not logged in
 if (empty($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -201,6 +231,93 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
 		$overallAvgDisplay = round(array_sum($allScores) / count($allScores), 1) . '%';
 	}
 }
+
+// --- NEW: compute this student's account balance, mirroring logic from admin/AccountBalance.php ---
+const FIXED_TOTAL_FEE = 15000.00;
+
+$studentFees = (float) FIXED_TOTAL_FEE;
+$studentPaid = 0.0;
+$studentBalance = (float)$studentFees;
+$feesExists = tableExists($conn, 'fees');
+$paymentsExists = tableExists($conn, 'payments');
+
+if ($feesExists) {
+    $paymentsHasFeeId = $paymentsExists && columnExists($conn, 'payments', 'fee_id');
+    $paymentsHasStudentId = $paymentsExists && columnExists($conn, 'payments', 'student_id');
+
+    if ($paymentsExists && $paymentsHasFeeId) {
+        // payments linked to fees; exclude categories 'Other Fees' / 'Scholarships'
+        $sql = "SELECT IFNULL(SUM(p.amount), 0) AS total_payments
+                FROM payments p
+                JOIN fees f2 ON p.fee_id = f2.id
+                WHERE f2.student_id = ?
+                  AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')";
+        if ($stmt = $conn->prepare($sql)) {
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $stmt->bind_result($sumPayments);
+            if ($stmt->fetch()) {
+                $studentPaid = (float)$sumPayments;
+            }
+            $stmt->close();
+        }
+    } elseif ($paymentsExists && $paymentsHasStudentId) {
+        // payments by student fallback; can't exclude categories
+        $sql = "SELECT IFNULL(SUM(amount), 0) AS total_payments FROM payments WHERE student_id = ?";
+        if ($stmt = $conn->prepare($sql)) {
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $stmt->bind_result($sumPayments);
+            if ($stmt->fetch()) {
+                $studentPaid = (float)$sumPayments;
+            }
+            $stmt->close();
+        }
+    } else {
+        // No payments table or relation; total_paid remains 0
+        $studentPaid = 0.0;
+    }
+} else {
+    // fees table not found; attempt to sum payments directly by student_id if available
+    if ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
+        $sql = "SELECT IFNULL(SUM(amount), 0) AS total_payments FROM payments WHERE student_id = ?";
+        if ($stmt = $conn->prepare($sql)) {
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            $stmt->bind_result($sumPayments);
+            if ($stmt->fetch()) {
+                $studentPaid = (float)$sumPayments;
+            }
+            $stmt->close();
+        }
+    } else {
+        $studentPaid = 0.0;
+    }
+}
+
+$studentBalance = round($studentFees - $studentPaid, 2);
+
+// After $isEnrolled and $user are defined, fetch joined / enrolled date:
+$joinedSinceDisplay = '-'; // default value
+$enrolledColumn = getEnrollmentColumn($conn);
+if ($isEnrolled && $enrolledColumn) {
+    $sql = "SELECT `{$enrolledColumn}` FROM students WHERE id = ? LIMIT 1";
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $stmt->bind_result($rawEnrolledAt);
+        if ($stmt->fetch() && !empty($rawEnrolledAt)) {
+            $ts = strtotime($rawEnrolledAt);
+            if ($ts !== false) {
+                $joinedSinceDisplay = date('F j, Y', $ts);
+            } else {
+                // Show raw string safely
+                $joinedSinceDisplay = htmlspecialchars($rawEnrolledAt);
+            }
+        }
+        $stmt->close();
+    }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -283,8 +400,8 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
               <div class="value status"><?php echo $statusText; ?></div>
             </div>
             <div class="row">
-              <div class="label">Member Since</div>
-              <div class="value">-</div>
+              <div class="label">Joined Since</div>
+              <div class="value"><?php echo htmlspecialchars($joinedSinceDisplay); ?></div>
             </div>
           </div>
 
@@ -392,14 +509,19 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
             <div class="card small-grid">
               <div class="mini-card">
                 <div class="mini-head">Account Balance</div>
-                <div class="mini-val">₱1,250.00</div>
-                <a class="mini-link" href="account.php">Pay Now</a>
+                <?php
+                  // format and render computed student balance
+                  $balanceFormatted = '₱' . number_format((float)$studentBalance, 2);
+                  $balanceClass = ($studentBalance > 0) ? 'mini-val red' : 'mini-val green';
+                ?>
+                <div class="<?php echo $balanceClass; ?>"><?php echo $balanceFormatted; ?></div>
+                
               </div>
 
               <div class="mini-card">
                 <div class="mini-head">Status</div>
                 <div class="mini-val status"><?php echo $statusText; ?></div>
-                <a class="mini-link" href="#">Contact Admin</a>
+                
               </div>
 
               <div class="mini-card">
