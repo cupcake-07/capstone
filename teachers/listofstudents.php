@@ -271,7 +271,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
   <!-- NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
-      <div class="navbar-logo">GGF</div>
+       <img src="g2flogo.png" class="logo-image"/>
       <div class="navbar-text">
         <div class="navbar-title">Glorious God's Family</div>
         <div class="navbar-subtitle">Christian School</div>
