@@ -330,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                     <map name="logo">
                         <area shape="poly" coords="101,8,200,106,129,182,73,182,1,110" href="#">
                     </map>
-                     <h2>Welcome</h2>
+                     <h2>Welcome To Glorious God's Family Christian School, Inc.</h2>
                     <p>To keep connected, please log in with your personal info.</p>
                    
                 </div>
