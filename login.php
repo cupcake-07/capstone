@@ -198,7 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="css/SignLog.css">
+    <!-- Change stylesheet path to the login folder where SignLog.css exists -->
+    <link rel="stylesheet" href="login/SignLog.css">
     <style>
         .message-box { padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; text-align: center; font-weight: 500; }
         .error-message { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
@@ -250,18 +251,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
 <div class="container" id="container">
     <div class="form-container sign-up-container">
         <form method="POST">
-            <h1>Sign Up</h1>
+            <!-- Added class to align with SignLog.css styling -->
+            <h1 class="signin">Sign Up</h1>
+
             <?php if ($error_message && isset($_POST['signup'])): ?>
                 <div class="message-box error-message"><?php echo htmlspecialchars($error_message); ?></div>
             <?php endif; ?>
+
             <div class="infield">
                 <input type="text" placeholder="Full Name" name="signup_name" required/>
+                <label></label>
             </div>
             <div class="infield">
                 <input type="email" placeholder="Email" name="signup_email" required/>
+                <label></label>
             </div>
             <div class="infield">
                 <input type="password" placeholder="Password (min 6 chars)" name="signup_password" required/>
+                <label></label>
             </div>
             <button type="submit" name="signup" value="1">Sign Up</button>
         </form>
@@ -269,7 +276,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     
     <div class="form-container log-in-container">
         <form method="POST">
-            <h1>Log in</h1>
+            <!-- Added class to align with SignLog.css styling -->
+            <h1 class="login">Log in</h1>
             <?php if ($flash_success): ?>
                 <div class="message-box success-message"><?php echo htmlspecialchars($flash_success); ?></div>
                 <?php if ($reset_link): 
@@ -284,7 +292,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                     </div>
                 <?php endif; ?>
                 <?php 
-                // Now unset after using them
                 unset($_SESSION['flash_success']);
                 unset($_SESSION['reset_link']);
                 unset($_SESSION['reset_email']);
@@ -295,9 +302,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             <?php endif; ?>
             <div class="infield">
                 <input type="email" placeholder="Email" name="login_email" required/>
+                <label></label>
             </div>
             <div class="infield">
                 <input type="password" placeholder="Password" name="login_password" required/>
+                <label></label>
             </div>
             <button type="submit" name="login" value="1">Log In</button>
             <div class="forgot-pwd-link">
@@ -308,20 +317,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     
     <div class="overlay-container" id="overlayCon">
         <div class="overlay">
-            <div class="overlay-panel overlay-left">
-                <div class="logo-wrapper">
-                    <img src="school_logo.jpeg" alt="Logo" class="logo">
+           <div class="overlay-panel overlay-left">
+                    <img src="g2flogo.png">
+                    <map name="logo">
+                        <area shape="poly" coords="101,8,200,106,129,182,73,182,1,110" href="#">
+                    </map>
+                    <h2>Hello, Friend! </h2>
+                    <p>Enter your personal details and start your journey with us.</p>
                 </div>
-                <h2>Hello, Student!</h2>
-                <p>Create an account to get started.</p>
-            </div>
             <div class="overlay-panel overlay-right">
-                <div class="logo-wrapper">
-                    <img src="school_logo.jpeg" alt="Logo" class="logo">
+                    <img src="g2flogo.png">
+                    <map name="logo">
+                        <area shape="poly" coords="101,8,200,106,129,182,73,182,1,110" href="#">
+                    </map>
+                     <h2>Welcome</h2>
+                    <p>To keep connected, please log in with your personal info.</p>
+                   
                 </div>
-                <h2>Welcome To Glorious God's Family Christian School!</h2>
-                <p>Log in with your credentials.</p>
-            </div>
         </div>
     </div>
     
@@ -373,8 +385,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
 <script>
     const container = document.getElementById('container');
     const toggleSwitch = document.getElementById('toggleForms');
+
+    // Set default panel state explicitly (Log In on load)
+    container.classList.remove('right-panel-active');
+    toggleSwitch.checked = false;
+
+    // Keep the toggle behavior intact for switching panels (UI only)
     toggleSwitch.addEventListener('change', () => {
-        container.classList.toggle('right-panel-active');
+        if (toggleSwitch.checked) {
+            container.classList.add('right-panel-active');
+        } else {
+            container.classList.remove('right-panel-active');
+        }
     });
 
     function openForgotPasswordModal() {
