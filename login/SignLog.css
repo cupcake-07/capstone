@@ -1,4 +1,4 @@
-        * {
+* {
             padding: 0px;
             margin: 0px;
             box-sizing: border-box;
@@ -26,6 +26,7 @@
             box-shadow: 25px 30px 55px rgba(0, 0, 0, 0.1);
             border-radius: 25px;
             overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.06); /* New: subtle border to the sign-in container */
              /* Important for the sliding effect */
 
         }

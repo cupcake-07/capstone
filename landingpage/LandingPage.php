@@ -22,14 +22,11 @@
 	</div>
 
 	<!-------------------header_start--------------------->
-  <header class="header">
-   	  <div class="nav">
-   	  	  <div class="logo">
-              <img src="Images/g2flogo.png"/>
-			 
-			
+  <header class="header page-hero">
+   	  <div class="nav container-inner">
+   	  	  <div class="logo logo-wrapper">
+              <img src="Images/g2flogo.png" alt="G2F logo"/>
    	  	  </div>
-             
    	  	  <div class="menu">
    	  	  	 <ul>
    	  	  	 	<li><a href="#">home</a></li>
@@ -42,18 +39,16 @@
    	  	  </div>
    	  </div> 
 
-   	  <div class="content">
+   	  <div class="content container-inner">
    	  	<h1>Welcome to Glorious God's Family Christian School!
    	  		<br>Are you looking for new learning opportunities?</h1>
          <p class="border">Welcome to our elementary school community. We provide a nurturing, safe, and stimulating environment for children from Kindergarten through Grade 6. Our curriculum focuses on foundational literacy and numeracy, social‑emotional growth, creativity, and hands‑on learning—so each child can build confidence, character, and a love of learning.</p>
           <p class="slog"><em>"Nurturing hearts and minds — growing learners for tomorrow."</em></p>
 
-          <button id="inquireBtn" type="button" aria-controls="inquire_modal" aria-haspopup="dialog" aria-expanded="false">Inquire Now</button>
-          
+          <button id="inquireBtn" class="gradient-btn" type="button" aria-controls="inquire_modal" aria-haspopup="dialog" aria-expanded="false">Inquire Now</button>          
    	  </div>
 
    </header>
-
   <!---------------header_end----------->
 
 
@@ -815,33 +810,33 @@
     <div class="input-group">
       <h1 id="inquireTitle">INQUIRE NOW</h1>
       <form id="inquireForm" class="form" novalidate action="#" method="POST">
-        <div class="input-field">
-          <label for="inqName">Full Name</label>
-          <input id="inqName" name="name" type="text" placeholder="Your name (optional)">
+        <div class="infield input-field">
+          <input id="inqName" name="name" type="text" placeholder="Full Name (optional)">
+          <label></label>
         </div>
 
-        <div class="input-field">
-          <label for="inqEmail">Email Address</label>
+        <div class="infield input-field">
           <input id="inqEmail" name="email" type="email" placeholder="you@example.com" required>
+          <label></label>
         </div>
 
-        <div class="input-field">
-          <label for="inqMessage">Your Question</label>
+        <div class="infield input-field">
           <textarea id="inqMessage" name="message" placeholder="Write your question here..." required></textarea>
+          <label></label>
         </div>
 
         <div class="input-field">
           <input type="reset" class="reset" value="Clear">
-          <input type="submit" class="submit" value="Send Inquiry">
+          <input type="submit" class="submit gradient-btn" value="Send Inquiry">
         </div>
 
-        <div id="inquireStatus" aria-live="polite"></div>
+        <div id="inquireStatus" aria-live="polite" class="message-box"></div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- Apply as Teacher modal structure -->
+<!-- Apply as Teacher modal (consistent inputs) -->
 <div class="container apply-teacher" id="apply_teacher_modal" data-admin-email="arnel.shin@gmail.com" aria-hidden="true" role="dialog" aria-labelledby="applyTeacherTitle" tabindex="-1">
   <div class="cancel" id="applyTeacherClose" aria-label="Close apply as teacher dialog">X</div>
 
@@ -849,37 +844,33 @@
     <div class="input-group">
       <h1 id="applyTeacherTitle">APPLY AS TEACHER</h1>
       <form id="applyTeacherForm" class="form" novalidate action="mailto:arnel.shin@gmail.com">
-        <div class="input-field">
-          <label for="appName">Full Name</label>
+        <div class="infield input-field">
           <input id="appName" name="name" type="text" placeholder="Your full name" required>
+          <label></label>
         </div>
-
-        <div class="input-field">
-          <label for="appEmail">Email Address</label>
+        <div class="infield input-field">
           <input id="appEmail" name="email" type="email" placeholder="you@example.com" required>
+          <label></label>
         </div>
-
-        <div class="input-field">
-          <label for="appQualifications">Qualifications</label>
+        <div class="infield input-field">
           <input id="appQualifications" name="qualifications" type="text" placeholder="e.g., Bachelor's in Education" required>
+          <label></label>
         </div>
-
-        <div class="input-field">
-          <label for="appExperience">Years of Experience</label>
+        <div class="infield input-field">
           <input id="appExperience" name="experience" type="text" placeholder="e.g., 5 years" required>
+          <label></label>
         </div>
-
-        <div class="input-field">
-          <label for="appMessage">Additional Message</label>
+        <div class="infield input-field">
           <textarea id="appMessage" name="message" placeholder="Tell us why you'd like to join our team..." required></textarea>
+          <label></label>
         </div>
 
         <div class="input-field">
           <input type="reset" class="reset" value="Clear">
-          <input type="submit" class="submit" value="Submit Application">
+          <input type="submit" class="submit gradient-btn" value="Submit Application">
         </div>
 
-        <div id="applyTeacherStatus" aria-live="polite"></div>
+        <div id="applyTeacherStatus" aria-live="polite" class="message-box"></div>
       </form>
     </div>
   </div>
