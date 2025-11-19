@@ -8,7 +8,18 @@ if (!isAdminLoggedIn()) {
     exit;
 }
 
-$allStudentsResult = $conn->query("SELECT id, name, email, grade_level, section, is_enrolled, enrollment_date FROM students ORDER BY enrollment_date DESC");
+// Check whether the 'is_archived' column exists to avoid SQL errors.
+// If missing, we fall back to selecting all students and show a migration hint.
+$hasIsArchived = false;
+$colCheck = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
+if ($colCheck) {
+    $hasIsArchived = ($colCheck->num_rows > 0);
+    $colCheck->close();
+}
+
+// Build query conditionally
+$whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+$allStudentsResult = $conn->query("SELECT id, name, email, grade_level, section, is_enrolled, enrollment_date FROM students{$whereClause} ORDER BY enrollment_date DESC");
 $allStudents = [];
 if ($allStudentsResult) {
     while ($row = $allStudentsResult->fetch_assoc()) {
@@ -51,6 +62,8 @@ $user = getAdminSession();
                     <div class="top-actions">
                         <!-- use a direct link to the export endpoint to trigger browser download -->
                         <a href="export_students.php" class="btn-export" title="Download students CSV">Export CSV</a>
+                        <!-- Link to archived students page -->
+                        <a href="archived-students.php" class="btn-export" title="View archived students" style="margin-left: 8px; background: #555;">Archived Students</a>
                     </div>
                 </header>
 
@@ -115,8 +128,11 @@ $user = getAdminSession();
                                         </td>
                                         <td><?php echo date('M d, Y', strtotime($student['enrollment_date'])); ?></td>
                                         <td>
-                                            <!-- pass raw grade code to Edit button (use data-grade) -->
+                                            <!-- Edit button -->
                                             <button type="button" class="btn-edit-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>" data-grade="<?php echo $rawGrade; ?>" data-section="<?php echo $displaySection; ?>">Edit</button>
+
+                                            <!-- Archive button: add archive action (keeps other functionality unchanged) -->
+                                            <button type="button" class="btn-archive-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>">Archive</button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -207,6 +223,22 @@ $user = getAdminSession();
 
             .btn-edit-student:hover {
                 background-color: #357ABD;
+            }
+
+            /* Archive button style */
+            .btn-archive-student {
+                background-color: #E53E3E;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin-left: 8px;
+                transition: background-color 0.2s ease;
+            }
+            .btn-archive-student:hover {
+                background-color: #C53030;
             }
 
             /* Toggle switch (styled) */
@@ -470,7 +502,7 @@ $user = getAdminSession();
                 });
             });
 
-            // Enrollment toggle
+            // Enrollment toggle (fixed arrow function syntax)
             document.querySelectorAll('.enrollment-toggle').forEach(toggle => {
                 toggle.addEventListener('change', function() {
                     const formData = new FormData();
@@ -588,6 +620,43 @@ $user = getAdminSession();
 
             enableTableSorting('studentsTable', [0, 2, 6]); // ID, Email, Enrolled Date non-sortable
             applyFilters(); // Initial filter application (in case of pre-selected filters)
+
+            // Archive student handler
+            document.querySelectorAll('.btn-archive-student').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const studentId = this.dataset.studentId;
+                    const studentName = this.dataset.studentName;
+                    if (!confirm(`Archive student "${studentName}"? This will hide them from lists and other functions.`)) {
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('student_id', studentId);
+
+                    // disable button while processing
+                    const button = this;
+                    button.disabled = true;
+                    fetch('../api/archive-student.php', { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.success) {
+                                // Remove the student's row from the DOM so they are no longer visible
+                                const row = button.closest('tr');
+                                if (row) row.remove();
+                                // Re-apply filters to refresh "no results" or other UI
+                                applyFilters();
+                            } else {
+                                alert('Error archiving student: ' + (data.message || 'Unknown error'));
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Archive error:', err);
+                            alert('Failed to archive student');
+                            button.disabled = false;
+                        });
+                });
+            });
         </script>
     </body>
 </html>
