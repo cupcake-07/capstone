@@ -446,7 +446,7 @@ body {
 
 .value.status {
   background: rgba(218, 218, 24, 0.1);
-  color: var(--green);
+  color: rgb(202, 79, 137);
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
@@ -500,7 +500,7 @@ body {
 .link-more {
   display: inline-block;
   margin-top: 12px;
-  color: var(--green);
+  color: rgb(61, 61, 223);
   text-decoration: none;
   font-weight: 700;
   font-size: 13px;
@@ -686,7 +686,7 @@ body {
 }
 
 .ann-list strong {
-  color: var(--green);
+  color: rgb(233, 100, 222);
   font-weight: 700;
 }
 

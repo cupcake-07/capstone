@@ -46,9 +46,129 @@ if (empty($_SESSION['user_id'])) {
 
 $userId = intval($_SESSION['user_id']);
 
-// Fetch user info - query should always use the session user ID
+// --- ADDED: determine avatar column & build fields for SELECT ---------------
+$avatarColumn = columnExists($conn, 'students', 'avatar') ? 'avatar' : null;
+$selectFields = 'id, name, username, email, grade_level, section, is_enrolled, avg_score' . ($avatarColumn ? ", {$avatarColumn}" : '');
+
+// --- NEW: helper to manage local avatar mapping for sites without DB avatar column ---
+$avatarsMapFile = __DIR__ . '/data/avatars.json';
+if (!function_exists('loadAvatarMap')) {
+    function loadAvatarMap($file) {
+        if (!file_exists($file)) return [];
+        $json = @file_get_contents($file);
+        if ($json === false) return [];
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : [];
+    }
+}
+if (!function_exists('saveAvatarMap')) {
+    function saveAvatarMap($file, $map) {
+        $dir = dirname($file);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        // Use LOCK_EX to avoid concurrent write issues
+        @file_put_contents($file, json_encode($map, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES), LOCK_EX);
+    }
+}
+// ------------------------------------------------------------------------------
+
+// --- NEW: Avatar upload handler (AJAX POST to student.php?action=upload_avatar) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_REQUEST['action']) && $_REQUEST['action'] === 'upload_avatar')) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    if (empty($_SESSION['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        exit;
+    }
+    $userId = intval($_SESSION['user_id']);
+
+    if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'No file uploaded or upload error']);
+        exit;
+    }
+
+    $file = $_FILES['avatar'];
+    $maxSize = 2 * 1024 * 1024; // 2MB limit
+    if ($file['size'] > $maxSize) {
+        echo json_encode(['success' => false, 'message' => 'File is too large (2MB max)']);
+        exit;
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
+    $allowed = [
+        'image/png'  => 'png',
+        'image/jpeg' => 'jpg',
+        'image/jpg'  => 'jpg',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif'
+    ];
+    if (!isset($allowed[$mime])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid image type']);
+        exit;
+    }
+    $ext = $allowed[$mime];
+
+    // Upload config
+    $uploadDir = __DIR__ . '/uploads/avatars';
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+            echo json_encode(['success' => false, 'message' => 'Unable to create upload directory']);
+            exit;
+        }
+    }
+
+    // Build safe filename: user_{id}_{ts}.{ext}
+    $newFilename = 'user_' . $userId . '_' . time() . '.' . $ext;
+    $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $newFilename;
+
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to save uploaded file']);
+        exit;
+    }
+
+    // Optionally update DB if avatar column exists and store relative path
+    $relativeUrl = 'uploads/avatars/' . $newFilename;
+    if ($avatarColumn) {
+        // update students set avatar = ? where id = ?
+        if ($stmt = $conn->prepare("UPDATE students SET {$avatarColumn} = ? WHERE id = ? LIMIT 1")) {
+            $stmt->bind_param('si', $relativeUrl, $userId);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        // Persist the mapping file for sites without DB avatar column
+        $map = loadAvatarMap($avatarsMapFile);
+        $previous = isset($map[$userId]) ? $map[$userId] : null;
+        $map[$userId] = $relativeUrl;
+        saveAvatarMap($avatarsMapFile, $map);
+
+        // Remove previous avatar file (best-effort) when mapped and differs
+        if ($previous && $previous !== $relativeUrl) {
+            $prevPath = __DIR__ . '/' . $previous;
+            if (file_exists($prevPath)) {
+                @unlink($prevPath);
+            }
+        }
+    }
+
+    // Attempt to remove any previous avatar file saved under pattern user_<id>_* (optional best-effort)
+    $globPattern = $uploadDir . DIRECTORY_SEPARATOR . 'user_' . $userId . '_*.*';
+    foreach (glob($globPattern) as $filename) {
+        if (strpos($filename, $targetPath) === false) {
+            // do not delete the file we just saved
+            @unlink($filename);
+        }
+    }
+
+    echo json_encode(['success' => true, 'url' => $relativeUrl]);
+    exit;
+}
+
+// -- REPLACE: fetch user info including avatar when available ------------------
 $user = null;
-if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, section, is_enrolled, avg_score FROM students WHERE id = ? LIMIT 1")) {
+if ($stmt = $conn->prepare("SELECT {$selectFields} FROM students WHERE id = ? LIMIT 1")) {
     $stmt->bind_param('i', $userId);
     $stmt->execute();
     if (method_exists($stmt, 'get_result')) {
@@ -59,9 +179,17 @@ if ($stmt = $conn->prepare("SELECT id, name, username, email, grade_level, secti
     } else {
         $stmt->store_result();
         if ($stmt->num_rows === 1) {
-            $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled, $favg_score);
-            if ($stmt->fetch()) {
-                $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled, 'avg_score' => $favg_score];
+            // Bind result - adjust binding based on avatar presence
+            if ($avatarColumn) {
+                $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled, $favg_score, $favatar);
+                if ($stmt->fetch()) {
+                    $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled, 'avg_score' => $favg_score, 'avatar' => $favatar];
+                }
+            } else {
+                $stmt->bind_result($fid, $fname, $fusername, $femail, $fgrade, $fsection, $fis_enrolled, $favg_score);
+                if ($stmt->fetch()) {
+                    $user = ['id'=>$fid,'name'=>$fname,'username'=>$fusername,'email'=>$femail,'grade_level'=>$fgrade,'section'=>$fsection,'is_enrolled'=>$fis_enrolled, 'avg_score' => $favg_score];
+                }
             }
         }
     }
@@ -73,6 +201,52 @@ if (!$user) {
     session_destroy();
     header('Location: login.php');
     exit;
+}
+
+// --- NEW: compute avatar url to display -------------------------------------
+$avatarUrl = 'https://placehold.co/240x240/0f520c/dada18?text=Photo'; // default placeholder
+if (!empty($user['avatar'])) {
+    $raw = trim($user['avatar']);
+    if ($raw !== '') {
+        // If absolute URL, use as is; otherwise assume file stored under uploads/avatars
+        if (preg_match('/^https?:\/\//i', $raw)) {
+            $avatarUrl = $raw;
+        } else {
+            $candidatePath = __DIR__ . '/' . $raw;
+            if (file_exists($candidatePath)) {
+                // build a relative web path
+                $avatarUrl = $raw;
+            } else {
+                // Also allow direct uploads folder path (backward compatibility)
+                $otherCandidate = __DIR__ . '/uploads/avatars/' . basename($raw);
+                if (file_exists($otherCandidate)) {
+                    $avatarUrl = 'uploads/avatars/' . basename($raw);
+                }
+            }
+        }
+    }
+} else {
+    // If DB column not present (or empty), check mapping file for persisted avatar
+    if (!$avatarColumn) {
+        $map = loadAvatarMap($avatarsMapFile);
+        if (!empty($map[$userId])) {
+            $mapped = $map[$userId];
+            if (preg_match('/^https?:\/\//i', $mapped)) {
+                $avatarUrl = $mapped;
+            } else {
+                $candidate = __DIR__ . '/' . $mapped;
+                if (file_exists($candidate)) {
+                    $avatarUrl = $mapped;
+                } else {
+                    // try uploads folder
+                    $other = __DIR__ . '/uploads/avatars/' . basename($mapped);
+                    if (file_exists($other)) {
+                        $avatarUrl = 'uploads/avatars/' . basename($mapped);
+                    }
+                }
+            }
+        }
+    }
 }
 
 // --- REPLACE: sanitize/display values and add raw/normalized keys for lookups ---
@@ -318,6 +492,11 @@ if ($isEnrolled && $enrolledColumn) {
         $stmt->close();
     }
 }
+
+// --- REPLACE OR ADD: make sure schedule is loaded now (so we can embed it) ----
+// load schedule for this student so client-side script gets persisted data
+$studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -368,13 +547,13 @@ if ($isEnrolled && $enrolledColumn) {
         <aside class="hero">
           <div class="avatar-wrap">
             <div class="avatar-container">
-              <img id="avatarImage" class="avatar" src="https://placehold.co/240x240/0f520c/dada18?text=Photo" alt="Student photo">
+              <img id="avatarImage" class="avatar" src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Student photo">
               <div class="avatar-overlay">
                 <label for="avatarInput" class="upload-label">
                   <span class="upload-icon">📤</span>
                   <span class="upload-text">Upload Photo</span>
                 </label>
-                <input id="avatarInput" type="file" class="avatar-input" accept="image/*" />
+                <input id="avatarInput" name="avatar" type="file" class="avatar-input" accept="image/*" />
               </div>
             </div>
             <!-- ADD id for JS updates -->
@@ -417,7 +596,7 @@ if ($isEnrolled && $enrolledColumn) {
               <noscript>
                 <?php
                   // Fallback for non-JS users: simple server-side message
-                  $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
+                  $studentSchedule = $studentSchedule ?? load_schedule_for($gradeKey, $normalizedSection);
                   if ($studentSchedule && is_array($studentSchedule)) {
                       echo '<div style="color:#666;">Enable JavaScript to see today’s schedule in your local time. View the full schedule below.</div>';
                   } else {
@@ -570,59 +749,61 @@ if ($isEnrolled && $enrolledColumn) {
     })();
   </script>
 
+  <!-- UPLOAD HANDLER: Client-side JS to send selected file via fetch and update avatar -->
   <script>
-    // Client-side "today" schedule renderer — uses browser local timezone so "today" is accurate
-    (function(){
-      // schedule data embedded from server (safe JSON encoding)
-      const studentSchedule = <?php echo json_encode($studentSchedule ?? [], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
-      const gradeDisplay = <?php echo json_encode($grade); ?>;
-      const sectionDisplay = <?php echo json_encode($section); ?>;
-      const container = document.getElementById('todaySchedule');
-      if (!container) return;
+  (function(){
+    const input = document.getElementById('avatarInput');
+    if (!input) return;
 
-      const isMeaningful = v => {
-        v = (v||'').trim();
-        if (!v) return false;
-        const low = v.toLowerCase();
-        return ['n/a','na','-','none','tbd',''].indexOf(low) === -1;
-      };
+    input.addEventListener('change', function() {
+      const file = input.files && input.files[0];
+      if (!file) return;
 
-      const todayName = new Date().toLocaleString(undefined, { weekday: 'long' }).toLowerCase(); // e.g. "tuesday"
-      const dayKey = ['monday','tuesday','wednesday','thursday','friday'].includes(todayName) ? todayName : null;
-
-      let items = [];
-      if (dayKey && Array.isArray(studentSchedule)) {
-        for (const row of studentSchedule) {
-          const time = (row.time || '').trim();
-          const entry = row[dayKey] || { teacher: '', subject: '' };
-          const subject = entry.subject || '';
-          const teacher = entry.teacher || '';
-          if (!isMeaningful(subject) && !isMeaningful(teacher)) continue;
-          let display = '';
-          if (time) display += time + ' • ';
-          display += (isMeaningful(subject) ? subject : teacher);
-          if (isMeaningful(subject) && isMeaningful(teacher)) display += ' • ' + teacher;
-          items.push(display);
-        }
+      // Basic client-side size/type checks (same server constraints)
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      const allowedTypes = ['image/png','image/jpeg','image/jpg','image/webp','image/gif'];
+      if (file.size > maxSize) {
+        alert('File is too large (2MB max).');
+        return;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        alert('Invalid image format (PNG, JPG, WEBP, GIF allowed).');
+        return;
       }
 
-      container.innerHTML = ''; // clear loading
-      if (items.length > 0) {
-        const ul = document.createElement('ul');
-        ul.className = 'schedule';
-        for (const it of items) {
-          const li = document.createElement('li');
-          li.textContent = it;
-          ul.appendChild(li);
-        }
-        container.appendChild(ul);
-      } else {
-        const div = document.createElement('div');
-        div.style.color = '#666';
-        div.textContent = 'No classes scheduled for today in Grade ' + gradeDisplay + ' Section ' + sectionDisplay + '.';
-        container.appendChild(div);
-      }
-    })();
+      const form = new FormData();
+      form.append('avatar', file);
+
+      const btnLabel = document.querySelector('.upload-text');
+      const previousLabel = btnLabel ? btnLabel.textContent : null;
+      if (btnLabel) btnLabel.textContent = 'Uploading...';
+
+      fetch('student.php?action=upload_avatar', {
+        method: 'POST',
+        body: form,
+        credentials: 'same-origin'
+      }).then(res => res.json())
+        .then(data => {
+          if (btnLabel) btnLabel.textContent = previousLabel || 'Upload Photo';
+          if (!data || !data.success) {
+            const msg = data && data.message ? data.message : 'Upload failed';
+            alert(msg);
+            return;
+          }
+          // Update image src with returned URL, and add timestamp param to bust cache
+          const img = document.getElementById('avatarImage');
+          if (img) {
+            const t = Date.now();
+            img.src = data.url + '?t=' + t;
+          }
+        })
+        .catch(err => {
+          if (btnLabel) btnLabel.textContent = previousLabel || 'Upload Photo';
+          console.error('Upload failed', err);
+          alert('Error uploading image');
+        });
+    });
+  })();
   </script>
 
   <!-- Add this script near the other scripts (keeps announcements in sync with teacher dashboard) -->
@@ -673,6 +854,86 @@ if ($isEnrolled && $enrolledColumn) {
       return text.replace(/[&<>"']/g, function(m) {
         return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
       });
+    }
+  })();
+  </script>
+
+  <script>
+  (function(){
+    // schedule data embedded from server (safe JSON encoding)
+    const studentSchedule = <?php echo json_encode($studentSchedule ?? [], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+    const gradeDisplay = <?php echo json_encode($grade); ?>;
+    const sectionDisplay = <?php echo json_encode($section); ?>;
+
+    const container = document.getElementById('todaySchedule');
+    if (!container) return;
+
+    // remove loading, we'll insert a fresh fragment
+    container.innerHTML = '';
+
+    const isMeaningful = v => {
+      if (!v) return false;
+      v = (typeof v === 'string' ? v : '').trim();
+      const low = v.toLowerCase();
+      return v !== '' && ['n/a','na','-','none','tbd',''].indexOf(low) === -1;
+    };
+
+    // Detect localized weekday and map to schedule keys (lowercase english names)
+    const todayName = new Date().toLocaleString(undefined, { weekday: 'long' }).toLowerCase();
+    const dayKey = ['monday','tuesday','wednesday','thursday','friday'].includes(todayName) ? todayName : null;
+
+    // If no dayKey (weekend), show no classes message
+    if (!dayKey || !Array.isArray(studentSchedule) || studentSchedule.length === 0) {
+      const div = document.createElement('div');
+      div.style.color = '#666';
+      div.textContent = 'No classes scheduled for today in Grade ' + gradeDisplay + ' Section ' + sectionDisplay + '.';
+      container.appendChild(div);
+      return;
+    }
+
+    const items = [];
+    for (const row of studentSchedule) {
+      const time = (row.time || '').toString().trim();
+      let entry = row[dayKey];
+
+      if (!entry) {
+        // if entry not present, continue
+        continue;
+      }
+
+      // support string or object
+      let subject = '';
+      let teacher = '';
+      if (typeof entry === 'string') {
+        subject = entry.trim();
+      } else if (typeof entry === 'object') {
+        subject = (entry.subject || '').toString().trim();
+        teacher = (entry.teacher || '').toString().trim();
+      }
+
+      if (!isMeaningful(subject) && !isMeaningful(teacher)) continue;
+
+      let display = '';
+      if (time) display += time + ' • ';
+      display += (isMeaningful(subject) ? subject : teacher);
+      if (isMeaningful(subject) && isMeaningful(teacher)) display += ' • ' + teacher;
+      items.push(display);
+    }
+
+    if (items.length === 0) {
+      const div = document.createElement('div');
+      div.style.color = '#666';
+      div.textContent = 'No classes scheduled for today in Grade ' + gradeDisplay + ' Section ' + sectionDisplay + '.';
+      container.appendChild(div);
+    } else {
+      const ul = document.createElement('ul');
+      ul.className = 'schedule';
+      for (const it of items) {
+        const li = document.createElement('li');
+        li.textContent = it;
+        ul.appendChild(li);
+      }
+      container.appendChild(ul);
     }
   })();
   </script>

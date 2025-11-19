@@ -319,7 +319,7 @@ tbody tr:hover {
 /* BUTTONS */
 .btn-primary {
   background: linear-gradient(180deg, var(--hover-yellow), #e6b800);
-  color: #0b0b0b;
+  color: #23232b;
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
