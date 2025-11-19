@@ -44,7 +44,7 @@ $user = getAdminSession();
             <header class="topbar">
                 <h1>Archived Students</h1>
                 <div class="top-actions">
-                    <a href="students.php" class="btn-export" title="Back to students" style="background: #ffffffff;">Back to Students</a>
+                    <a href="students.php" class="btn-export" title="Back to students" style="background: #000;">Back to Students</a>
                 </div>
             </header>
 

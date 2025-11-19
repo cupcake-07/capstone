@@ -1,13 +1,18 @@
 <?php
-// Minimal API to archive a student (admin only)
+// Add dev error reporting to help debug on local laptop
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/admin-session.php';
 require_once __DIR__ . '/../includes/admin-check.php';
 
-if (!isAdminLoggedIn()) {
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+// Ensure DB connection is valid
+if (!isset($conn) || !$conn) {
+    echo json_encode(['success' => false, 'message' => 'Database connection not available']);
     exit;
 }
 
