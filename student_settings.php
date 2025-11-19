@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 
     /* ===== BUTTON STYLING ===== */
     .btn-primary { 
-      background: #000; 
+      background: #4d57afff; 
       color: #fff; 
       padding: 11px 22px; 
       border: none; 
@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     }
 
     .danger-zone-btn {
-      background: #000;
+      background: #4d57afff; 
       color: #fff;
       padding: 11px 22px;
       border-radius: 4px;
