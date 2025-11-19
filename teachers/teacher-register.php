@@ -89,7 +89,7 @@ $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Ed
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            background: linear-gradient(135deg, #2535c7ff 0%, #b43f91ff 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -191,7 +191,7 @@ $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Ed
         .btn-register {
             width: 100%;
             padding: 12px;
-            background: #1a1a1a;
+             background: #b83fa3ff;
             color: white;
             border: none;
             border-radius: 4px;
@@ -204,7 +204,7 @@ $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Ed
         }
 
         .btn-register:hover {
-            background: #000;
+           background: #4f65e0ff;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
