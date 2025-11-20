@@ -14,6 +14,16 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
     exit;
 }
 
+// Detect whether students.is_archived exists and create a NOT_ARCHIVED clause usable by functions
+$hasIsArchived = false;
+$colCheck = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
+if ($colCheck) {
+    $hasIsArchived = ($colCheck->num_rows > 0);
+    $colCheck->close();
+}
+$notArchivedClauseJoin = $hasIsArchived ? " JOIN students s ON g.student_id = s.id AND (s.is_archived IS NULL OR s.is_archived = 0)" : " JOIN students s ON g.student_id = s.id";
+$notArchivedClauseWhere = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -151,7 +161,11 @@ function handleGradeSubmission($conn) {
 }
 
 function getStudentsByGradeLevel($conn) {
-    $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students ORDER BY grade_level ASC, section ASC, name ASC");
+    // Filter out archived students if the column exists
+    global $hasIsArchived;
+    $whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+
+    $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students{$whereClause} ORDER BY grade_level ASC, section ASC, name ASC");
     $studentsByGradeLevel = [];
 
     if ($studentsResult) {
@@ -174,9 +188,13 @@ function getStudentsByGradeLevel($conn) {
 }
 
 function getGradeLevelStats($conn, $grade_level) {
+    global $hasIsArchived;
+    // include not-archived filter when the column exists
+    $archiveFilter = $hasIsArchived ? " AND (s.is_archived IS NULL OR s.is_archived = 0)" : "";
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
         JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = ?");
+        WHERE s.grade_level = ?{$archiveFilter}");
     if (!$stmt) return ['count' => 0, 'avg' => 0];
     
     $stmt->bind_param('s', $grade_level);
@@ -188,7 +206,10 @@ function getGradeLevelStats($conn, $grade_level) {
 }
 
 function getStudentsBySection($conn) {
-    $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students ORDER BY grade_level ASC, section ASC, name ASC");
+    global $hasIsArchived;
+    $whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+
+    $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students{$whereClause} ORDER BY grade_level ASC, section ASC, name ASC");
     $studentsBySection = [];
     
     if ($studentsResult) {
@@ -205,18 +226,24 @@ function getStudentsBySection($conn) {
 }
 
 function getGradeStatistics($conn) {
+    global $hasIsArchived, $notArchivedClauseJoin;
+    // If is_archived exists, join to students and exclude archived via the join; otherwise join to students to compute the same stats
+    $join = $notArchivedClauseJoin;
     $statsResult = $conn->query("SELECT 
-        AVG(score) as avg_score,
-        MAX(score) as max_score,
-        MIN(score) as min_score
-    FROM grades");
-    return $statsResult->fetch_assoc();
+        AVG(g.score) as avg_score,
+        MAX(g.score) as max_score,
+        MIN(g.score) as min_score
+    FROM grades g{$join}");
+    return $statsResult ? $statsResult->fetch_assoc() : ['avg_score' => 0, 'max_score' => 0, 'min_score' => 0];
 }
 
 function getSectionStats($conn, $grade_level, $section) {
+    global $hasIsArchived;
+    $archiveFilter = $hasIsArchived ? " AND (s.is_archived IS NULL OR s.is_archived = 0)" : "";
+
     $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
         JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = ? AND s.section = ?");
+        WHERE s.grade_level = ? AND s.section = ?{$archiveFilter}");
     if (!$stmt) return ['count' => 0, 'avg' => 0];
     
     $stmt->bind_param('ss', $grade_level, $section);
@@ -233,8 +260,11 @@ function getStudentGradeCount($conn, $student_id) {
 }
 
 function getSectionsForGrade($conn, $grade_level) {
+    global $hasIsArchived;
+    $archiveFilter = $hasIsArchived ? " AND (is_archived IS NULL OR is_archived = 0)" : "";
+
     $sections = [];
-    $stmt = $conn->prepare("SELECT DISTINCT TRIM(COALESCE(NULLIF(section, ''), 'N/A')) AS section FROM students WHERE grade_level = ? ORDER BY section ASC");
+    $stmt = $conn->prepare("SELECT DISTINCT TRIM(COALESCE(NULLIF(section, ''), 'N/A')) AS section FROM students WHERE grade_level = ?{$archiveFilter} ORDER BY section ASC");
     if (!$stmt) {
         return $sections;
     }
@@ -453,7 +483,7 @@ $quarters = [1, 2, 3, 4];
                             <div style="display: flex; align-items: center; gap: 20px; margin-left: 16px;">
                               <div style="text-align: center;">
                                 <div style="font-size: 10px; font-weight: 600; color:black; text-transform: uppercase; margin-bottom: 2px;">Average</div>
-                                <div style="font-size: 18px; font-weight: 700; color: black;"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
+                                <div style="font-size: 18px; font-weight: 700, color: black;"><?php echo ($studentAvg !== '-') ? $studentAvg . '%' : '-'; ?></div>
                               </div>
                             </div>
                           </div>

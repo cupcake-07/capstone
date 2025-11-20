@@ -14,8 +14,20 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
     exit;
 }
 
-// Fetch all students from database
-$studentsResult = $conn->query("SELECT id, name, email, grade_level, section FROM students ORDER BY name ASC");
+// Show archived filtering based on column existence
+$hasIsArchived = false;
+$colCheckTeachers = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
+if ($colCheckTeachers) {
+    $hasIsArchived = ($colCheckTeachers->num_rows > 0);
+    $colCheckTeachers->close();
+}
+
+// Build query conditionally to exclude archived students if column exists
+$whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+// Include is_archived in SELECT only if column exists
+$selectIsArchived = $hasIsArchived ? ", is_archived" : "";
+$studentsResult = $conn->query("SELECT id, name, email, grade_level, section{$selectIsArchived} FROM students{$whereClause} ORDER BY name ASC");
+
 $allStudents = [];
 if ($studentsResult) {
     while ($row = $studentsResult->fetch_assoc()) {
@@ -345,7 +357,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
           <tbody id="studentsBody">
             <?php if (!empty($allStudents)): ?>
               <?php foreach ($allStudents as $student): ?>
-                <tr>
+                <tr data-is-archived="<?php echo isset($student['is_archived']) ? intval($student['is_archived']) : 0; ?>">
                   <td class="id-cell"><?php echo htmlspecialchars($student['id']); ?></td>
                   <td class="name-cell" data-name="<?php echo htmlspecialchars($student['name']); ?>"><?php echo htmlspecialchars($student['name']); ?></td>
                   <td class="email-cell" data-email="<?php echo htmlspecialchars($student['email']); ?>"><?php echo htmlspecialchars($student['email']); ?></td>
@@ -375,8 +387,13 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-      // Store all data rows
-      allDataRows = Array.from(document.querySelectorAll('#studentsBody tr')).filter(row => !row.querySelector('td[colspan]'));
+      // Store all data rows — exclude archived rows from client-side indexing
+      allDataRows = Array.from(document.querySelectorAll('#studentsBody tr')).filter(row => {
+          if (row.querySelector('td[colspan]')) return false;
+          // Use the data attribute to filter archived rows if present
+          const isArchived = row.dataset.isArchived === '1' || row.dataset.isArchived === 'true';
+          return !isArchived;
+      });
       filterAndSort();
     });
 
@@ -399,7 +416,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
     function filterAndSort() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      
+
       // Filter rows based on search term
       const filteredRows = allDataRows.filter(row => {
         const text = row.textContent.toLowerCase();
@@ -432,7 +449,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         return aValue.localeCompare(bValue);
       });
 
-      // Update display
+      // Update display: ensure we don't display archived rows
       const tbody = document.getElementById('studentsBody');
       tbody.innerHTML = '';
       
@@ -445,7 +462,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       }
     }
 
-    // Export CSV
+    // Export CSV: ensure archived rows are not included
     document.getElementById('exportBtn').addEventListener('click', function() {
       const table = document.getElementById('studentsTable');
       let csv = [];
@@ -457,13 +474,16 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       csv.push(headers.join(','));
       
       document.querySelectorAll('#studentsBody tr').forEach(tr => {
-        if (!tr.querySelector('td[colspan]')) {
-          const row = [];
-          tr.querySelectorAll('td').forEach(td => {
-            row.push('"' + td.textContent.replace(/"/g, '""') + '"');
-          });
-          csv.push(row.join(','));
-        }
+        // skip empty state & skip archived rows
+        if (tr.querySelector('td[colspan]')) return;
+        const isArchived = tr.dataset.isArchived === '1' || tr.dataset.isArchived === 'true';
+        if (isArchived) return;
+
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => {
+          row.push('"' + td.textContent.replace(/"/g, '""') + '"');
+        });
+        csv.push(row.join(','));
       });
       
       const csvContent = csv.join('\n');

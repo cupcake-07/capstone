@@ -9,7 +9,6 @@ if (!isAdminLoggedIn()) {
 }
 
 // Check whether the 'is_archived' column exists to avoid SQL errors.
-// If missing, we fall back to selecting all students and show a migration hint.
 $hasIsArchived = false;
 $colCheck = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
 if ($colCheck) {
@@ -19,7 +18,8 @@ if ($colCheck) {
 
 // Build query conditionally
 $whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
-$allStudentsResult = $conn->query("SELECT id, name, email, grade_level, section, is_enrolled, enrollment_date FROM students{$whereClause} ORDER BY enrollment_date DESC");
+$selectIsArchived = $hasIsArchived ? ", is_archived" : "";
+$allStudentsResult = $conn->query("SELECT id, name, email, grade_level, section, is_enrolled, enrollment_date{$selectIsArchived} FROM students{$whereClause} ORDER BY enrollment_date DESC");
 $allStudents = [];
 if ($allStudentsResult) {
     while ($row = $allStudentsResult->fetch_assoc()) {
@@ -60,8 +60,8 @@ $user = getAdminSession();
                 <header class="topbar">
                     <h1>Students Management</h1>
                     <div class="top-actions">
-                        <!-- use a direct link to the export endpoint to trigger browser download -->
-                        <a href="export_students.php" class="btn-export" title="Download students CSV">Export CSV</a>
+                        <!-- use a direct link to the export endpoint to trigger browser download; pass exclude_archived for safety -->
+                        <a href="export_students.php?exclude_archived=1" class="btn-export" title="Download students CSV">Export CSV</a>
                         <!-- Link to archived students page -->
                         <a href="archived-students.php" class="btn-export" title="View archived students" style="margin-left: 8px; background: #555;">Archived Students</a>
                     </div>
@@ -107,13 +107,13 @@ $user = getAdminSession();
                         </thead>
                         <tbody id="studentsBody">
                             <?php if (!empty($allStudents)): ?>
-                                <?php foreach ($allStudents as $student): 
-                                    // Use a raw grade code and map it to a friendly label
+                                <?php foreach ($allStudents as $student):
                                     $rawGrade = htmlspecialchars($student['grade_level'] ?? '1');
                                     $displayGrade = htmlspecialchars($gradeLabels[$rawGrade] ?? $rawGrade);
                                     $displaySection = htmlspecialchars($student['section'] ?? 'A');
+                                    $isArchivedAttr = isset($student['is_archived']) ? 'data-is-archived="' . intval($student['is_archived']) . '"' : 'data-is-archived="0"';
                                 ?>
-                                    <tr>
+                                    <tr <?php echo $isArchivedAttr; ?>>
                                         <td><?php echo htmlspecialchars($student['id']); ?></td>
                                         <td><?php echo htmlspecialchars($student['name']); ?></td>
                                         <td><?php echo htmlspecialchars($student['email']); ?></td>
@@ -128,10 +128,8 @@ $user = getAdminSession();
                                         </td>
                                         <td><?php echo date('M d, Y', strtotime($student['enrollment_date'])); ?></td>
                                         <td>
-                                            <!-- Edit button -->
                                             <button type="button" class="btn-edit-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>" data-grade="<?php echo $rawGrade; ?>" data-section="<?php echo $displaySection; ?>">Edit</button>
 
-                                            <!-- Archive button: add archive action (keeps other functionality unchanged) -->
                                             <button type="button" class="btn-archive-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>">Archive</button>
                                         </td>
                                     </tr>
@@ -633,7 +631,6 @@ $user = getAdminSession();
                     const formData = new FormData();
                     formData.append('student_id', studentId);
 
-                    // disable button while processing
                     const button = this;
                     button.disabled = true;
                     fetch('../api/archive-student.php', { method: 'POST', body: formData })
@@ -643,7 +640,6 @@ $user = getAdminSession();
                                 // Remove the student's row from the DOM so they are no longer visible
                                 const row = button.closest('tr');
                                 if (row) row.remove();
-                                // Re-apply filters to refresh "no results" or other UI
                                 applyFilters();
                             } else {
                                 alert('Error archiving student: ' + (data.message || 'Unknown error'));
