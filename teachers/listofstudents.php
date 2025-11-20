@@ -134,7 +134,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     .action-buttons button.secondary {
       background: #f5f5f5;
       color: #000;
-      border: 1px solid #333;
+      border: 1px solid #1543a5ff;
     }
 
     .action-buttons button.secondary:hover {
@@ -157,7 +157,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     }
 
     .students-table thead {
-      background: #1a1a1a;
+      background: linear-gradient(180deg, var(--love) 0%, #3d71a4 100%);
       color: #fff;
     }
 
@@ -281,8 +281,8 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
         <a href="teacher-logout.php" class="logout-btn" title="Logout">
-          <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer; font-size: 14px; border-radius: 4px; background-color: #dc3545; transition: background-color 0.3s ease;">
-            Logout
+           <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+            <img src="logout-btn.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
           </button>
         </a>
       </div>

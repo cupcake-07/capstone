@@ -738,8 +738,9 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         <div class="user-menu">
             <span><?php echo $user_name ?? 'Teacher'; ?></span>
             <a href="teacher-logout.php" class="logout-btn" title="Logout"><button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
-            <img src="loginswitch.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
-                </button>
+            <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+            <img src="logout-btn.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
+          </button>
             </a>
         </div>
     </div>
