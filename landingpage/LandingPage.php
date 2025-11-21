@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html>
-<head>    
+<html lang="en">
+<head>
 	<title>G2F</title>
 	<link rel="stylesheet" href="style.css">
 	<link rel="icon" href="Images/future.png">
@@ -9,34 +9,33 @@
 	<meta name="description" content="This is a top online job website. where we provide online and offline jobs.....">
 	<meta name="keywords" content="Web , Android , Database , PHP">
 	<meta name="author" content="Md S. Alam">
-	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
-	
-	<!-- Keep Google Fonts link; moved CSS rules to style.css -->
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
 	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 	<div class="welcome" id="top">Welcome to Glorious God's Family Christian School
-         <button onclick="cancel()">&#10540</button>
+         <button onclick="cancel()" aria-label="Close welcome banner">&#10540</button>
 	</div>
 
 	<!-------------------header_start--------------------->
+
   <header class="header page-hero">
    	  <div class="nav container-inner">
    	  	  <div class="logo logo-wrapper">
-              <img src="Images/g2flogo.png" alt="G2F logo"/>
+              <img src="Images/g2flogo.png"/>
    	  	  </div>
    	  	  <div class="menu">
    	  	  	 <ul>
    	  	  	 	<li><a href="#">home</a></li>
    	  	  	 	<li><a href="#about_us">about us</a></li>
-   	  	  	 	<li><a href="Event.html">Events</a></li>
+   	  	  	 	<li><a href="#career">Events</a></li>
    	  	  	 	<li><a href="#job_criteria">Programs </a></li>
    	  	  	    <li><a href="#how">how it works</a></li>
    	  	  	 	<li><a href="#contact_us">contact us</a></li>
    	  	  	 </ul>
    	  	  </div>
-   	  </div> 
+   	  </div>
 
    	  <div class="content container-inner">
    	  	<h1>Welcome to Glorious God's Family Christian School!
@@ -44,24 +43,25 @@
          <p class="border">Welcome to our elementary school community. We provide a nurturing, safe, and stimulating environment for children from Kindergarten through Grade 6. Our curriculum focuses on foundational literacy and numeracy, social‑emotional growth, creativity, and hands‑on learning—so each child can build confidence, character, and a love of learning.</p>
           <p class="slog"><em>"Nurturing hearts and minds — growing learners for tomorrow."</em></p>
 
-          <div class="cta">
+          <div class="cta" role="group" aria-label="Call to actions">
             <button id="inquireBtn" class="gradient-btn" type="button" aria-controls="inquire_modal" aria-haspopup="dialog" aria-expanded="false">Inquire Now</button>
             
           </div>
+
    	  </div>
 
    </header>
+
   <!---------------header_end----------->
 
-  <!--------------------About_us-start--------------------->
+   <!--------------------About_us-start--------------------->
      <div class="about-section" id="about_us">
      	 <h1>About us</h1>
 
      <div class="sub abs-photo">
 
       <div class="para">
-     	
-                <p>Glorious God's Family Christian School is a welcoming elementary school serving families in our community. We provide a warm, caring environment where young learners are encouraged to explore, discover, and grow.</p>
+     		<p>Glorious God's Family Christian School is a welcoming elementary school serving families in our community. We provide a warm, caring environment where young learners are encouraged to explore, discover, and grow.</p>
 
                 <p>Our teachers focus on building strong foundational skills in reading, writing, and math while also supporting social and emotional development through play, projects, and cooperative activities. We use age‑appropriate technology and hands‑on learning to spark curiosity.</p>
 
@@ -76,7 +76,6 @@
 
    <section class="mission-section" id="mission" data-anim="slide-up">
      <div class="mission-inner">
-
        <article class="mission-card" data-anim="fade-in">
 		 <div class="mission-icon" aria-hidden="true"><i class="fa fa-bullseye"></i></div>
          <div class="mission-body">
@@ -110,12 +109,11 @@
            </p>
          </div>
        </article>
-
      </div>
    </section>
 
-        <marquee scrollamount="10" onmouseover="this.stop()" onmouseout="this.start()">
-     	 <div class="marq">
+        <marquee scrollamount="10" onmouseover="this.stop()" onmouseout="this.start()" aria-hidden="true">
+     	 <div class="marq" aria-hidden="true">
      	 	  <div class="box" id="img1"><div class="over"><h4>Field Trip</h4></div></div>
      	 	  <div class="box" id="img2"><div class="over"><h4>Assessments</h4></div></div>
      	 	  <div class="box" id="img3"><div class="over"><h4>Student GSSG</h4></div></div>
@@ -141,7 +139,7 @@
   <!----------------------career_start----------------->
     <div class="career-section" id="career">
     	 <h1 style="font-family:Montserrat;">Student Programs</h1>
-          
+
           <div class="sect">
 
     	  <div class="box">
@@ -169,19 +167,15 @@
            </div>
 
       </div>
-       
-    	 
+
     	 <p class="para"><em>"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
 
     </div>
   <!----------------------career_end----------------->
 
-
   <!------------skills_start---------------->
-
    <div class="skill-section" id="job_criteria">
    	  <h1 style="font-family: Montserrat; text-align:center;">Programs & Activities</h1>
-    
 
       <div class="skill-box">
           <span>1</span>
@@ -235,67 +229,54 @@
   <!------------skills_end---------------->
 
   <!------------form_start-------------------->
+  <div class="container" id="form_act" aria-hidden="false">
+       <div class="cancel" id="close" aria-label="Close"> X </div>
+       <div class="box">
+         <div class="side-image">
+             <h3>hello people...</h3>
+             <p>Good luck for the job ! </p>
+             <i class="fa fa-smile-o"></i>
+         </div>
 
-  <div class="container" id="form_act">
-
-             <div class="cancel" id="close"> X </div>
-
-             <div class="box">
-                      <div class="side-image">
-                          <h3>hello people...</h3>
-                        <p>Good luck for the job ! </p>
-                        <i class="fa fa-smile-o"></i>
-             </div>
-                     
-            <div class="input-group">
-                  <h1>Application form</h1>
-                  <form class="form" method="POST" action="#.php" name="Application Form">
-                        
+         <div class="input-group">
+             <h1>Application form</h1>
+             <form class="form" method="POST" action="#.php" name="Application Form">
                         <div class="input-field">
                         <label>Full Name </label>
                         <input type="text" id="fname" name="fname" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Current Address</label>
                         <input type="text" id="caddress" name="caddress" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Permanent Address </label>
                         <input type="text" id="paddress" name="paddress" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>City </label>
                         <input type="text" id="city" name="city" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>State</label>
                         <input type="text" id="state" name="state" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Country</label>
                         <input type="text" id="country" name="country" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Email Address </label>
                         <input type="email" id="email" name="email" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Phone Number</label>
                         <input type="text" id="num" name="num" maxlength="10" required>
                         </div>
-                        
                         <div class="input-field">
                         <label>Postal Code </label>
                         <input type="text" id="code" name="code" maxlength="6">
                         </div>
-                        
                         <div class="input-field">
                         <label>Apply For </label>
                         <select>
@@ -309,27 +290,18 @@
                           <option>3D Animation Designer</option>
                         </select>
                         </div>
-                        
                         <div class="input-field">
                         <input class="reset" type="reset" value="Clear">
                         <input class="submit" type="submit" value="Apply Now">
                         </div>
-
-                        <!-- duplicate set removed -->
-                 </form>
-                 
-            </div>
-                
+             </form>
+         </div>
        </div>
-    
   </div>
-      
-
-  <!------------form_end---------------->
+  <!------------form_end-------------------->
 
   <!-------------How_it-works-start--------------->
-    <section class="how" id="how">
-
+   <section class="how" id="how">
     	    <h1>How Our Programs Work</h1>
            <div class="box">
            	 <div class="icon"><i class="fa fa-pencil-square-o"></i></div>
@@ -357,7 +329,6 @@
     </section>
   <!-------------How_it-works-end--------------->
 
-
   <!------------contact_us-start---------------->
        <footer class="footer" id="contact_us">
            <h1>Contact us...</h1>
@@ -376,10 +347,8 @@
                     <li><a href="#about_us">About</a></li>
                     <li><a href="#mission">Mission & Vision</a></li>
                     <li><a href="#job_criteria">Programs</a></li>
-                    
                  </ul>
 
-                 <!-- optional third column for office hours -->
                  <ul>
                     <h4>Office Hours</h4>
                     <li>Mon–Fri: 07:00 – 17:00</li>
@@ -389,63 +358,52 @@
               </div>
           </section>
 
-             <div class="link">
+             <div class="link" aria-hidden="false">
                 <h4>Follow us</h4>
-                <!-- only Facebook and Email (Gmail) -->
                 <a href="https://www.facebook.com/GloriousgfcsiCluster2" target="_blank" rel="noopener"><i class="fa fa-facebook"></i></a>
                 <a href="mailto:arnel.shin@gmail.com"><i class="fa fa-envelope"></i></a>
+                <!-- apply teacher button (opens modal) -->
+                <button id="applyTeacherBtn" class="fb-btn" type="button" aria-controls="apply_teacher_modal" aria-haspopup="dialog" aria-expanded="false" title="Apply as Teacher">Apply</button>
             </div>
 
-            <!-- Added link for admin: view submitted inquiries -->
             <div style="margin-top:10px; text-align:center;">
                 <a href="inquiries.php" style="color: #fff; text-decoration: underline;">View Inquiries</a>
             </div>
- 
+
              <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-angle-double-up"></i></a>	 
+                <a href="#top"><i class="fa fa-angle-double-up"></i></a>
              </div>
- 
+
         </footer>
- 
+
        <div class="bottom"><i class="fa fa-copyright"></i>2020-2030 Glorious God's Family Christian School || all rights reserved.</div>
    <!------------contact_us-end---------------->
-
-
 
    <!------------------ Welcome start------------------>
 
        <section class="welcome_big">
-           
-            <img src="Images/fbs_logo.png" class="scale" />
-
+            <img src="Images/fbs_logo.png" class="scale" alt="Logo" onerror="this.src='Images/fbs_logo.png'"/>
        </section>
 
    <!------------------ Welcome end ------------------>
 
-
-
-
    <!------------javascript code start---------------->
-
    <script type="text/javascript">
-  // Initialize behaviors after DOM is ready
+  // Initialize behaviors
   document.addEventListener('DOMContentLoaded', function () {
     // Close the welcome banner
     function cancel() {
       const topEl = document.getElementById('top');
       if (topEl) topEl.style.marginTop = '-50px';
     }
-
-    // Expose for inline onclick (existing HTML)
     window.cancel = cancel;
 
     // Toggle sticky top arrow on scroll
     window.addEventListener("scroll", function () {
-      var top = document.getElementById('navTop');
-      if (top) top.classList.toggle("sticky", window.scrollY > 250);
+      var top = document.getElementById('navTop'); if (top) top.classList.toggle("sticky", window.scrollY > 250);
     });
 
-    // Application form open/close (existing behavior)
+    // application form "close" button from the original form_act
     var formCloseBtn = document.getElementById('close');
     if (formCloseBtn) {
       formCloseBtn.addEventListener("click", function () {
@@ -454,7 +412,7 @@
       });
     }
 
-    // INQUIRE MODAL - elements
+    // INQUIRE modal variables
     const inquireBtn = document.getElementById('inquireBtn');
     const inquireModal = document.getElementById('inquire_modal');
     const inquireClose = document.getElementById('inquireClose');
@@ -462,7 +420,7 @@
     const inquireStatus = document.getElementById('inquireStatus');
     let lastFocusedElement = null;
 
-    // Helper: unique getFocusableElements (single helper)
+    // Helper
     function getFocusableElements(container) {
       if (!container) return [];
       return Array.prototype.slice.call(
@@ -470,7 +428,17 @@
       );
     }
 
-    // Open/close modal logic & focus trap (both modals use same helper)
+    // Focus-trap for a modal: generic helper
+    function trapFocus(container, e) {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusableElements(container);
+      if (!focusable.length) return;
+      const first = focusable[0]; const last = focusable[focusable.length - 1];
+      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+      else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+    }
+
+    // Open/Close inquire modal
     function openInquireModal() {
       if (!inquireModal) return;
       lastFocusedElement = document.activeElement;
@@ -481,7 +449,7 @@
       if (inquireBtn) inquireBtn.setAttribute('aria-expanded', 'true');
       const focusable = getFocusableElements(inquireModal);
       if (focusable.length) focusable[0].focus();
-      inquireModal.addEventListener('keydown', trapFocusInquire);
+      inquireModal.addEventListener('keydown', function (e) { trapFocus(inquireModal, e); });
     }
     function closeInquireModal() {
       if (!inquireModal) return;
@@ -489,25 +457,16 @@
       inquireModal.setAttribute('aria-hidden', 'true');
       inquireModal.removeAttribute('aria-modal');
       document.body.classList.remove('no-scroll');
-      if (inquireStatus) inquireStatus.textContent = '';
+      if (inquireStatus) { inquireStatus.textContent = ''; inquireStatus.classList.remove('error'); }
       if (inquireBtn) inquireBtn.setAttribute('aria-expanded', 'false');
-      inquireModal.removeEventListener('keydown', trapFocusInquire);
-      if (lastFocusedElement) lastFocusedElement.focus();
+      if (lastFocusedElement) try { lastFocusedElement.focus(); } catch (e) {}
     }
-    function trapFocusInquire(e) {
-      if (e.key !== 'Tab') return;
-      const focusable = getFocusableElements(inquireModal);
-      if (!focusable.length) return;
-      const first = focusable[0]; const last = focusable[focusable.length - 1];
-      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
-      else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
-    }
-
     if (inquireBtn) inquireBtn.addEventListener('click', openInquireModal);
     if (inquireClose) inquireClose.addEventListener('click', closeInquireModal);
     if (inquireModal) inquireModal.addEventListener('click', function (e) { if (e.target === inquireModal) closeInquireModal(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && inquireModal && inquireModal.classList.contains('show')) closeInquireModal(); });
 
+    // Submit inquiry form
     if (inquireForm) {
       inquireForm.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -515,8 +474,8 @@
         const email = document.getElementById('inqEmail').value.trim();
         const message = document.getElementById('inqMessage').value.trim();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || !emailRegex.test(email)) { inquireStatus.textContent = 'Please enter a valid email address.'; inquireStatus.classList.add('error'); return; }
-        if (!message) { inquireStatus.textContent = 'Please write your question.'; inquireStatus.classList.add('error'); return; }
+        if (!email || !emailRegex.test(email)) { if (inquireStatus) { inquireStatus.textContent = 'Please enter a valid email address.'; inquireStatus.classList.add('error'); } return; }
+        if (!message) { if (inquireStatus) { inquireStatus.textContent = 'Please write your question.'; inquireStatus.classList.add('error'); } return; }
         const submitBtn = inquireForm.querySelector('input[type="submit"]'); if (submitBtn) submitBtn.disabled = true;
         fetch('submit_inquiry.php', {
           method: 'POST',
@@ -532,12 +491,12 @@
             inquireStatus.classList.add('error'); inquireStatus.textContent = data.error || 'Submission failed. Try again later.'; if (submitBtn) submitBtn.disabled = false;
           }
         })
-        .catch(err => { console.error('Error:', err); inquireStatus.classList.add('error'); inquireStatus.textContent = 'Submission failed.'; if (submitBtn) submitBtn.disabled = false; });
+        .catch(err => { console.error('Error:', err); if (inquireStatus) { inquireStatus.classList.add('error'); inquireStatus.textContent = 'Submission failed.'; } if (submitBtn) submitBtn.disabled = false; });
       });
       inquireForm.addEventListener('reset', function () { if (inquireStatus) { inquireStatus.textContent = ''; inquireStatus.classList.remove('error'); } });
     }
 
-    // APPLY AS TEACHER modal uses the same functions
+    // Apply as Teacher modal handling (open from footer)
     const applyTeacherBtn = document.getElementById('applyTeacherBtn');
     const applyTeacherModal = document.getElementById('apply_teacher_modal');
     const applyTeacherClose = document.getElementById('applyTeacherClose');
@@ -555,28 +514,17 @@
       if (applyTeacherBtn) applyTeacherBtn.setAttribute('aria-expanded', 'true');
       const focusable = getFocusableElements(applyTeacherModal);
       if (focusable.length) focusable[0].focus();
-      applyTeacherModal.addEventListener('keydown', trapFocusApplyTeacher);
+      applyTeacherModal.addEventListener('keydown', function (e) { trapFocus(applyTeacherModal, e); });
     }
     function closeApplyTeacherModal() {
       if (!applyTeacherModal) return;
-      applyTeacherModal.classList.remove('show');
-      applyTeacherModal.setAttribute('aria-hidden', 'true');
-      applyTeacherModal.removeAttribute('aria-modal');
-      document.body.classList.remove('no-scroll');
+      applyTeacherModal.classList.remove('show'); applyTeacherModal.setAttribute('aria-hidden', 'true'); applyTeacherModal.removeAttribute('aria-modal'); document.body.classList.remove('no-scroll');
       if (applyTeacherStatus) applyTeacherStatus.textContent = '';
       if (applyTeacherBtn) applyTeacherBtn.setAttribute('aria-expanded', 'false');
-      applyTeacherModal.removeEventListener('keydown', trapFocusApplyTeacher);
       if (lastFocusedElementTeacher) try { lastFocusedElementTeacher.focus(); } catch (e) {}
     }
-    function trapFocusApplyTeacher(e) {
-      if (e.key !== 'Tab') return;
-      const focusable = getFocusableElements(applyTeacherModal);
-      if (!focusable.length) return;
-      const first = focusable[0]; const last = focusable[focusable.length - 1];
-      if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
-      else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
-    }
 
+    if (applyTeacherBtn) applyTeacherBtn.addEventListener('click', openApplyTeacherModal);
     if (applyTeacherClose) applyTeacherClose.addEventListener('click', closeApplyTeacherModal);
     if (applyTeacherModal) applyTeacherModal.addEventListener('click', function (e) { if (e.target === applyTeacherModal) closeApplyTeacherModal(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && applyTeacherModal && applyTeacherModal.classList.contains('show')) closeApplyTeacherModal(); });
@@ -593,6 +541,7 @@
         if (!email || !emailRegex.test(email)) { applyTeacherStatus.textContent = 'Please enter a valid email address.'; applyTeacherStatus.classList.add('error'); return; }
         if (!name) { applyTeacherStatus.textContent = 'Please enter your full name.'; applyTeacherStatus.classList.add('error'); return; }
         const submitBtnApply = applyTeacherForm.querySelector('input[type="submit"]'); if (submitBtnApply) submitBtnApply.disabled = true;
+        // send via mailto as fallback to avoid forcing server-side implementation
         const adminEmailApply = (applyTeacherModal && applyTeacherModal.dataset && applyTeacherModal.dataset.adminEmail) ? applyTeacherModal.dataset.adminEmail : 'arnel.shin@gmail.com';
         const subject = encodeURIComponent('Teacher Application from ' + name);
         const body = encodeURIComponent('Name: ' + name + '\nEmail: ' + email + '\nQualifications: ' + qualifications + '\nExperience: ' + experience + '\nMessage:\n' + message);
@@ -604,8 +553,7 @@
     }
 
   }); // end DOMContentLoaded
-</script>
-   
+  </script>
   <!------------javascript code end---------------->
 
 <!-- Simplified inquire modal structure -->
