@@ -30,7 +30,7 @@
    	  	  	 <ul>
    	  	  	 	<li><a href="#">home</a></li>
    	  	  	 	<li><a href="#about_us">about us</a></li>
-   	  	  	 	<li><a href="#career">Events</a></li>
+   	  	  	 	<li><a href="Event.html">Events</a></li>
    	  	  	 	<li><a href="#job_criteria">Programs </a></li>
    	  	  	    <li><a href="#how">how it works</a></li>
    	  	  	 	<li><a href="#contact_us">contact us</a></li>

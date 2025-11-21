@@ -48,8 +48,10 @@
          <p class="border">Welcome to our elementary school community. We provide a nurturing, safe, and stimulating environment for children from Kindergarten through Grade 6. Our curriculum focuses on foundational literacy and numeracy, social‑emotional growth, creativity, and hands‑on learning—so each child can build confidence, character, and a love of learning.</p>
           <p class="slog"><em>"Nurturing hearts and minds — growing learners for tomorrow."</em></p>
 
-          <button id="inquireBtn" type="button" aria-controls="inquire_modal" aria-haspopup="dialog" aria-expanded="false">Inquire Now</button>
-          
+          <div class="cta">
+            <button id="inquireBtn" type="button" aria-controls="inquire_modal" aria-haspopup="dialog" aria-expanded="false">Inquire Now</button>
+            <a class="fb-btn" href="https://www.facebook.com/GloriousgfcsiCluster2" target="_blank" rel="noopener" aria-label="Facebook"><i class="fa fa-facebook"></i></a>
+          </div>
    	  </div>
 
    </header>
@@ -407,6 +409,11 @@
                 <a href="https://www.facebook.com/GloriousgfcsiCluster2" target="_blank" rel="noopener"><i class="fa fa-facebook"></i></a>
                 <a href="mailto:arnel.shin@gmail.com"><i class="fa fa-envelope"></i></a>
             </div>
+
+            <!-- Added link for admin: view submitted inquiries -->
+            <div style="margin-top:10px; text-align:center;">
+                <a href="inquiries.php" style="color: #fff; text-decoration: underline;">View Inquiries</a>
+            </div>
  
              <div class="top-arrow" id="navTop">
                 <a href="#top"><i class="fa fa-angle-double-up"></i></a>	 
@@ -454,13 +461,6 @@
     });
 
     // Application form open/close (existing behavior)
-    var formShowBtn = document.getElementById('form_show');
-    if (formShowBtn) {
-      formShowBtn.addEventListener("click", function () {
-        var formAct = document.getElementById('form_act');
-        if (formAct) formAct.classList.add('show');
-      });
-    }
     var formCloseBtn = document.getElementById('close');
     if (formCloseBtn) {
       formCloseBtn.addEventListener("click", function () {
@@ -597,24 +597,41 @@
         const submitBtn = inquireForm.querySelector('input[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
 
-        // Read admin email from modal dataset (fall back to original)
-        const adminEmail = (inquireModal && inquireModal.dataset && inquireModal.dataset.adminEmail) ? inquireModal.dataset.adminEmail : 'arnel.shin@gmail.com';
-
-        const subject = encodeURIComponent('Website Inquiry from ' + (name || 'Visitor'));
-        const body = encodeURIComponent('Message:\n' + message + '\n\nEmail: ' + email + '\nName: ' + name);
-        // This typically opens the user's mail client (if configured)
-        window.location.href = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
-
-        // Show immediate feedback
-        inquireStatus.classList.remove('error');
-        inquireStatus.textContent = 'Your mail client should open now. Thank you!';
-
-        // Close the modal shortly after submission (small delay to let the mail client trigger)
-        setTimeout(function () {
-          closeInquireModal();
-          // re-enable submit after closing so the form remains usable if user returns
+        // send POST to our server endpoint (relative path)
+        fetch('submit_inquiry.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            name: name,
+            email: email,
+            message: message
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            inquireStatus.classList.remove('error');
+            inquireStatus.textContent = 'Thank you! Your inquiry has been submitted.';
+            // close modal shortly, then reset form
+            setTimeout(function () {
+              closeInquireModal();
+              if (submitBtn) submitBtn.disabled = false;
+              inquireForm.reset();
+            }, 600);
+          } else {
+            inquireStatus.classList.add('error');
+            inquireStatus.textContent = data.error || 'Submission failed. Try again later.';
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          inquireStatus.classList.add('error');
+          inquireStatus.textContent = 'Submission failed. Check console for details.';
           if (submitBtn) submitBtn.disabled = false;
-        }, 400);
+        });
       });
 
       // Reset status on reset
@@ -703,11 +720,6 @@
       }
     }
 
-    // Apply Teacher button click
-    if (applyTeacherBtn) {
-      applyTeacherBtn.addEventListener('click', openApplyTeacherModal);
-    }
-
     // close button on modal
     if (applyTeacherClose) {
       applyTeacherClose.addEventListener('click', closeApplyTeacherModal);
@@ -792,7 +804,7 @@
   <div class="box" role="document">
     <div class="input-group">
       <h1 id="inquireTitle">INQUIRE NOW</h1>
-      <form id="inquireForm" class="form" novalidate action="mailto:arnel.shin@gmail.com">
+      <form id="inquireForm" class="form" novalidate action="#" method="POST">
         <div class="input-field">
           <label for="inqName">Full Name</label>
           <input id="inqName" name="name" type="text" placeholder="Your name (optional)">

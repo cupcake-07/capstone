@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hope Academy | Community Outreach</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary-color: #1a3c7a; /* School Navy */
+            --accent-color: #f4a261;  /* Warm Gold/Orange */
+            --text-dark: #333;
+            --text-light: #fff;
+            --bg-light: #f9f9f9;
+            --transition-speed: 0.8s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            background-color: var(--bg-light);
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: linear-gradient(90deg, rgba(253, 253, 253, 0.98) 0%, #f0a5e6 100%);
+            padding: 1.2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-color);
+        }
+
+        .cta-btn {
+            background-color: var(--primary-color);
+            color: var(--text-light) !important;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+        }
+
+        .cta-btn:hover {
+            background-color: #132c5a;
+        }
+
+        /* --- HERO SECTION (SLIDING BACKGROUND) --- */
+        .hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--text-light);
+            padding: 0 20px;
+            overflow: hidden;
+        }
+
+        /* The Dark Blue Overlay */
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(26, 60, 122, 0.85), rgba(26, 60, 122, 0.5));
+            z-index: 1;
+        }
+
+        /* Container for the sliding images */
+        .hero-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Individual Slide Styling */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transform: scale(1);
+            animation: slideAnimation 15s infinite;
+        }
+
+        /* Slide Images & Delays */
+        .slide:nth-child(1) { 
+            background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            animation-delay: 0s; 
+        }
+        .slide:nth-child(2) { 
+            background-image: url('https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            animation-delay: 5s; 
+        }
+        .slide:nth-child(3) { 
+            background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            animation-delay: 10s; 
+        }
+
+        /* Keyframes for Background Slider (Fade + Zoom) */
+        @keyframes slideAnimation {
+            0% { opacity: 0; transform: scale(1); }
+            5% { opacity: 1; }
+            33% { opacity: 1; }
+            38% { opacity: 0; transform: scale(1.1); }
+            100% { opacity: 0; }
+        }
+
+        /* Content Styling */
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Hero Text Load Animation */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.2s;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 0.6s;
+        }
+
+        .hero-btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out forwards;
+            animation-delay: 1s;
+            transition: transform 0.3s, background-color 0.3s;
+        }
+
+        .hero-btn:hover {
+            transform: scale(1.05);
+            background-color: #e08e50;
+        }
+
+        /* --- SCROLL TRIGGER ANIMATION CLASSES --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all var(--transition-speed) ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-100 { transition-delay: 0.1s; }
+        .delay-200 { transition-delay: 0.2s; }
+        .delay-300 { transition-delay: 0.3s; }
+
+        /* --- GENERAL SECTIONS --- */
+        section {
+            padding: 5rem 10%;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 3rem;
+        }
+
+        /* --- ABOUT / MISSION --- */
+        .mission-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .mission-img img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .mission-text h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .mission-text p {
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- IMPACT STATS --- */
+        .stats-section {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+
+        .stat-item {
+            margin: 1rem;
+        }
+
+        .stat-item h2 {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* --- PROGRAMS CARDS --- */
+        .programs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* --- CONTACT / CTA --- */
+        .join-section {
+            text-align: center;
+            background-color: #fff;
+        }
+
+        footer {
+            background-color: #111;
+            color: #aaa;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .mission-container { grid-template-columns: 1fr; }
+            .nav-links { display: none; } 
+        }
+
+        /* --- MODAL (ALBUM & ACHIEVEMENTS) --- */
+        .album-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+
+        .album-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .album-modal-inner {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .album-header {
+            background: var(--primary-color);
+            color: #fff;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .album-title {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .album-sub {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .album-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+        }
+
+        .album-body {
+            display: flex;
+            flex-direction: row;
+            padding: 1rem;
+            overflow: hidden;
+            flex-wrap: wrap;
+        }
+
+        .album-left {
+            flex: 2;
+            padding-right: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .album-preview {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .album-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .album-thumb {
+            background: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+
+        .album-thumb img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .album-thumb:hover img {
+            transform: scale(1.1);
+        }
+
+        .album-right {
+            flex: 1;
+            padding-left: 1rem;
+            color: var(--text-dark);
+        }
+
+        .album-right h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .album-right ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .album-right li {
+            margin-bottom: 0.5rem;
+        }
+
+        .album-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .album-cta {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 0.75rem;
+            border-radius: 4px;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .album-cta:hover {
+            background-color: #132c5a;
+        }
+
+        /* --- SCROLL TRIGGER ANIMATION CLASSES --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all var(--transition-speed) ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-100 { transition-delay: 0.1s; }
+        .delay-200 { transition-delay: 0.2s; }
+        .delay-300 { transition-delay: 0.3s; }
+
+        /* --- GENERAL SECTIONS --- */
+        section {
+            padding: 5rem 10%;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 3rem;
+        }
+
+        /* --- ABOUT / MISSION --- */
+        .mission-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .mission-img img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .mission-text h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .mission-text p {
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- IMPACT STATS --- */
+        .stats-section {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+
+        .stat-item {
+            margin: 1rem;
+        }
+
+        .stat-item h2 {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* --- PROGRAMS CARDS --- */
+        .programs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* --- CONTACT / CTA --- */
+        .join-section {
+            text-align: center;
+            background-color: #fff;
+        }
+
+        footer {
+            background-color: #111;
+            color: #aaa;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .mission-container { grid-template-columns: 1fr; }
+            .nav-links { display: none; } 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="logo">HOPE ACADEMY</div>
+        <div class="nav-links">
+            <a href="#about">Our Mission</a>
+            <a href="#programs">Programs</a>
+            <a href="#impact">Impact</a>
+            <a href="#contact" class="cta-btn">Donate</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section (Sliding Background + Content) -->
+    <header class="hero">
+        <!-- Background Slider -->
+        <div class="hero-slider">
+            <div class="slide"></div>
+            <div class="slide"></div>
+            <div class="slide"></div>
+        </div>
+
+        <!-- Overlay -->
+        <div class="hero-overlay"></div>
+
+        <!-- Text Content -->
+        <div class="hero-content">
+            <h1>Empowering The Next Generation</h1>
+            <p>Join the Hope Academy Outreach Program. We bring education, supplies, and smiles to remote communities.</p>
+            <a id="seeWorkBtn" href="#albumModal" role="button" class="hero-btn" aria-controls="albumModal" aria-haspopup="dialog" aria-expanded="false">See Our Work</a>
+        </div>
+    </header>
+
+    <!-- Mission Section (Scroll Animation) -->
+    <section id="about">
+        <div class="mission-container">
+            <div class="mission-img reveal">
+                <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Teaching kids">
+            </div>
+            <div class="mission-text">
+                <h3 class="reveal delay-100">Why We Reach Out</h3>
+                <p class="reveal delay-200">Education shouldn't be limited by geography. Our outreach program travels to the most remote barangays to provide books, school supplies, and teaching support.</p>
+                <p class="reveal delay-300">We believe that every child deserves a champion. Through our volunteer network, we bridge the gap between privilege and potential.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section (Scroll Animation) -->
+    <section id="impact" class="stats-section">
+        <h2 class="section-title reveal" style="color: white;">Our Impact So Far</h2>
+        <div class="stats-grid">
+            <div class="stat-item reveal delay-100">
+                <h2>1,500+</h2>
+                <p>Students Helped</p>
+            </div>
+            <div class="stat-item reveal delay-200">
+                <h2>50+</h2>
+                <p>Communities Visited</p>
+            </div>
+            <div class="stat-item reveal delay-300">
+                <h2>300</h2>
+                <p>Volunteers</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Programs Section (Scroll Animation) -->
+    <section id="programs">
+        <h2 class="section-title reveal">How We Help</h2>
+        <div class="programs-grid">
+            <div class="card reveal delay-100">
+                <div class="card-icon">📚</div>
+                <h3>Book Drives</h3>
+                <p>Collecting and distributing textbooks and storybooks to build mini-libraries.</p>
+            </div>
+            <div class="card reveal delay-200">
+                <div class="card-icon">🥪</div>
+                <h3>Feeding Programs</h3>
+                <p>Providing nutritious meals to ensure students have the energy to learn.</p>
+            </div>
+            <div class="card reveal delay-300">
+                <div class="card-icon">✏️</div>
+                <h3>School Kits</h3>
+                <p>Equipping every child with a backpack, notebooks, and pencils.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="contact" class="join-section">
+        <div class="reveal">
+            <h2 class="section-title">Be Part of the Change</h2>
+            <p style="margin-bottom: 2rem; font-size: 1.2rem; color: #555;">Whether you have time to volunteer or funds to donate, your contribution changes lives.</p>
+            <a href="#" class="hero-btn" style="opacity: 1; animation: none; background-color: var(--primary-color);">Join the Program</a>
+        </div>
+    </section>
+
+    <!-- Album & Achievements modal -->
+    <div class="container album-modal" id="albumModal" aria-hidden="true" role="dialog" aria-labelledby="albumTitle" tabindex="-1">
+      <div class="album-modal-inner" role="document" aria-modal="true">
+        <button class="cancel album-close" id="albumClose" aria-label="Close album dialog">✕</button>
+        <header class="album-header">
+          <h2 id="albumTitle">Album & Achievements</h2>
+          <p class="album-sub">A showcase of community events, student achievements, and highlights from our outreach programs.</p>
+        </header>
+        <main class="album-body">
+          <section class="album-left">
+            <div class="album-preview" id="albumPreview" aria-live="polite">
+              <img src="Images/school14.jpg" alt="Preview image 1" id="albumPreviewImg">
+            </div>
+            <div class="album-grid" id="albumGrid" role="list">
+              <!-- thumbnails (use existing Images files) -->
+              <button class="album-thumb" data-src="Images/school14.jpg" aria-label="Open image 1" role="listitem">
+                <img src="Images/school14_thumb.jpg" onerror="this.src='Images/school14.jpg'" alt="Event 1">
+              </button>
+              <button class="album-thumb" data-src="Images/school15.jpg" aria-label="Open image 2" role="listitem">
+                <img src="Images/school15_thumb.jpg" onerror="this.src='Images/school15.jpg'" alt="Event 2">
+              </button>
+              <button class="album-thumb" data-src="Images/school16.jpg" aria-label="Open image 3" role="listitem">
+                <img src="Images/school16_thumb.jpg" onerror="this.src='Images/school16.jpg'" alt="Event 3">
+              </button>
+              <button class="album-thumb" data-src="Images/school18.jpg" aria-label="Open image 4" role="listitem">
+                <img src="Images/school18_thumb.jpg" onerror="this.src='Images/school18.jpg'" alt="Event 4">
+              </button>
+              <button class="album-thumb" data-src="Images/school19.jpg" aria-label="Open image 5" role="listitem">
+                <img src="Images/school19_thumb.jpg" onerror="this.src='Images/school19.jpg'" alt="Event 5">
+              </button>
+              <button class="album-thumb" data-src="Images/school20.jpg" aria-label="Open image 6" role="listitem">
+                <img src="Images/school20_thumb.jpg" onerror="this.src='Images/school20.jpg'" alt="Event 6">
+              </button>
+            </div>
+          </section>
+
+          <aside class="album-right" aria-label="Achievements">
+            <h3>Recent Achievements</h3>
+            <ul>
+              <li><strong>Field Trip (June 2025)</strong> — 150 students participated in a hands-on educational tour.</li>
+              <li><strong>Feeding Program (March 2025)</strong> — 1,500 meals served across remote communities.</li>
+              <li><strong>Book Drive (Jan 2025)</strong> — 2,000 books distributed to village libraries.</li>
+              <li><strong>Science Fair (Dec 2024)</strong> — Over 100 projects showcased by students.</li>
+              <li><strong>Sports & Wellness Day (Nov 2024)</strong> — Promoting teamwork and healthy lifestyles.</li>
+            </ul>
+            <div class="album-actions">
+              <a href="Event.html#programs" class="cta-btn album-cta">See Programs</a>
+              <a href="#" class="cta-btn album-cta" id="albumDownloadAll" role="button">Download Album</a>
+            </div>
+          </aside>
+        </main>
+      </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Hope Academy Outreach Program. All Rights Reserved.</p>
+    </footer>
+
+    <!-- SCROLL TRIGGER SCRIPT -->
+    <script>
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15 
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); 
+                }
+            });
+        }, observerOptions);
+
+        const elementsToReveal = document.querySelectorAll('.reveal');
+        elementsToReveal.forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+
+    <!-- Insert JS for the modal after the existing observer script -->
+    <script>
+      // Album modal script
+      (function () {
+        const openBtn = document.getElementById('seeWorkBtn');
+        const modal = document.getElementById('albumModal');
+        const closeBtn = document.getElementById('albumClose');
+        const previewImg = document.getElementById('albumPreviewImg');
+        const thumbs = Array.from(document.querySelectorAll('.album-thumb'));
+        let lastFocused = null;
+
+        function getFocusableElements(container){
+          if(!container) return [];
+          return Array.prototype.slice.call(container.querySelectorAll(
+            'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          ));
+        }
+
+        function openModal(){
+          if(!modal) return;
+          lastFocused = document.activeElement;
+          modal.classList.add('show');
+          modal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          if(openBtn) openBtn.setAttribute('aria-expanded', 'true');
+          const focusables = getFocusableElements(modal);
+          if(focusables.length) focusables[0].focus();
+          modal.addEventListener('keydown', trapFocus);
+        }
+
+        function closeModal(){
+          if(!modal) return;
+          modal.classList.remove('show');
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          if(openBtn) openBtn.setAttribute('aria-expanded', 'false');
+          modal.removeEventListener('keydown', trapFocus);
+          if(lastFocused) lastFocused.focus();
+        }
+
+        function trapFocus(e){
+          if(e.key !== 'Tab') return;
+          const focusables = getFocusableElements(modal);
+          if(!focusables.length) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if(e.shiftKey){
+            if(document.activeElement === first){
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if(document.activeElement === last){
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+
+        function thumbnailClick(e){
+          const src = e.currentTarget.getAttribute('data-src');
+          if(src && previewImg){
+            previewImg.src = src;
+            previewImg.alt = e.currentTarget.querySelector('img').alt || 'Large preview';
+            // set focus for screen reader
+            previewImg.setAttribute('tabindex', '-1');
+            previewImg.focus();
+          }
+        }
+
+        if(openBtn) openBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          openModal();
+        });
+
+        if(closeBtn) closeBtn.addEventListener('click', function () {
+          closeModal();
+        });
+
+        // close when click outside content
+        window.addEventListener('click', function (e) {
+          if(modal && modal.classList.contains('show') && e.target === modal) closeModal();
+        });
+
+        // close on escape
+        document.addEventListener('keydown', function (e) {
+          if(e.key === 'Escape' && modal && modal.classList.contains('show')) closeModal();
+        });
+
+        // wire thumbnails
+        thumbs.forEach(btn => btn.addEventListener('click', thumbnailClick));
+
+        // Left/Right arrow navigation for preview
+        document.addEventListener('keydown', function (e) {
+          if(!modal || !modal.classList.contains('show')) return;
+          if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){
+            e.preventDefault();
+            const current = thumbs.findIndex(t => t.getAttribute('data-src') === previewImg.src || previewImg.src.endsWith(t.getAttribute('data-src')));
+            let next = current;
+            if(e.key === 'ArrowLeft') next = (current - 1 + thumbs.length) % thumbs.length;
+            if(e.key === 'ArrowRight') next = (current + 1) % thumbs.length;
+            if(next >= 0 && thumbs[next]) {
+              thumbs[next].click();
+              thumbs[next].focus();
+            }
+          }
+        });
+
+        // `Download Album` fallback action (simple behavior for now)
+        const downloadBtn = document.getElementById('albumDownloadAll');
+        if(downloadBtn){
+          downloadBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            // Minimal behavior: open the selected preview in a new tab
+            const link = document.createElement('a');
+            link.href = previewImg.src;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.click();
+          });
+        }
+      })();
+    </script>
+</body>
+</html>
