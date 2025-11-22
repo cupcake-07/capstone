@@ -407,9 +407,81 @@ if (isset($user['avg_score']) && $user['avg_score'] !== null && floatval($user['
 }
 
 // --- NEW: compute this student's account balance, mirroring logic from admin/AccountBalance.php ---
+// Add grade fee map and helpers for consistency
+$gradeFeeMap = [
+    'kinder 1' => 29050.00,
+    'kinder 2' => 29050.00,
+    'grade 1'  => 29550.00,
+    'grade 2'  => 29650.00,
+    'grade 3'  => 29650.00,
+    'grade 4'  => 30450.00,
+    'grade 5'  => 30450.00,
+    'grade 6'  => 30450.00,
+];
+
+/**
+ * Normalize a grade key by:
+ *  1. Converting it to lowercase
+ *  2. Removing any non-alphanumeric characters except for spaces
+ *  3. Collapsing any whitespace to a single space
+ *  4. Trimming any leading or trailing whitespace
+ * This allows for more flexible matching of grade keys.
+ * @param string $g The grade key to normalize.
+ * @return string The normalized grade key.
+ */
+function normalizeGradeKey($g) {
+    $g = strtolower(trim((string)$g));
+    $g = preg_replace('/[^a-z0-9 ]+/', ' ', $g);
+    $g = preg_replace('/\s+/', ' ', $g);
+    return trim($g);
+}
+
+function getFeeForGrade($gradeVal, $gradeFeeMap) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return null;
+
+    // Prefer kinder detection first (handles "k1", "k 1", "kg1", "kinder 1", etc.)
+    if (preg_match('/\b(?:k|kg|kinder|kindergarten)\s*([12])\b/i', $g, $m)) {
+        $key = 'kinder ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // Recognize explicit grade words with optional spacing (g1, gr1, grade1, grade 1, etc.)
+    if (preg_match('/\b(?:g|gr|grade)\s*([1-6])\b/i', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // If it has a standalone digit 1-6, treat as Grade X
+    if (preg_match('/\b([1-6])\b/', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // Direct exact mapping (e.g. "kinder 1" spelled out in the DB)
+    if (isset($gradeFeeMap[$g])) return $gradeFeeMap[$g];
+
+    // If not matched, return null to signal fallback
+    return null;
+}
+
+// Helper: treat some common placeholders / blank values as "grade not set"
+function isGradeProvided($gradeVal) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return false;
+    $sentinels = ['not set', 'not-set', 'n/a', 'na', 'none', 'unknown', 'null', '-', '—', 'notset'];
+    return !in_array($g, $sentinels, true);
+}
+
 const FIXED_TOTAL_FEE = 15000.00;
 
-$studentFees = (float) FIXED_TOTAL_FEE;
+// Determine student's grade (already available as $gradeKey)
+$studentGrade = $gradeKey; // Use the raw grade key from earlier
+
+// Compute total fee based on grade, fallback to FIXED_TOTAL_FEE
+$mappedFee = getFeeForGrade($studentGrade, $gradeFeeMap);
+$studentFees = ($mappedFee !== null) ? round((float)$mappedFee, 2) : round((float)FIXED_TOTAL_FEE, 2);
+
 $studentPaid = 0.0;
 $studentBalance = (float)$studentFees;
 $feesExists = tableExists($conn, 'fees');
