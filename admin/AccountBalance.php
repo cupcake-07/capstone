@@ -64,6 +64,25 @@ foreach ($gradeCandidates as $gcol) {
 
 const FIXED_TOTAL_FEE = 15000.00; // all students will have this as total_fee
 
+// Determine what the DB contains (moved here so these variables are available for subsequent checks)
+$feesExists = tableExists($conn, 'fees');
+$paymentsExists = tableExists($conn, 'payments');
+
+// Detect useful columns on fees table (if present) to compute per-grade/per-fee aggregates
+$feesHasAmount = $feesExists && columnExists($conn, 'fees', 'amount');
+$feesHasStudentId = $feesExists && columnExists($conn, 'fees', 'student_id');
+
+$feeGradeColumn = null;
+$feeGradeCandidates = ['grade', 'grade_level', 'level', 'class', 'year', 'class_level', 'student_level', 'section'];
+if ($feesExists) {
+    foreach ($feeGradeCandidates as $fgc) {
+        if (columnExists($conn, 'fees', $fgc)) {
+            $feeGradeColumn = $fgc;
+            break;
+        }
+    }
+}
+
 // Determine what the DB contains
 $feesExists = tableExists($conn, 'fees');
 $paymentsExists = tableExists($conn, 'payments');
@@ -71,18 +90,105 @@ $paymentsExists = tableExists($conn, 'payments');
 $errorMsg = '';
 $balances = [];
 
-if ($feesExists) {
-    // If 'fees' exists, determine payments column relationships
-    $paymentsHasFeeId = $paymentsExists && columnExists($conn, 'payments', 'fee_id');
-    $paymentsHasStudentId = $paymentsExists && columnExists($conn, 'payments', 'student_id');
+if ($feesExists && $feesHasAmount && $feesHasStudentId) {
+    // Prefer per-fee aggregates (grouped by student and the fee's recorded grade / fee-group)
+    $feeGradeExpr = $feeGradeColumn ? "IFNULL(f.`{$feeGradeColumn}`, '')" : "''";
 
-    if ($paymentsExists && $paymentsHasFeeId) {
-        // Full query: payments linked to fees; total_fees fixed to FIXED_TOTAL_FEE
-        $sql = "
+    // Build SQL to sum fees per (student, fee-grade) and payments linked to those fees
+    $sql = "
+        SELECT s.id AS student_id,
+               {$studentNameExpr} AS student_name,
+               {$gradeExpr} AS current_grade,
+               {$feeGradeExpr} AS fee_grade,
+               SUM(f.amount) AS total_fees,
+               IFNULL(SUM(p.amount), 0) AS total_payments,
+               SUM(f.amount) - IFNULL(SUM(p.amount), 0) AS balance
+        FROM students s
+        JOIN fees f ON f.student_id = s.id
+        LEFT JOIN payments p ON p.fee_id = f.id
+        WHERE (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+        GROUP BY s.id, fee_grade
+        ORDER BY student_name ASC, fee_grade ASC
+    ";
+    $result = $conn->query($sql);
+    if ($result) {
+        $studentsWithFees = [];
+        while ($row = $result->fetch_assoc()) {
+            // use the fees' stored sum as the total_fees (don't map based on current grade)
+            $row['total_fees'] = (float)$row['total_fees'];
+            $row['total_payments'] = (float)$row['total_payments'];
+            $row['balance'] = round((float)$row['balance'], 2);
+            // We use fee_grade if present; otherwise we can display current student grade
+            $row['grade'] = ($row['fee_grade'] !== '' ? $row['fee_grade'] : ($row['current_grade'] ?? ''));
+            $balances[] = $row;
+            $studentsWithFees[(int)$row['student_id']] = true;
+        }
+
+        // Add fallback rows for students who do not have entries in fees (use grade mapping)
+        $studentIds = array_keys($studentsWithFees);
+        if (!empty($studentIds)) {
+            $notIn = implode(',', array_map('intval', $studentIds));
+            $sqlFallback = "
+                SELECT s.id AS student_id,
+                       {$studentNameExpr} AS student_name,
+                       {$gradeExpr} AS grade
+                FROM students s
+                WHERE s.id NOT IN ({$notIn})
+                ORDER BY student_name ASC
+            ";
+        } else {
+            $sqlFallback = "
+                SELECT s.id AS student_id,
+                       {$studentNameExpr} AS student_name,
+                       {$gradeExpr} AS grade
+                FROM students s
+                ORDER BY student_name ASC
+            ";
+        }
+        $rf = $conn->query($sqlFallback);
+        if ($rf) {
+            while ($r = $rf->fetch_assoc()) {
+                // For students with no fee rows, compute totals from payments by student (fallback)
+                $sid = (int)$r['student_id'];
+                $paymentsForStudent = 0.0;
+                if ($paymentsExists) {
+                    // If payments linked to fees only, sum any payments by student_id directly if the column exists.
+                    if (columnExists($conn, 'payments', 'student_id')) {
+                        $res2 = $conn->query("SELECT IFNULL(SUM(amount),0) AS totp FROM payments WHERE student_id = {$sid}");
+                        if ($res2 && $rp = $res2->fetch_assoc()) {
+                            $paymentsForStudent = (float)$rp['totp'];
+                        }
+                    } else {
+                        $paymentsForStudent = 0.0;
+                    }
+                }
+                $r['total_fees'] = null;
+                // Use grade mapping for total fee (when grade present)
+                if ($hasGradeColumn && isGradeProvided($r['grade'])) {
+                    $mappedFee = getFeeForGrade($r['grade'], $gradeFeeMap);
+                    $r['total_fees'] = ($mappedFee !== null) ? round((float)$mappedFee, 2) : round((float)FIXED_TOTAL_FEE, 2);
+                } else {
+                    // No grade column or no grade given -> leave null (we can't set fee)
+                    $r['total_fees'] = null;
+                }
+
+                $r['total_payments'] = round($paymentsForStudent, 2);
+                $r['balance'] = is_null($r['total_fees']) ? null : round(($r['total_fees'] - $r['total_payments']), 2);
+                $balances[] = $r;
+            }
+        }
+    } else {
+        $errorMsg = 'Failed to fetch per-fee balances. Check the database structure and permissions.';
+    }
+
+} else if ($feesExists && $paymentsExists && $paymentsHasFeeId) {
+    // If fees exist but either amount is missing or fees aren't grouped above,
+    // fallback to student-level sums while excluding categories. This preserves earlier behavior.
+    $sql = "
         SELECT s.id AS student_id,
                {$studentNameExpr} AS student_name,
                {$gradeExpr} AS grade,
-               " . FIXED_TOTAL_FEE . " AS total_fees,
+               0 AS total_fees,
                IFNULL((
                    SELECT SUM(p.amount)
                    FROM payments p
@@ -90,7 +196,7 @@ if ($feesExists) {
                    WHERE f2.student_id = s.id
                      AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')
                ), 0) AS total_payments,
-               " . FIXED_TOTAL_FEE . " - IFNULL((
+               0 - IFNULL(( 
                    SELECT SUM(p.amount)
                    FROM payments p
                    JOIN fees f2 ON p.fee_id = f2.id
@@ -100,70 +206,48 @@ if ($feesExists) {
         FROM students s
         GROUP BY s.id
         ORDER BY student_name ASC
-        ";
-        $result = $conn->query($sql);
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $balances[] = $row;
-            }
-        } else {
-            $errorMsg = 'Failed to fetch balances (DB query error). Check the database structure and permissions.';
-        }
-    } else if ($paymentsExists && $paymentsHasStudentId) {
-        // payments by student fallback; total_fees fixed to FIXED_TOTAL_FEE
-        $sql = "
-        SELECT s.id AS student_id,
-               {$studentNameExpr} AS student_name,
-               {$gradeExpr} AS grade,
-               " . FIXED_TOTAL_FEE . " AS total_fees,
-               IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id ), 0) AS total_payments,
-               " . FIXED_TOTAL_FEE . " - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
-        FROM students s
-        GROUP BY s.id
-        ORDER BY student_name ASC
-        ";
-        $result = $conn->query($sql);
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $balances[] = $row;
-            }
-            // note: when payments are only by student_id we cannot exclude payments belonging to excluded fee categories
-            $errorMsg = ($errorMsg ? $errorMsg . ' ' : '') . 'Payments are summed by student; payments may include amounts for categories excluded from fee totals.';
-        } else {
-            $errorMsg = 'Failed to fetch balances (DB query error); payments table exists but lacks fee_id.';
+    ";
+    $result = $conn->query($sql);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $balances[] = $row;
         }
     } else {
-        // No payments table, total_paid is 0; total_fees fixed to FIXED_TOTAL_FEE
-        $sql = "
-        SELECT s.id AS student_id,
-               {$studentNameExpr} AS student_name,
-               {$gradeExpr} AS grade,
-               " . FIXED_TOTAL_FEE . " AS total_fees,
-               0 AS total_payments,
-               " . FIXED_TOTAL_FEE . " AS balance
-        FROM students s
-        GROUP BY s.id
-        ORDER BY student_name ASC
-        ";
-        $result = $conn->query($sql);
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $balances[] = $row;
-            }
-        } else {
-            $errorMsg = 'Failed to compute balances. Database read error or permissions issue.';
+        $errorMsg = 'Failed to fetch balances (student-level fallback).';
+    }
+
+} else if ($feesExists && $paymentsExists && $paymentsHasStudentId) {
+    // payments by student fallback; total_fees by grade mapping if available
+    $sql = "
+    SELECT s.id AS student_id,
+           {$studentNameExpr} AS student_name,
+           {$gradeExpr} AS grade,
+           0 AS total_fees,
+           IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id ), 0) AS total_payments,
+           0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
+    FROM students s
+    GROUP BY s.id
+    ORDER BY student_name ASC
+    ";
+    $result = $conn->query($sql);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $balances[] = $row;
         }
+        $errorMsg = ($errorMsg ? $errorMsg . ' ' : '') . 'Payments are summed by student; payments may include amounts for categories excluded from fee totals.';
+    } else {
+        $errorMsg = 'Failed to fetch balances (DB query error); payments table exists but lacks fee_id.';
     }
 } else {
-    // fees table missing — fallback using payments by student; total_fees fixed to FIXED_TOTAL_FEE
+    // No fees table — fallback using payments by student; compute per student using grade mapping or null if no grade
     if ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
         $sql = "
             SELECT s.id AS student_id,
                    {$studentNameExpr} AS student_name,
                    {$gradeExpr} AS grade,
-                   " . FIXED_TOTAL_FEE . " AS total_fees,
+                   0 AS total_fees,
                    IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id ), 0) AS total_payments,
-                   " . FIXED_TOTAL_FEE . " - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
+                   0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
             FROM students s
             GROUP BY s.id
             ORDER BY student_name ASC
@@ -177,19 +261,120 @@ if ($feesExists) {
             $errorMsg = 'Failed to fetch payments by student.';
         }
 
-        $errorMsg = 'The "fees" table was not found; total fees are shown as fixed 15,000 and payments (if available) were computed. Ensure the fees table exists to calculate fees from records if desired.';
+        $errorMsg = $errorMsg ? $errorMsg : '';
     } else {
         $errorMsg = 'Unable to compute balances: required "payments" table is missing or has unexpected columns. Check your database schema.';
     }
 }
 
 // Normalize numeric fields to floats and round
+// (Replace the normalization block to ALWAYS recompute balance from the mapped total fee.)
+$gradeFeeMap = [
+    'kinder 1' => 29050.00,
+    'kinder 2' => 29050.00,
+    'grade 1'  => 29550.00,
+    'grade 2'  => 29650.00,
+    'grade 3'  => 29650.00,
+    'grade 4'  => 30450.00,
+    'grade 5'  => 30450.00,
+    'grade 6'  => 30450.00,
+];
+
+/**
+ * Normalize a grade key by:
+ *  1. Converting it to lowercase
+ *  2. Removing any non-alphanumeric characters except for spaces
+ *  3. Collapsing any whitespace to a single space
+ *  4. Trimming any leading or trailing whitespace
+ * This allows for more flexible matching of grade keys.
+ * @param string $g The grade key to normalize.
+ * @return string The normalized grade key.
+ */
+function normalizeGradeKey($g) {
+    $g = strtolower(trim((string)$g));
+    $g = preg_replace('/[^a-z0-9 ]+/', ' ', $g);
+    $g = preg_replace('/\s+/', ' ', $g);
+    return trim($g);
+}
+
+function getFeeForGrade($gradeVal, $gradeFeeMap) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return null;
+
+    // Prefer kinder detection first (handles "k1", "k 1", "kg1", "kinder 1", etc.)
+    if (preg_match('/\b(?:k|kg|kinder|kindergarten)\s*([12])\b/i', $g, $m)) {
+        $key = 'kinder ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // Recognize explicit grade words with optional spacing (g1, gr1, grade1, grade 1, etc.)
+    if (preg_match('/\b(?:g|gr|grade)\s*([1-6])\b/i', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // If it has a standalone digit 1-6, treat as Grade X
+    if (preg_match('/\b([1-6])\b/', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+
+    // Direct exact mapping (e.g. "kinder 1" spelled out in the DB)
+    if (isset($gradeFeeMap[$g])) return $gradeFeeMap[$g];
+
+    // If not matched, return null to signal fallback
+    return null;
+}
+
+// Helper: treat some common placeholders / blank values as "grade not set"
+function isGradeProvided($gradeVal) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return false;
+    $sentinels = ['not set', 'not-set', 'n/a', 'na', 'none', 'unknown', 'null', '-', '—', 'notset'];
+    return !in_array($g, $sentinels, true);
+}
+
 foreach ($balances as &$b) {
-    $b['total_fees'] = (float)($b['total_fees'] ?? 0);
-    $b['total_payments'] = (float)($b['total_payments'] ?? 0);
-    $b['balance'] = round((float)($b['balance'] ?? ($b['total_fees'] - $b['total_payments'])), 2);
+    $gradeVal = isset($b['grade']) ? (string)$b['grade'] : '';
+
+    if ($hasGradeColumn && $gradeColumnName) {
+        // If grade is not set at all, show no fee & no balance
+        if (!isGradeProvided($gradeVal)) {
+            $b['total_fees'] = null; // purposely blank / unknown
+            $b['total_payments'] = round((float)($b['total_payments'] ?? 0), 2);
+            $b['balance'] = null; // can't compute balance without a fee
+        } else {
+            // Grade present: map it to a fee
+            $mappedFee = getFeeForGrade($gradeVal, $gradeFeeMap);
+            $b['total_fees'] = round((float)($mappedFee ?? FIXED_TOTAL_FEE), 2);
+            $b['total_payments'] = round((float)($b['total_payments'] ?? 0), 2);
+            $b['balance'] = round($b['total_fees'] - $b['total_payments'], 2);
+        }
+    } else {
+        // No grade column at all -> keep existing behavior (use fallback or preexisting value)
+        $b['total_fees'] = round((float)($b['total_fees'] ?? FIXED_TOTAL_FEE), 2);
+        $b['total_payments'] = round((float)($b['total_payments'] ?? 0), 2);
+        $b['balance'] = round($b['total_fees'] - $b['total_payments'], 2);
+    }
 }
 unset($b);
+
+// Adjust totals: exclude rows without a defined total_fees / balance
+$totalAllocatedAll = 0.0;
+$totalPaidAll = 0.0;
+$totalBalanceAll = 0.0;
+if (!empty($balances)) {
+    foreach ($balances as $r) {
+        if (isset($r['total_fees']) && $r['total_fees'] !== null) {
+            $totalAllocatedAll += (float)$r['total_fees'];
+        }
+        // Always sum what has been paid
+        $totalPaidAll += (float)($r['total_payments'] ?? 0);
+        if (isset($r['balance']) && $r['balance'] !== null) {
+            $totalBalanceAll += (float)$r['balance'];
+        }
+    }
+}
 
 // ----- New: Fetch distinct grades to build grade buttons (if column exists) -----
 $grades = [];
@@ -655,7 +840,7 @@ if (!empty($balances)) {
 
 					<div class="card">
 						<div class="card-header">
-							<h3 class="card-title">Students balances (excluding Other Fees & Scholarships)</h3>
+							<h3 class="card-title">Students balances</h3>
 						</div>
 						<div class="card-body table-responsive p-0">
 							<table class="table table-hover table-striped">
@@ -682,21 +867,24 @@ if (!empty($balances)) {
 											<tr id="student-row-<?= $studentId ?>" data-grade="<?= htmlspecialchars($gradeVal, ENT_QUOTES) ?>">
 												<td><?= $i + 1 ?></td>
 												<td><?= htmlspecialchars($row['student_name']) ?></td>
-												<td class="text-right" id="total-fees-<?= $studentId ?>"><?= number_format((float)$row['total_fees'], 2) ?></td>
-												<td class="text-right" id="total-paid-<?= $studentId ?>"><?= number_format((float)$row['total_payments'], 2) ?></td>
-												<td class="text-right <?= $balance > 0 ? 'text-danger' : 'text-success' ?>" id="balance-<?= $studentId ?>">
-													<?= number_format($balance, 2) ?>
-												</td>
+												<td class="text-right" id="total-fees-<?= $studentId ?>">
+                                                    <?= is_null($row['total_fees']) ? '—' : number_format((float)$row['total_fees'], 2) ?>
+                                                </td>
+                                                <td class="text-right" id="total-paid-<?= $studentId ?>"><?= number_format((float)$row['total_payments'], 2) ?></td>
+                                                <td class="text-right <?= is_null($row['balance']) ? '' : ($balance > 0 ? 'text-danger' : 'text-success') ?>" id="balance-<?= $studentId ?>">
+                                                    <?= is_null($row['balance']) ? '—' : number_format($balance, 2) ?>
+                                                </td>
 												<td><?= $gradeDisplay ?></td>
 												<td>
 													<button
 														class="btn-manage"
 														type="button"
+														<?= is_null($row['total_fees']) ? 'disabled title="Grade not set — assign grade to enable actions"' : '' ?>
 														data-student-id="<?= $studentId ?>"
 														data-student-name="<?= $studentName ?>"
-														data-total-fees="<?= (float)$row['total_fees'] ?>"
+														data-total-fees="<?= is_null($row['total_fees']) ? '' : (float)$row['total_fees'] ?>"
 														data-total-paid="<?= (float)$row['total_payments'] ?>"
-														data-balance="<?= $balance ?>"
+														data-balance="<?= is_null($row['balance']) ? '' : $balance ?>"
 													>Manage</button>
 												</td>
 											</tr>
@@ -843,13 +1031,39 @@ if (!empty($balances)) {
 		const modalSubmit = document.getElementById('modalSubmit');
 		const modalCancel = document.getElementById('modalCancel');
 
+		// Read fixed default fee from PHP for client-side use (optional)
+		const FIXED_TOTAL_FEE_JS = <?php echo json_encode((float)FIXED_TOTAL_FEE, JSON_NUMERIC_CHECK); ?>;
+
 		let activeStudentId = null;
+
+		function parseCurrencyCell(node) {
+			if (!node) return 0;
+			const txt = (node.textContent || '').replace(/,/g,'').trim();
+			if (txt === '—' || txt === '—' || txt === '' || txt === '—') return NaN;
+			const v = parseFloat(txt);
+			return isNaN(v) ? NaN : v;
+		}
 
 		function openModal(studentId, studentName, totalFees, totalPaid) {
 			activeStudentId = studentId;
 			modalStudentName.textContent = studentName;
-			modalTotalFee.textContent = parseFloat(totalFees).toFixed(2);
-			modalTotalPaid.textContent = parseFloat(totalPaid).toFixed(2);
+
+			// Use localized formatting to show the fee with thousands separator and 2 decimals.
+			// If totalFees missing/blank, display '—' and disable Save.
+			const totalFeesNum = (totalFees === '' || totalFees === null) ? NaN : Number(totalFees);
+			if (!isFinite(totalFeesNum) || totalFeesNum <= 0) {
+				modalTotalFee.textContent = '—';
+				// If no fee, we still show paid amount but disable saving a payment (no total_fees to compare)
+				modalTotalPaid.textContent = Number(totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalSubmit.disabled = true;
+				modalAmount.disabled = true;
+			} else {
+				modalTotalFee.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalTotalPaid.textContent = Number(totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalSubmit.disabled = false;
+				modalAmount.disabled = false;
+			}
+
 			modalAmount.value = '';
 			modalError.style.display = 'none';
 			modalBackdrop.classList.add('show');
@@ -867,7 +1081,7 @@ if (!empty($balances)) {
 			if (el.matches('.btn-manage')) {
 				const sid = el.getAttribute('data-student-id');
 				const studentName = el.getAttribute('data-student-name') || 'Student';
-				const totalFees = el.getAttribute('data-total-fees') || '0';
+				const totalFees = el.getAttribute('data-total-fees') || '';
 				const totalPaid = el.getAttribute('data-total-paid') || '0';
 				openModal(sid, studentName, totalFees, totalPaid);
 			}
@@ -879,6 +1093,9 @@ if (!empty($balances)) {
 		});
 
 		modalSubmit.addEventListener('click', async function() {
+			// Guard: Do not submit if no fee defined
+			if (modalSubmit.disabled) return;
+
 			// Validate
 			modalError.style.display = 'none';
 			const val = modalAmount.value.trim();
@@ -901,32 +1118,73 @@ if (!empty($balances)) {
 				if (!res.ok) {
 					throw new Error(data.message || 'Server error');
 				}
-				// Success -> update row UI
+
+				// Success -> update row UI (use DOM cells to be robust)
 				const sid = activeStudentId;
 				const totalPaidTD = document.getElementById('total-paid-' + sid);
 				const balanceTD = document.getElementById('balance-' + sid);
-				if (data.totals) {
-					const totalFees = parseFloat(data.totals.total_fees || '0');
-					const totalPaid = parseFloat(data.totals.total_payments || '0');
-					const balance = parseFloat(data.totals.balance || (totalFees - totalPaid));
-					// Update DOM (formatted)
-					totalPaidTD.textContent = totalPaid.toFixed(2);
-					balanceTD.textContent = balance.toFixed(2);
-					// Update color based on sign (balance > 0 => owing, else green)
-					if (balance > 0) {
-						balanceTD.classList.remove('text-success');
-						balanceTD.classList.add('text-danger');
-					} else {
-						balanceTD.classList.remove('text-danger');
-						balanceTD.classList.add('text-success');
-					}
-					// Also update dataset attributes on Manage button for subsequent opens
-					const rowBtn = document.querySelector('button.btn-manage[data-student-id="' + sid + '"]');
-					if (rowBtn) {
-						rowBtn.setAttribute('data-total-paid', totalPaid);
-						rowBtn.setAttribute('data-balance', balance);
+				const totalFeesTD = document.getElementById('total-fees-' + sid);
+
+				// Use DOM to determine the total fee (trust page mapping). Fallback to server value only if DOM cannot provide numeric fee.
+				let domTotalFees = parseCurrencyCell(totalFeesTD);
+				if (!isFinite(domTotalFees)) domTotalFees = NaN;
+
+				// Use server-supplied total_payments when provided; otherwise compute locally
+				let totalPaidNum = NaN;
+				if (data.totals && typeof data.totals.total_payments !== 'undefined') {
+					const parsedServerPaid = parseFloat(data.totals.total_payments);
+					if (!isNaN(parsedServerPaid)) totalPaidNum = parsedServerPaid;
+				}
+				if (!isFinite(totalPaidNum)) {
+					// fallback to existing UI value plus amount
+					let domTotalPaid = parseCurrencyCell(totalPaidTD);
+					if (!isFinite(domTotalPaid)) domTotalPaid = 0;
+					totalPaidNum = domTotalPaid + amount;
+				}
+
+				// Determine total fee - prefer DOM (map-based value displayed) unless it's not available
+				let totalFeesNum = domTotalFees;
+				if (!isFinite(totalFeesNum)) {
+					// If dom doesn't have a fee, try server response
+					if (data.totals && typeof data.totals.total_fees !== 'undefined') {
+						const parsedServerFee = parseFloat(data.totals.total_fees);
+						if (!isNaN(parsedServerFee)) totalFeesNum = parsedServerFee;
 					}
 				}
+
+				// If still no numeric fee -> treat as 0 for computation (but this shouldn't happen since Manage is disabled for those)
+				if (!isFinite(totalFeesNum)) totalFeesNum = 0;
+
+				// Compute balance strictly as total_fees - total_payments
+				const balanceNum = roundTo2(totalFeesNum - totalPaidNum);
+
+				// Update DOM formatted (keep thousands and decimals)
+				totalFeesTD.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+				totalPaidTD.textContent = totalPaidNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+				balanceTD.textContent = balanceNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+				// Update color based on sign
+				if (balanceNum > 0) {
+					balanceTD.classList.remove('text-success');
+					balanceTD.classList.add('text-danger');
+				} else {
+					balanceTD.classList.remove('text-danger');
+					balanceTD.classList.add('text-success');
+				}
+
+				// Update dataset attributes on the Manage button for subsequent opens (including total fees)
+				const rowBtn = document.querySelector('button.btn-manage[data-student-id="' + sid + '"]');
+				if (rowBtn) {
+					rowBtn.setAttribute('data-total-paid', totalPaidNum);
+					rowBtn.setAttribute('data-balance', balanceNum);
+					// keep total-fees dataset consistent with DOM value
+					rowBtn.setAttribute('data-total-fees', totalFeesNum);
+				}
+
+				// Update modal totalPaid and totalFee displays (optional)
+				modalTotalFee.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalTotalPaid.textContent = totalPaidNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 				closeModal();
 			} catch (err) {
 				console.error(err);
@@ -936,6 +1194,11 @@ if (!empty($balances)) {
 				modalSubmit.disabled = false;
 			}
 		});
+
+		// Helper to round to 2 decimal places consistently
+		function roundTo2(v) {
+			return Math.round((v + Number.EPSILON) * 100) / 100;
+		}
 	})();
 
 	// New: simple grade sorting via dropdown select
