@@ -512,10 +512,11 @@
     <nav>
         <div class="logo">Glorious God's Family Christian School</div>
         <div class="nav-links">
-            <a href="#about">Our Mission</a>
-            <a href="#programs">Programs</a>
-             <a href="#pro">About Us</a>
-             <a href="#pro">Events</a>
+            <a href="index.php">Home</a>
+            <a href="program.php">Programs</a>
+             <a href="Event.php">Events</a>
+             <a href="index.php">Contact Us</a>
+             
              
             
             

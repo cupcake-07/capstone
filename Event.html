@@ -27,12 +27,14 @@
    	  	  </div>
    	  	  <div class="menu">
    	  	  	 <ul>
-   	  	  	 	<li><a href="#">home</a></li>
-   	  	  	 	<li><a href="#about_us">about us</a></li>
-   	  	  	 	<li><a href="#career">Events</a></li>
-   	  	  	 	<li><a href="#job_criteria">Programs </a></li>
-   	  	  	    <li><a href="#how">how it works</a></li>
-   	  	  	 	<li><a href="#contact_us">contact us</a></li>
+   	  	  	 	<li><a href="index.php">home</a></li>
+   	  	  	 	
+   	  	  	 	<li><a href="Event.php">Events</a></li>
+   	  	  	 	<li><a href="program.php">Programs </a></li>
+              <li><a href="index.php">Contact Us</a></li>
+   	  	  	    
+   	  	  	 	
+   	  	  	 	<li class="login-nav"><a href="login.php">Login</a></li>
    	  	  	 </ul>
    	  	  </div>
    	  </div>
@@ -56,7 +58,7 @@
 
    <!--------------------About_us-start--------------------->
      <div class="about-section" id="about_us">
-     	
+     	 
 
      <div class="sub abs-photo">
 
@@ -74,7 +76,7 @@
 
    </div>
 
-  
+   
 
         <marquee scrollamount="10" onmouseover="this.stop()" onmouseout="this.start()" aria-hidden="true">
      	 <div class="marq" aria-hidden="true">
@@ -105,58 +107,7 @@
   <!----------------------career_end----------------->
 
   <!------------skills_start---------------->
-   <div class="skill-section" id="job_criteria">
-   	  <h1 style="font-family: Montserrat; text-align:center;">Programs & Activities</h1>
-
-      <div class="skill-box">
-          <span>1</span>
-          <h2>Reading & Literacy</h2>
-          <p>Fun, guided reading sessions and phonics instruction to help young readers build strong literacy skills.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>2</span>
-          <h2>Math & Numeracy</h2>
-          <p>Hands-on activities and games to build number sense, counting, and basic problem-solving.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>3</span>
-          <h2>Science Explorers</h2>
-          <p>Age-appropriate experiments and nature projects to spark curiosity about the world.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>4</span>
-          <h2>Arts & Crafts</h2>
-          <p>Creative art projects and craft activities that encourage expression and fine motor skills.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>5</span>
-          <h2>Music & Movement</h2>
-          <p>Interactive music lessons and movement sessions that build coordination and rhythm.</p>
-      </div>
-
-     <div class="skill-box">
-          <span>6</span>
-          <h2>Physical Education</h2>
-          <p>Fun, safe games and activities that promote physical health and sportsmanship.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>7</span>
-          <h2>Social Studies & Culture</h2>
-          <p>Engaging lessons on communities, cultures, history, and geography that help children understand the world around them.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>8</span>
-          <h2>Library & Storytime</h2>
-          <p>Daily story sessions and library time to develop listening skills and a love for books.</p>
-      </div>
-
-   </div>
+   
   <!------------skills_end---------------->
 
   <!------------form_start-------------------->
@@ -294,15 +245,13 @@
                 <a href="https://www.facebook.com/GloriousgfcsiCluster2" target="_blank" rel="noopener"><i class="fa fa-facebook"></i></a>
                 <a href="mailto:arnel.shin@gmail.com"><i class="fa fa-envelope"></i></a>
                 <!-- apply teacher button (opens modal) -->
-                <button id="applyTeacherBtn" class="fb-btn" type="button" aria-controls="apply_teacher_modal" aria-haspopup="dialog" aria-expanded="false" title="Apply as Teacher">Apply</button>
+                
             </div>
 
-            <div style="margin-top:10px; text-align:center;">
-                <a href="inquiries.php" style="color: #fff; text-decoration: underline;">View Inquiries</a>
-            </div>
+          
 
              <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-angle-double-up"></i></a>
+                <a href="#top"><i class="fa fa-caret-up"></i></a>	 
              </div>
 
         </footer>
@@ -483,6 +432,8 @@
       applyTeacherForm.addEventListener('reset', function () { applyTeacherStatus.textContent = ''; applyTeacherStatus.classList.remove('error'); });
     }
 
+    // LOGIN modal variables removed - now using direct navigation
+
   }); // end DOMContentLoaded
   </script>
   <!------------javascript code end---------------->
@@ -499,59 +450,24 @@
           <input id="inqName" name="name" type="text" placeholder="Your name (optional)">
         </div>
         <div class="infield input-field">
-          <label for="inqEmail">Email Address</label>
-          <input id="inqEmail" name="email" type="email" placeholder="you@example.com" required>
-        </div>
-        <div class="infield input-field">
-          <label for="inqMessage">Your Question</label>
-          <textarea id="inqMessage" name="message" placeholder="Write your question here..." required></textarea>
+          <label for="inqEmail">Email Address</label>bel>
+          <input id="inqEmail" name="email" type="email" placeholder="you@example.com" required>quired>
+        </div>   </div>
+        <div class="infield input-field">t-field">
+          <label for="inqMessage">Your Question</label>ge">Your Question</label>
+          <textarea id="inqMessage" name="message" placeholder="Write your question here..." required></textarea>message" placeholder="Write your question here..." required></textarea>
         </div>
         <div class="input-field">
-          <input type="reset" class="reset" value="Clear">
+          <input type="reset" class="reset" value="Clear">"Clear">
           <input type="submit" class="submit gradient-btn" value="Send Inquiry">
         </div>
         <div id="inquireStatus" aria-live="polite"></div>
-      </form>
+      </form> </form>
     </div>
   </div>
 </div>
 
-<!-- Apply as Teacher modal structure -->
-<div class="container apply-teacher" id="apply_teacher_modal" data-admin-email="arnel.shin@gmail.com" aria-hidden="true" role="dialog" aria-labelledby="applyTeacherTitle" tabindex="-1">
-  <div class="cancel" id="applyTeacherClose" aria-label="Close apply as teacher dialog">X</div>
-  <div class="box" role="document">
-    <div class="input-group">
-      <h1 id="applyTeacherTitle">APPLY AS TEACHER</h1>
-      <form id="applyTeacherForm" class="form" novalidate action="mailto:arnel.shin@gmail.com">
-        <div class="infield input-field">
-          <label for="appName">Full Name</label>
-          <input id="appName" name="name" type="text" placeholder="Your full name" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appEmail">Email Address</label>
-          <input id="appEmail" name="email" type="email" placeholder="you@example.com" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appQualifications">Qualifications</label>
-          <input id="appQualifications" name="qualifications" type="text" placeholder="e.g., Bachelor's in Education" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appExperience">Years of Experience</label>
-          <input id="appExperience" name="experience" type="text" placeholder="e.g., 5 years" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appMessage">Additional Message</label>
-          <textarea id="appMessage" name="message" placeholder="Tell us why you'd like to join our team..." required></textarea>
-        </div>
-        <div class="input-field">
-          <input type="reset" class="reset" value="Clear">
-          <input type="submit" class="submit gradient-btn" value="Submit Application">
-        </div>
-        <div id="applyTeacherStatus" aria-live="polite"></div>
-      </form>
-    </div>
-  </div>
-</div>
+
 
 </body>
 </html>

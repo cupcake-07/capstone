@@ -27,12 +27,14 @@
    	  	  </div>
    	  	  <div class="menu">
    	  	  	 <ul>
-   	  	  	 	<li><a href="#">home</a></li>
-   	  	  	 	<li><a href="#about_us">about us</a></li>
-   	  	  	 	<li><a href="#career">Events</a></li>
-   	  	  	 	<li><a href="#job_criteria">Programs </a></li>
-   	  	  	    <li><a href="#how">how it works</a></li>
-   	  	  	 	<li><a href="#contact_us">contact us</a></li>
+   	  	  	 	<li><a href="index.php">home</a></li>
+   	  	  	 	
+   	  	  	 	<li><a href="Event.php">Events</a></li>
+   	  	  	 	<li><a href="program.php">Programs </a></li>
+              <li><a href="index.php">Contact Us</a></li>
+   	  	  	    
+   	  	  	 	
+   	  	  	 	<li class="login-nav"><a href="login.php">Login</a></li>
    	  	  	 </ul>
    	  	  </div>
    	  </div>
@@ -56,7 +58,7 @@
 
    <!--------------------About_us-start--------------------->
      <div class="about-section" id="about_us">
-     	 <h1>About us</h1>
+     	 
 
      <div class="sub abs-photo">
 
@@ -74,43 +76,7 @@
 
    </div>
 
-   <section class="mission-section" id="mission" data-anim="slide-up">
-     <div class="mission-inner">
-       <article class="mission-card" data-anim="fade-in">
-		 <div class="mission-icon" aria-hidden="true"><i class="fa fa-bullseye"></i></div>
-         <div class="mission-body">
-           <h3>Mission</h3>
-           <p>
-             1. Above all else, to promote to our pupils the Word of God in their academic learning and to develop a godly behavioral perspective.<br>
-             2. To facilitate all aspects of academic learning required in elementary education that will prepare pupils for higher academic levels.<br>
-             3. To hone their God-given talents and excellence for the glory of God.
-           </p>
-         </div>
-       </article>
-
-       <article class="mission-card" data-anim="fade-in">
-		 <div class="mission-icon" aria-hidden="true"><i class="fa fa-eye"></i></div>
-         <div class="mission-body">
-           <h3>Vision</h3>
-           <p>
-             A recognized Christian school dedicated to promoting faith in God, developing godly character, and facilitating academic learning, innovation, and excellence.
-           </p>
-         </div>
-       </article>
-
-       <article class="mission-card" data-anim="fade-in">
-		 <div class="mission-icon" aria-hidden="true"><i class="fa fa-book"></i></div>
-         <div class="mission-body">
-           <h3>Philosophy</h3>
-           <p>
-             FAITH – CHARACTER – EXCELLENCE<br>
-             Train up the child in the way he should go; and when he is old he will not depart from it. – Proverbs 22:6<br>
-             "Your word is a lamp to my feet and a light to my path." – Psalm 119:105
-           </p>
-         </div>
-       </article>
-     </div>
-   </section>
+   
 
         <marquee scrollamount="10" onmouseover="this.stop()" onmouseout="this.start()" aria-hidden="true">
      	 <div class="marq" aria-hidden="true">
@@ -137,95 +103,11 @@
   <!--------------------About_us-end--------------------->
 
   <!----------------------career_start----------------->
-    <div class="career-section" id="career">
-    	 <h1 style="font-family:Montserrat;">Student Programs</h1>
-
-          <div class="sect">
-
-    	  <div class="box">
-           	 <div class="icon"><i class="fa fa-graduation-cap"></i></div>
-           	 <h2>Academic Programs</h2>
-           	 <p>Strong foundational lessons in reading, writing, and math, using hands-on activities and age‑appropriate technology to build learning confidence.</p>
-           </div>
-
-           <div class="box">
-           	 <div class="icon"><i class="fa fa-music"></i></div>
-           	 <h2>Clubs & Activities</h2>
-           	 <p>After-school clubs, arts, music, and sports programs that foster creativity, teamwork, and healthy habits.</p>
-           </div>
-
-           <div class="box">
-           	 <div class="icon"><i class="fa fa-trophy"></i></div>
-           	 <h2>Student Achievements</h2>
-           	 <p>Recognition for academic progress, character awards, and celebrations of student accomplishments throughout the year.</p>
-           </div>
-
-           <div class="box">
-           	 <div class="icon"><i class="fa fa-heart"></i></div>
-           	 <h2>Student Support</h2>
-           	 <p>Guidance, counseling, and family engagement to nurture each child's social and emotional well‑being.</p>
-           </div>
-
-      </div>
-
-    	 <p class="para"><em>"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
-
-    </div>
+    
   <!----------------------career_end----------------->
 
   <!------------skills_start---------------->
-   <div class="skill-section" id="job_criteria">
-   	  <h1 style="font-family: Montserrat; text-align:center;">Programs & Activities</h1>
-
-      <div class="skill-box">
-          <span>1</span>
-          <h2>Reading & Literacy</h2>
-          <p>Fun, guided reading sessions and phonics instruction to help young readers build strong literacy skills.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>2</span>
-          <h2>Math & Numeracy</h2>
-          <p>Hands-on activities and games to build number sense, counting, and basic problem-solving.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>3</span>
-          <h2>Science Explorers</h2>
-          <p>Age-appropriate experiments and nature projects to spark curiosity about the world.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>4</span>
-          <h2>Arts & Crafts</h2>
-          <p>Creative art projects and craft activities that encourage expression and fine motor skills.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>5</span>
-          <h2>Music & Movement</h2>
-          <p>Interactive music lessons and movement sessions that build coordination and rhythm.</p>
-      </div>
-
-     <div class="skill-box">
-          <span>6</span>
-          <h2>Physical Education</h2>
-          <p>Fun, safe games and activities that promote physical health and sportsmanship.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>7</span>
-          <h2>Social Studies & Culture</h2>
-          <p>Engaging lessons on communities, cultures, history, and geography that help children understand the world around them.</p>
-      </div>
-
-      <div class="skill-box">
-          <span>8</span>
-          <h2>Library & Storytime</h2>
-          <p>Daily story sessions and library time to develop listening skills and a love for books.</p>
-      </div>
-
-   </div>
+   
   <!------------skills_end---------------->
 
   <!------------form_start-------------------->
@@ -363,16 +245,10 @@
                 <a href="https://www.facebook.com/GloriousgfcsiCluster2" target="_blank" rel="noopener"><i class="fa fa-facebook"></i></a>
                 <a href="mailto:arnel.shin@gmail.com"><i class="fa fa-envelope"></i></a>
                 <!-- apply teacher button (opens modal) -->
-                <button id="applyTeacherBtn" class="fb-btn" type="button" aria-controls="apply_teacher_modal" aria-haspopup="dialog" aria-expanded="false" title="Apply as Teacher">Apply</button>
+                
             </div>
 
-            <div style="margin-top:10px; text-align:center;">
-                <a href="inquiries.php" style="color: #fff; text-decoration: underline;">View Inquiries</a>
-            </div>
-
-             <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-angle-double-up"></i></a>
-             </div>
+          
 
         </footer>
 
@@ -552,6 +428,8 @@
       applyTeacherForm.addEventListener('reset', function () { applyTeacherStatus.textContent = ''; applyTeacherStatus.classList.remove('error'); });
     }
 
+    // LOGIN modal variables removed - now using direct navigation
+
   }); // end DOMContentLoaded
   </script>
   <!------------javascript code end---------------->
@@ -585,42 +463,7 @@
   </div>
 </div>
 
-<!-- Apply as Teacher modal structure -->
-<div class="container apply-teacher" id="apply_teacher_modal" data-admin-email="arnel.shin@gmail.com" aria-hidden="true" role="dialog" aria-labelledby="applyTeacherTitle" tabindex="-1">
-  <div class="cancel" id="applyTeacherClose" aria-label="Close apply as teacher dialog">X</div>
-  <div class="box" role="document">
-    <div class="input-group">
-      <h1 id="applyTeacherTitle">APPLY AS TEACHER</h1>
-      <form id="applyTeacherForm" class="form" novalidate action="mailto:arnel.shin@gmail.com">
-        <div class="infield input-field">
-          <label for="appName">Full Name</label>
-          <input id="appName" name="name" type="text" placeholder="Your full name" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appEmail">Email Address</label>
-          <input id="appEmail" name="email" type="email" placeholder="you@example.com" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appQualifications">Qualifications</label>
-          <input id="appQualifications" name="qualifications" type="text" placeholder="e.g., Bachelor's in Education" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appExperience">Years of Experience</label>
-          <input id="appExperience" name="experience" type="text" placeholder="e.g., 5 years" required>
-        </div>
-        <div class="infield input-field">
-          <label for="appMessage">Additional Message</label>
-          <textarea id="appMessage" name="message" placeholder="Tell us why you'd like to join our team..." required></textarea>
-        </div>
-        <div class="input-field">
-          <input type="reset" class="reset" value="Clear">
-          <input type="submit" class="submit gradient-btn" value="Submit Application">
-        </div>
-        <div id="applyTeacherStatus" aria-live="polite"></div>
-      </form>
-    </div>
-  </div>
-</div>
+
 
 </body>
 </html>

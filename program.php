@@ -397,8 +397,16 @@
 </head>
 <body>
 
-    <!-- NAVBAR - MATCHING Event.html -->
-    
+    <!-- NAVBAR - MATCHING index.php and Event.php -->
+    <nav style="position: fixed; top: 0; width: 100%; background: linear-gradient(90deg, rgba(253, 253, 253, 0.98) 0%, #f0a5e6 100%); padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="font-weight: bold; font-size: 1.5rem; color: #1a3c7a; letter-spacing: 1px; text-transform: uppercase; font-family: Montserrat, sans-serif;">Glorious God's Family Christian School</div>
+        <div style="display: flex; gap: 2rem;">
+            <a href="index.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Home</a>
+            <a href="program.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Programs</a>
+            <a href="Event.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Events</a>
+            <a href="index.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Contact Us</a>
+        </div>
+    </nav>
 
     <!-- Add top spacing for fixed navbar -->
     <div style="height: 80px;"></div>
@@ -406,28 +414,11 @@
     
 
 	<!-------------------header_start--------------------->
-    <header class="header">
-   	    <div class="nav">
-   	  	    <div class="logo">
-                <img src="Images/g2flogo.png"/>
-   	  	    </div>
-             
-   	  	    <div class="menu">
-                <ul>
-                    <li><a href="index.html">home</a></li>
-                    <li><a href="#about_us">about us</a></li>
-                    <li><a href="events.html">Events</a></li>
-                    <li><a href="program.html" class="active">Programs </a></li>
-                    <li><a href="how.html">how it works</a></li>
-                    <li><a href="#contact_us">contact us</a></li>
-                </ul>
-   	  	    </div>
-   	    </div>
-    </header>
+ 
     
   <!------------skills_start---------------->
     <div class="career-section" id="career">
-    	<h1 style="font-family:Montserrat;">Student Programs</h1>
+    	<h1 style="font-family:Montserrat; color:#EDFFF0;">Student Programs</h1>
           
             <div class="sect">
 
@@ -457,7 +448,7 @@
             </div>
        
     	 
-    	<p class="para"><em>"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
+    	<p class="para"><em style="color:#EDFFF0">"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
 
     </div>
     <div class="skill-section" id="job_criteria">
@@ -512,13 +503,5 @@
         </div>
 
     </div>
-    <!--
-    <div class="top-arrow" id="navTop">
-        <a href="#top"><i class="fa fa-arrow-up"></i></a>
-    </div>
-    -->
-             <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-caret-up"></i></a>
-             </div>
 </body>
 </html>
