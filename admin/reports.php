@@ -33,31 +33,122 @@ if ($res) {
 // --- end new ---
 
 // --- NEW: fees analytics ---
-// Keep fixed fee consistent with AccountBalance.php's constant
 define('FIXED_TOTAL_FEE', 15000.00);
 
-// Allocated total fee = studentCount * per-student allocation
-$allocatedTotal = $studentCount * FIXED_TOTAL_FEE;
-
-// determine existing payment/fees tables and payment column availability
-$paymentsTableExists = false;
-$feesTableExists = false;
-$paymentsHasFeeId = false;
-$paymentsHasStudentId = false;
-
-$res = $conn->query("SHOW TABLES LIKE 'payments'");
-if ($res && $res->num_rows > 0) $paymentsTableExists = true;
-$res = $conn->query("SHOW TABLES LIKE 'fees'");
-if ($res && $res->num_rows > 0) $feesTableExists = true;
-
-if ($paymentsTableExists) {
-    $res = $conn->query("SHOW COLUMNS FROM `payments` LIKE 'fee_id'");
-    if ($res && $res->num_rows > 0) $paymentsHasFeeId = true;
-    $res = $conn->query("SHOW COLUMNS FROM `payments` LIKE 'student_id'");
-    if ($res && $res->num_rows > 0) $paymentsHasStudentId = true;
+// Helper functions (mirrors logic in AccountBalance.php)
+function tableExists($conn, $table) {
+    $table = $conn->real_escape_string($table);
+    $res = $conn->query("SHOW TABLES LIKE '{$table}'");
+    return ($res && $res->num_rows > 0);
+}
+function columnExists($conn, $table, $column) {
+    $table = $conn->real_escape_string($table);
+    $column = $conn->real_escape_string($column);
+    $res = $conn->query("SHOW COLUMNS FROM `{$table}` LIKE '{$column}'");
+    return ($res && $res->num_rows > 0);
 }
 
-// Compute total paid with same exclusion as AccountBalance (exclude Other Fees/Scholarships if fee_id is present)
+// Determine available tables and columns (robust checks)
+$paymentsTableExists = tableExists($conn, 'payments');
+$feesTableExists = tableExists($conn, 'fees');
+$paymentsHasFeeId = $paymentsTableExists && columnExists($conn, 'payments', 'fee_id');
+$paymentsHasStudentId = $paymentsTableExists && columnExists($conn, 'payments', 'student_id');
+$feesHasAmount = $feesTableExists && columnExists($conn, 'fees', 'amount');
+$feesHasStudentId = $feesTableExists && columnExists($conn, 'fees', 'student_id');
+
+// Detect a grade column on students table
+$hasGradeColumn = false;
+$gradeColumnName = null;
+$gradeCandidates = ['grade', 'grade_level', 'level', 'class', 'year', 'class_level', 'student_level', 'section'];
+foreach ($gradeCandidates as $gc) {
+    if (columnExists($conn, 'students', $gc)) {
+        $gradeColumnName = $gc;
+        $hasGradeColumn = true;
+        break;
+    }
+}
+
+// Grade-to-fee mapping (same mapping as AccountBalance.php)
+$gradeFeeMap = [
+    'kinder 1' => 29050.00,
+    'kinder 2' => 29050.00,
+    'grade 1'  => 29550.00,
+    'grade 2'  => 29650.00,
+    'grade 3'  => 29650.00,
+    'grade 4'  => 30450.00,
+    'grade 5'  => 30450.00,
+    'grade 6'  => 30450.00,
+];
+
+function normalizeGradeKey($g) {
+    $g = strtolower(trim((string)$g));
+    $g = preg_replace('/[^a-z0-9 ]+/', ' ', $g);
+    $g = preg_replace('/\s+/', ' ', $g);
+    return trim($g);
+}
+function getFeeForGrade($gradeVal, $gradeFeeMap) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return null;
+
+    if (preg_match('/\b(?:k|kg|kinder|kindergarten)\s*([12])\b/i', $g, $m)) {
+        $key = 'kinder ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+    if (preg_match('/\b(?:g|gr|grade)\s*([1-6])\b/i', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+    if (preg_match('/\b([1-6])\b/', $g, $m)) {
+        $key = 'grade ' . intval($m[1]);
+        if (isset($gradeFeeMap[$key])) return $gradeFeeMap[$key];
+    }
+    if (isset($gradeFeeMap[$g])) return $gradeFeeMap[$g];
+    return null;
+}
+function isGradeProvided($gradeVal) {
+    $g = normalizeGradeKey($gradeVal);
+    if ($g === '') return false;
+    $sentinels = ['not set', 'not-set', 'n/a', 'na', 'none', 'unknown', 'null', '-', '—', 'notset'];
+    return !in_array($g, $sentinels, true);
+}
+
+// Compute allocated total with same precedence as AccountBalance.php
+$allocatedTotal = 0.0;
+if ($feesTableExists && $feesHasAmount && $feesHasStudentId) {
+    // Use amounts recorded in fees table (excluding Other Fees/Scholarships categories)
+    $sql = "SELECT IFNULL(SUM(f.amount), 0) AS total_allocated
+            FROM fees f
+            WHERE (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))";
+    $res = $conn->query($sql);
+    if ($res) {
+        $allocatedTotal = (float)$res->fetch_assoc()['total_allocated'];
+    } else {
+        $allocatedTotal = 0.0;
+    }
+} elseif ($hasGradeColumn && $gradeColumnName) {
+    // Map each student grade to the corresponding fee; include only students with a provided grade
+    $col = $conn->real_escape_string($gradeColumnName);
+    $res = $conn->query("SELECT IFNULL(`{$col}`, '') AS g FROM students");
+    if ($res) {
+        $sum = 0.0;
+        while ($r = $res->fetch_assoc()) {
+            $gradeVal = (string)($r['g'] ?? '');
+            if (isGradeProvided($gradeVal)) {
+                $mapped = getFeeForGrade($gradeVal, $gradeFeeMap);
+                $sum += (float)($mapped ?? FIXED_TOTAL_FEE);
+            }
+        }
+        $allocatedTotal = $sum;
+    } else {
+        // fallback if query fails
+        $allocatedTotal = $studentCount * FIXED_TOTAL_FEE;
+    }
+} else {
+    // No grade column to provide mapping: apply a fixed per-student fee to all students
+    $allocatedTotal = $studentCount * FIXED_TOTAL_FEE;
+}
+
+// Compute totalPaid following the same exclusions as AccountBalance.php
 $totalPaid = 0.0;
 if ($paymentsTableExists && $paymentsHasFeeId && $feesTableExists) {
     $sql = "SELECT IFNULL(SUM(p.amount), 0) AS total_paid
@@ -67,7 +158,7 @@ if ($paymentsTableExists && $paymentsHasFeeId && $feesTableExists) {
     $res = $conn->query($sql);
     if ($res) $totalPaid = (float)$res->fetch_assoc()['total_paid'];
 } elseif ($paymentsTableExists && $paymentsHasStudentId) {
-    // fallback - sum all payments if only student_id exists on payments
+    // fallback - sum all payments by student_id if per-fee linkage not available
     $sql = "SELECT IFNULL(SUM(amount), 0) AS total_paid FROM payments";
     $res = $conn->query($sql);
     if ($res) $totalPaid = (float)$res->fetch_assoc()['total_paid'];
