@@ -302,3 +302,268 @@
         input:checked + .toggle-slider:before {
             transform: translateX(25px); 
         }
+
+        /* Responsive adjustments for mobile view - keep layout & functions unchanged */
+@media (max-width: 768px) {
+    /* Container scales down with a smaller max-width and auto height */
+    body {
+        height: auto;
+        padding: 16px;
+        display: block;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 420px;
+        height: auto;
+        min-height: 520px;
+        border-radius: 14px;
+        overflow: visible;
+        padding-bottom: 20px;
+    }
+
+    /* Make form containers stack and be relative - no off-screen transforms */
+    .form-container {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 18px;
+        transition: none; /* keep switching logical but avoid accidental shifting on load */
+    }
+
+    /* Ensure both form panels are visible / stacked on mobile */
+    .sign-up-container,
+    .log-in-container {
+        left: 0;
+        transform: none;
+        opacity: 1;
+        z-index: 2;
+    }
+
+    form {
+        padding: 14px;
+    }
+
+    h1.signin, h1.login {
+        font-size: 20px;
+    }
+
+    .infield {
+        margin: 8px 0;
+    }
+
+    input {
+        padding: 12px 12px;
+        font-size: 14px;
+    }
+
+    label {
+        left: 0;
+        transform: none;
+        width: 100%;
+    }
+
+    /* Overlay adapts to mobile as a vertical block - doesn't hide forms */
+    .overlay-container {
+        position: relative;
+        width: 100%;
+        height: auto;
+        left: 0;
+        top: 0;
+        transform: none !important;
+        z-index: 0; /* overlay behind forms */
+    }
+
+    .overlay {
+        left: 0;
+        width: 100%;
+        height: auto;
+        transform: none !important;
+        left: 0;
+        display: block;
+        padding: 10px 16px;
+        box-sizing: border-box;
+        z-index: 0;
+        pointer-events: none; /* allow interactions on form elements above */
+    }
+
+    .overlay-panel {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 12px 12px;
+        transform: none !important;
+    }
+
+    .overlay-panel .logo {
+        max-width: 240px;
+        max-height: 240px;
+        width: 100%;
+        height: auto;
+    }
+
+    /* Hide the duplicate top overlay panel and show only the bottom one */
+    .overlay-left {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Ensure the right panel is visible and centered at the bottom */
+    .overlay-right {
+        display: flex !important;
+        visibility: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 16px !important;
+        box-sizing: border-box;
+    }
+
+    /* Make overlay container smaller and keep it behind forms */
+    .overlay {
+        width: 100% !important;
+        left: 0 !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        pointer-events: none;
+    }
+
+    /* Keep overlay-panel content readable and not duplicated */
+    .overlay-panel h1,
+    .overlay-panel p {
+        color: #fff;
+        text-align: center;
+        padding: 6px 12px;
+    }
+
+    /* Keep toggle accessible and non-intrusive on smaller screens */
+    .toggle-switch-wrapper {
+        top: 12px;
+        right: 12px;
+        left: auto;
+        padding: 6px;
+        z-index: 1001;
+    }
+
+    .toggle-switch {
+        width: 54px;
+        height: 30px;
+    }
+
+    .toggle-slider:before {
+        width: 26px;
+        height: 26px;
+        left: 3px;
+        bottom: 2px;
+    }
+
+    .toggle-slider {
+        border-radius: 30px;
+    }
+
+    /* Default mobile: show login and hide signup */
+    .log-in-container {
+        display: block;
+        opacity: 1;
+        z-index: 21; /* in front */
+        pointer-events: auto;
+        height: auto;
+    }
+    .sign-up-container {
+        display: none;
+        opacity: 0;
+        z-index: 19;
+        pointer-events: none;
+        height: 0;
+        overflow: hidden;
+        transform: none !important;
+    }
+
+    /* When toggle (container.right-panel-active) is active, show signup and hide login */
+    .container.right-panel-active .sign-up-container,
+    .right-panel-active .sign-up-container {
+        display: block;
+        opacity: 1;
+        z-index: 22; /* above overlay & login */
+        pointer-events: auto;
+        height: auto;
+        overflow: visible;
+        transform: none !important;
+    }
+    .container.right-panel-active .log-in-container,
+    .right-panel-active .log-in-container {
+        display: none;
+        opacity: 0;
+        z-index: 18;
+        pointer-events: none;
+        transform: none !important;
+    }
+
+    /* Ensure overlay stays behind the forms on mobile */
+    .overlay-container {
+        z-index: 0; /* overlay behind forms */
+    }
+
+    .overlay {
+        z-index: 0;
+        pointer-events: none; /* allow interactions on form elements above */
+    }
+
+    /* Bring form containers above overlay and ensure proper stacking */
+    .form-container {
+        z-index: 20; /* forms above overlay */
+        pointer-events: auto;
+        transform: none !important; /* prevent any transform from hiding forms */
+    }
+
+    /* Reset transforms that hide forms on mobile and avoid off-screen translation */
+    .sign-up-container,
+    .log-in-container {
+        transform: none !important;
+    }
+
+    /* Ensure the toggle remains clickable */
+    .toggle-switch-wrapper {
+        z-index: 1003;
+    }
+
+    /* Ensure buttons remain usable & legible on smaller screens */
+    .form-container button {
+        padding: 10px 26px;
+        font-size: 13px;
+    }
+
+    /* Modals: full width and centered */
+    .modal-content,
+    .reset-modal-content {
+        width: 94%;
+        max-width: 420px;
+        padding: 18px;
+        box-sizing: border-box;
+    }
+
+    .modal-form input,
+    .reset-modal-form input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Small fixes for text scaling and spacing */
+    p {
+        font-size: 13px;
+        margin: 14px 0 18px;
+    }
+
+    .overlay-panel h1 {
+        font-size: 18px;
+    }
+}
