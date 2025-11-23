@@ -304,22 +304,24 @@
         }
 
         /* Responsive adjustments for mobile view - keep layout & functions unchanged */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     /* Container scales down with a smaller max-width and auto height */
     body {
         height: auto;
-        padding: 16px;
+        padding: clamp(8px, 3vw, 20px);
         display: block;
+        width: 100%;
+        margin: 0;
     }
 
     .container {
         width: 100%;
-        max-width: 420px;
+        max-width: none;
         height: auto;
-        min-height: 520px;
+        min-height: auto;
         border-radius: 14px;
         overflow: visible;
-        padding-bottom: 20px;
+        padding-bottom: clamp(16px, 3vw, 24px);
     }
 
     /* Make form containers stack and be relative - no off-screen transforms */
@@ -327,7 +329,7 @@
         position: relative;
         width: 100%;
         height: auto;
-        padding: 18px;
+        padding: clamp(8px, 2vw, 16px);
         transition: none; /* keep switching logical but avoid accidental shifting on load */
     }
 
@@ -341,20 +343,22 @@
     }
 
     form {
-        padding: 14px;
+        padding: clamp(8px, 2vw, 16px);
+        height: auto;
     }
 
     h1.signin, h1.login {
-        font-size: 20px;
+        font-size: clamp(18px, 5vw, 24px);
+        margin-bottom: clamp(12px, 2vw, 16px);
     }
 
     .infield {
-        margin: 8px 0;
+        margin: clamp(6px, 1.5vw, 10px) 0;
     }
 
     input {
-        padding: 12px 12px;
-        font-size: 14px;
+        padding: clamp(10px, 2.5vw, 14px) clamp(10px, 2.5vw, 14px);
+        font-size: clamp(12px, 3vw, 16px);
     }
 
     label {
@@ -379,9 +383,8 @@
         width: 100%;
         height: auto;
         transform: none !important;
-        left: 0;
         display: block;
-        padding: 10px 16px;
+        padding: clamp(8px, 2vw, 16px);
         box-sizing: border-box;
         z-index: 0;
         pointer-events: none; /* allow interactions on form elements above */
@@ -391,7 +394,7 @@
         position: relative;
         width: 100%;
         height: auto;
-        padding: 12px 12px;
+        padding: clamp(10px, 2.5vw, 16px);
         transform: none !important;
     }
 
@@ -420,7 +423,7 @@
         height: auto !important;
         align-items: center;
         justify-content: center;
-        padding: 12px 16px !important;
+        padding: clamp(10px, 2.5vw, 20px) clamp(10px, 2.5vw, 20px) !important;
         box-sizing: border-box;
     }
 
@@ -442,32 +445,37 @@
     .overlay-panel p {
         color: #fff;
         text-align: center;
-        padding: 6px 12px;
+        padding: clamp(4px, 1.5vw, 12px);
     }
 
-    /* Keep toggle accessible and non-intrusive on smaller screens */
+    /* Keep toggle accessible - position at top but smaller footprint */
     .toggle-switch-wrapper {
-        top: 12px;
-        right: 12px;
+        position: fixed;
+        top: clamp(8px, 2vw, 14px);
+        right: clamp(8px, 2vw, 14px);
         left: auto;
-        padding: 6px;
-        z-index: 1001;
+        padding: clamp(3px, 0.8vw, 6px);
+        z-index: 2000;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e0e0e0;
     }
 
     .toggle-switch {
-        width: 54px;
-        height: 30px;
+        width: clamp(44px, 10vw, 56px);
+        height: clamp(24px, 6vw, 32px);
     }
 
     .toggle-slider:before {
-        width: 26px;
-        height: 26px;
-        left: 3px;
+        width: clamp(20px, 4.5vw, 26px);
+        height: clamp(20px, 4.5vw, 26px);
+        left: 2px;
         bottom: 2px;
     }
 
     .toggle-slider {
-        border-radius: 30px;
+        border-radius: 25px;
     }
 
     /* Default mobile: show login and hide signup */
@@ -538,32 +546,23 @@
 
     /* Ensure buttons remain usable & legible on smaller screens */
     .form-container button {
-        padding: 10px 26px;
-        font-size: 13px;
+        padding: clamp(8px, 2vw, 12px) clamp(18px, 4vw, 40px);
+        font-size: clamp(11px, 2.5vw, 13px);
+        margin-top: clamp(12px, 2vw, 16px);
     }
 
-    /* Modals: full width and centered */
-    .modal-content,
-    .reset-modal-content {
-        width: 94%;
-        max-width: 420px;
-        padding: 18px;
-        box-sizing: border-box;
+    a {
+        font-size: clamp(12px, 2vw, 14px);
+        margin: clamp(10px, 2vw, 14px) 0px;
     }
 
-    .modal-form input,
-    .reset-modal-form input {
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* Small fixes for text scaling and spacing */
     p {
-        font-size: 13px;
-        margin: 14px 0 18px;
+        font-size: clamp(12px, 2.5vw, 14px);
+        margin: clamp(8px, 1.5vw, 14px) 0 clamp(10px, 2vw, 16px);
+        line-height: 18px;
     }
 
     .overlay-panel h1 {
-        font-size: 18px;
+        font-size: clamp(16px, 4vw, 22px);
     }
 }
