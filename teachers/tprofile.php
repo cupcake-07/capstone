@@ -14,56 +14,37 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
     exit;
 }
 
-// Check which columns exist in teachers table
-$selectCols = "id, name, email, subject, phone, grade, sections";
-$hasAvatar = false;
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'avatar'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasAvatar = true;
-    $selectCols .= ", avatar";
-}
-$hasAddress = false;
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'address'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasAddress = true;
-    $selectCols .= ", address";
-}
-
-// Add detection for both 'hire_date' and 'date_hired' for compatibility
-$hasHireDate = false;
-$hasDateHired = false;
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'hire_date'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasHireDate = true;
-    $selectCols .= ", hire_date";
-}
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'date_hired'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasDateHired = true;
-    $selectCols .= ", date_hired";
+// Determine which optional columns actually exist using INFORMATION_SCHEMA for robust detection
+$schemaResult = $conn->query("SELECT DATABASE() as dbname");
+$schema = $schemaResult ? $schemaResult->fetch_assoc()['dbname'] : '';
+$optionalColumns = ['avatar', 'address', 'hire_date', 'date_hired', 'is_hired', 'status'];
+$exists = [];
+foreach ($optionalColumns as $col) {
+    // Safe check using INFORMATION_SCHEMA
+    $colEscaped = $conn->real_escape_string($col);
+    $schemaEscaped = $conn->real_escape_string($schema);
+    $checkSql = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{$schemaEscaped}' AND TABLE_NAME = 'teachers' AND COLUMN_NAME = '{$colEscaped}' LIMIT 1";
+    $colRes = $conn->query($checkSql);
+    $exists[$col] = ($colRes && $colRes->num_rows > 0);
 }
 
-// Detect is_hired column (boolean/tinyint)
-$hasIsHired = false;
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'is_hired'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasIsHired = true;
-    $selectCols .= ", is_hired";
-}
-
-$hasStatus = false;
-$colRes = $conn->query("SHOW COLUMNS FROM teachers LIKE 'status'");
-if ($colRes && $colRes->num_rows > 0) {
-    $hasStatus = true;
-    $selectCols .= ", status";
-}
+// Build a safe select list using only confirmed columns
+$selectCols = ['id', 'name', 'email', 'subject', 'phone', 'grade', 'sections'];
+if ($exists['avatar']) $selectCols[] = 'avatar';
+if ($exists['address']) $selectCols[] = 'address';
+if ($exists['hire_date']) $selectCols[] = 'hire_date';
+if ($exists['date_hired']) $selectCols[] = 'date_hired';
+if ($exists['is_hired']) $selectCols[] = 'is_hired';
+if ($exists['status']) $selectCols[] = 'status';
+$selectColsList = implode(', ', array_map(function($c){ return "`$c`"; }, $selectCols));
 
 // Fetch teacher data from database
 $teacher_id = $_SESSION['user_id'];
-$query = "SELECT $selectCols FROM teachers WHERE id = ?";
+$query = "SELECT $selectColsList FROM `teachers` WHERE `id` = ?";
 $stmt = $conn->prepare($query);
 if (!$stmt) {
-    die('Prepare failed: ' . $conn->error);
+    // Fail gracefully with a clear message for debugging; do not expose raw DB errors in production
+    die('Prepare failed: ' . htmlspecialchars($conn->error));
 }
 $stmt->bind_param('s', $teacher_id);
 $stmt->execute();
@@ -76,18 +57,36 @@ if ($result->num_rows === 0) {
 $teacher_data = $result->fetch_assoc();
 $stmt->close();
 
-// Build teacher array with database values and defaults
 // Determine hire date value from whichever column exists
 $rawHireDate = '';
-if ($hasHireDate && isset($teacher_data['hire_date'])) {
+if (!empty($teacher_data['hire_date'])) {
     $rawHireDate = $teacher_data['hire_date'];
-} elseif ($hasDateHired && isset($teacher_data['date_hired'])) {
+} elseif (!empty($teacher_data['date_hired'])) {
     $rawHireDate = $teacher_data['date_hired'];
 }
 
+// Build teacher array with database values and defaults
 $isHiredFlag = false;
-if ($hasIsHired && isset($teacher_data['is_hired'])) {
+if (!empty($teacher_data['is_hired'])) {
     $isHiredFlag = ($teacher_data['is_hired'] == '1' || $teacher_data['is_hired'] === 1 || $teacher_data['is_hired'] === true);
+}
+
+// Turn any relative avatar (or stored absolute) into a working absolute URL for persistent display
+$avatarUrl = 'https://placehold.co/240x240/0f520c/dada18?text=Photo';
+if ($exists['avatar'] && !empty($teacher_data['avatar'])) {
+    $rawAvatar = trim($teacher_data['avatar']);
+    if (preg_match('#^https?://#i', $rawAvatar)) {
+        $avatarUrl = $rawAvatar;
+    } else {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $projectBase = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/\\');
+        if (strpos($rawAvatar, '/') === 0) {
+            $avatarUrl = "{$protocol}://{$host}{$rawAvatar}";
+        } else {
+            $avatarUrl = "{$protocol}://{$host}{$projectBase}/" . ltrim($rawAvatar, '/');
+        }
+    }
 }
 
 // Build teacher array with database values and defaults
@@ -96,15 +95,13 @@ $teacher = [
     'name' => htmlspecialchars($teacher_data['name'] ?? 'Teacher'),
     'role' => 'Teacher',
     'email' => htmlspecialchars($teacher_data['email'] ?? 'N/A'),
-    'status' => ($hasStatus && !empty($teacher_data['status'])) ? htmlspecialchars($teacher_data['status']) : 'Active',
+    'status' => ($exists['status'] && !empty($teacher_data['status'])) ? htmlspecialchars($teacher_data['status']) : 'Active',
     'subjects' => !empty($teacher_data['subject']) ? array_map('trim', explode(',', $teacher_data['subject'])) : [],
     'gradeLevels' => !empty($teacher_data['grade']) ? array_map('trim', explode(',', $teacher_data['grade'])) : [],
     'contact' => htmlspecialchars($teacher_data['phone'] ?? 'N/A'),
-    'address' => ($hasAddress && !empty($teacher_data['address'])) ? htmlspecialchars($teacher_data['address']) : 'N/A',
-    // Show the date only if the teacher is marked as hired; otherwise N/A
+    'address' => ($exists['address'] && !empty($teacher_data['address'])) ? htmlspecialchars($teacher_data['address']) : 'N/A',
     'dateHired' => ($isHiredFlag && !empty($rawHireDate)) ? htmlspecialchars($rawHireDate) : 'N/A',
-    'avatar' => ($hasAvatar && !empty($teacher_data['avatar'])) ? htmlspecialchars($teacher_data['avatar']) : 'https://placehold.co/240x240/0f520c/dada18?text=Photo',
-    // expose the hired flag for UI rendering
+    'avatar' => htmlspecialchars($avatarUrl),
     'isHired' => $isHiredFlag
 ];
 
@@ -182,6 +179,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                                     <span class="upload-icon">📤</span>
                                     <span class="upload-text">Upload Photo</span>
                                 </label>
+                                <!-- Keep the existing input; JS will handle upload -->
                                 <input id="avatarInput" type="file" class="avatar-input" accept="image/*"/>
                             </div>
                         </div>
@@ -221,13 +219,95 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                             </div>
                             
                         </div>
+                        <div id="uploadFeedback" style="margin-top:8px;color:#fff"></div>
                     </div>
                 </aside>
             </section>
         </main>
         <script>
             // Update the year in the footer
-            document.getElementById('year').textContent = new Date().getFullYear();
+            document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+
+            // Avatar upload handler
+            (function () {
+                const input = document.getElementById('avatarInput');
+                const img = document.getElementById('avatarImage');
+                const feedback = document.getElementById('uploadFeedback');
+
+                if (!input) return;
+
+                function showMessage(msg, color = '#fff') {
+                    if (!feedback) return;
+                    feedback.style.color = color;
+                    feedback.textContent = msg;
+                }
+
+                input.addEventListener('change', function (e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    // Basic client-side validation
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+
+                    if (!allowedTypes.includes(file.type)) {
+                        showMessage('Only JPG, PNG or GIF images are allowed.', 'orange');
+                        return;
+                    }
+                    if (file.size > maxSize) {
+                        showMessage('Image too large. Max 5MB.', 'orange');
+                        return;
+                    }
+
+                    // Preview immediately
+                    const reader = new FileReader();
+                    reader.onload = function (ev) {
+                        img.src = ev.target.result;
+                    }
+                    reader.readAsDataURL(file);
+
+                    const fd = new FormData();
+                    fd.append('avatar', file);
+
+                    showMessage('Uploading...', 'lightblue');
+
+                    // Use explicit relative path; same dir as tprofile.php
+                    fetch('./upload_avatar.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                        .then(async r => {
+                            const text = await r.text();
+                            let data = null;
+                            try {
+                                data = text ? JSON.parse(text) : null;
+                            } catch (err) {
+                                console.error('Response text parse error:', err, text);
+                            }
+
+                            if (!r.ok) {
+                                const errMsg = (data && data.error) ? data.error : (text || `Upload failed (${r.status})`);
+                                showMessage(errMsg, 'orange');
+                                // if the server returned an SQL hint in data.sql, log it (or show it for debugging)
+                                if (data && data.sql) {
+                                    console.log('SQL to run manually:', data.sql);
+                                }
+                                return;
+                            }
+
+                            if (data && data.success) {
+                                img.src = data.url + '?t=' + Date.now(); // cache bust
+                                showMessage('Upload successful.', 'lightgreen');
+                                // Reload so new DB value is used on the page
+                                setTimeout(() => location.reload(), 700);
+                            } else {
+                                const errMsg = (data && data.error) ? data.error : 'Upload failed';
+                                showMessage(errMsg, 'orange');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showMessage('Upload failed. Please try again.', 'red');
+                        });
+                });
+            })();
         </script>
         <!-- ...existing code... (modal and scripts preserved) -->
     </div>
