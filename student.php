@@ -584,7 +584,7 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
   <!-- TOP NAVBAR -->
   <nav class="navbar">
     <div class="navbar-brand">
-      <img src="g2flogo.png" alt="Glorious God's Family Logo" style="height: 40px; margin-left:-20px"  />
+      <img src="g2flogo.png" alt="Glorious God's Family Logo" class="nav-brand-logo" aria-hidden="false" />
       <div class="navbar-text">
         <div class="navbar-title">Glorious God's Family</div>
         <div class="navbar-subtitle">Christian School</div>

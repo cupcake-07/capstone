@@ -21,6 +21,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow-x: hidden; /* prevent horizontal overflow on small screens */
 }
 
 body {
@@ -32,7 +33,7 @@ body {
 
 /* ===== TOP NAVBAR ===== */
 .navbar {
- background: linear-gradient(180deg, #0099ff 0%, #fd4ba7 100%);
+  background: linear-gradient(180deg, #0099ff 0%, #fd4ba7 100%);
   color: #ffffff;
   padding: 16px 44px;
   display: flex;
@@ -43,48 +44,70 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  /* ensure a stable height so the brand's elements fit */
+  min-height: 56px;
 }
 
 .navbar-brand {
   display: flex;
   gap: 12px;
   align-items: center;
+  /* allow the brand block to shrink to prevent forced overflow */
+  min-width: 0;
 }
 
-.navbar-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--green) 0%, var(--yellow) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #071006;
-  font-size: 16px;
-  box-shadow: 0 6px 18px rgba(15, 17, 20, 0.2);
+/* Specific brand logo used in the top navbar */
+.nav-brand-logo {
+  height: 40px;
+  width: 40px;
+  object-fit: contain;
+  display: block;
+  margin-right: 8px;
+  flex: 0 0 auto;
+  z-index: 5;
+  /* don't use negative margins that cause overflow */
+  margin-left: 0;
 }
 
+/* Ensure the title doesn't force the layout to overflow */
 .navbar-text {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .navbar-title {
   font-weight: 700;
   font-size: 13px;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.05;
+  /* limit the title width so that it does not push the actions out of view */
+  max-width: calc(100vw - 220px);
 }
 
 .navbar-subtitle {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.65);
   margin: 2px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.05;
 }
 
+/* make sure action area doesn't expand and push the brand */
 .navbar-actions {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-shrink: 0;
+  z-index: 6;
 }
 
 .user-menu {
@@ -113,6 +136,8 @@ body {
   display: flex;
   min-height: calc(100vh - 76px);
   gap: 0;
+  overflow-x: hidden; /* ensure wrapper doesn't create horizontal scroll */
+  align-items: stretch;
 }
 
 /* ===== SIDEBAR (UPDATED) ===== */
@@ -211,7 +236,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 32px 44px;
+  overflow-x: hidden;
+  padding: clamp(12px, 3.5vw, 44px);
 }
 
 .header {
@@ -306,13 +332,15 @@ body {
 
 .avatar-container {
   position: relative;
-  width: 260px;
-  height: 260px;
+  /* make responsive: min 120px, ideal 36vw, max 260px */
+  width: clamp(120px, 36vw, 260px);
+  aspect-ratio: 1 / 1; /* keep square, height adapts to width */
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  group: avatar-upload;
   flex-shrink: 0;
+  margin: 0 auto; /* center in its container (avatar-wrap) */
+  display: block;
 }
 
 .avatar {
@@ -410,6 +438,9 @@ body {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border);
   transition: box-shadow 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .card:hover {
@@ -456,6 +487,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%
 }
 
 /* ===== SMALL CARD (SCHEDULE) ===== */
@@ -464,6 +496,7 @@ body {
   padding: 16px;
   border-radius: 12px;
   border: 1px solid rgba(218, 218, 24, 0.08);
+  width:100%;
 }
 
 .small-card h4 {
@@ -878,21 +911,32 @@ body {
   }
 
   .main {
-    padding: 16px 20px;
+    padding: clamp(12px, 3vw, 20px);
   }
 
   .navbar {
     padding: 12px 20px;
   }
 
+  /* collapse grid into single column and make each column full width */
   .profile-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 18px;
+  }
+
+  /* ensure hero/content fully stretch to container */
+  .hero, .content {
+    width: 100%;
   }
 
   .avatar {
-    width: 200px;
-    height: 200px;
+    /* maintain proper border and avoid overflow inside responsive avatar box */
+    border: 8px solid rgba(218, 218, 24, 0.12);
+  }
+
+  /* center hero content (avatar, name, badge) */
+  .hero {
+    align-items: center;
   }
 
   .card.small-grid {
@@ -902,14 +946,49 @@ body {
 
 @media (max-width: 640px) {
   .navbar {
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 12px;
+    padding: 10px 12px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    position: sticky; /* remains sticky */
+  }
+
+  .navbar-brand {
+    justify-content: center;
+    width: auto;
+    min-width: 0;
+  }
+
+  .nav-brand-logo {
+    /* slightly smaller logo on very small devices */
+    height: 34px;
+    width: 34px;
   }
 
   .navbar-actions {
-    width: 100%;
+    width: auto;
     flex-direction: column;
+    align-items: center;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    /* ensure actions remain above brand if overlapping */
+    z-index: 12;
+  }
+
+  /* Ensure the navbar-brand content remains centered and not overlapped */
+  .navbar-text {
+    text-align: center;
+    white-space: normal; /* allow wrapping if necessary only on small screens */
+    max-width: calc(100vw - 108px); /* account for actions and logo widths */
+  }
+
+  /* remove divider and extra padding that create space on small screens */
+  .user-menu {
+    border-left: none;
+    padding-left: 0;
   }
 
   .search {
@@ -917,7 +996,7 @@ body {
   }
 
   .main {
-    padding: 12px 16px;
+    padding: 10px 12px; /* reduce main padding on very small screens */
   }
 
   .header {
@@ -926,17 +1005,23 @@ body {
     gap: 10px;
   }
 
+  /* ensure grid continues to collapse and cards fill width */
   .profile-grid {
-    gap: 16px;
+    gap: 12px;
+    grid-template-columns: 1fr;
   }
 
   .hero {
-    gap: 14px;
+    gap: 12px;
+    align-items: center; /* center avatar & text */
+  }
+
+  /* slightly reduce avatar footprint on very small phones */
+  .avatar-container {
+    width: clamp(92px, 34vw, 180px);
   }
 
   .avatar {
-    width: 160px;
-    height: 160px;
     border: 6px solid rgba(218, 218, 24, 0.12);
   }
 
@@ -954,13 +1039,17 @@ body {
 
   .quick-buttons .btn {
     flex: 1;
+    min-width: 40%;
   }
 
   .grades-table {
     font-size: 12px;
+    table-layout: fixed; /* improves mobile layout for tables */
+    word-break: break-word;
   }
 
   .grades-table th, .grades-table td {
     padding: 8px;
+    overflow-wrap: anywhere;
   }
 }
