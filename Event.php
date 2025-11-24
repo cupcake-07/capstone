@@ -198,7 +198,8 @@
             border-bottom: 2px solid navy;
             font-weight: 700;
         }
-/* --- ALBUM SECTION (replaces modal) --- */
+
+        /* --- ALBUM SECTION (replaces modal) --- */
         .album-section {
             background-color: var(--Dwhite);
             background: linear-gradient(var(--blue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
@@ -377,6 +378,77 @@
             .album-body { grid-template-columns: 1fr; }
         }
 
+        /* Responsive navigation for Event.php — keep the same gradient color */
+        @media (max-width: 992px) {
+            .header .nav {
+                flex-direction: column;
+                align-items: center;
+                height: auto;
+                padding: 8px 10px;
+            }
+            .header .nav.container-inner { /* optional if class used below, won't break if not present */
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .header .nav .logo,
+            .header .nav .logo.logo-wrapper {
+                margin-left: 0;
+                padding: 6px 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .header .nav .logo img {
+                max-height: 60px;
+                width: auto;
+            }
+            .header .nav .menu {
+                width: 100%;
+                margin: 8px 0 0 0;
+                font-size: 16px;
+            }
+            .header .nav .menu ul {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+                margin: 0;
+                padding: 0;
+            }
+            .header .nav .menu ul li {
+                margin: 6px 6px;
+                text-align: center;
+            }
+            .header .nav .menu ul li a {
+                padding: 8px 10px;
+                display: inline-block;
+                color: var(--black); /* keep color consistent */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header .nav {
+                padding: 6px 8px;
+            }
+            .header .nav .logo img {
+                max-height: 52px;
+            }
+            .header .nav .menu ul {
+                flex-direction: column;
+            }
+            .header .nav .menu ul li {
+                width: 100%;
+                margin: 4px 0;
+            }
+            .header .nav .menu ul li a {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+                text-align: center;
+            }
+        }
+
     </style>
       
 	
@@ -389,19 +461,19 @@
 
 	<!-------------------header_start--------------------->
     <header class="header">
-   	    <div class="nav">
-   	  	    <div class="logo">
+   	    <!-- add id and container class to nav for consistent behavior and sticky toggle -->
+   	    <div class="nav container-inner" id="navTop">
+   	  	    <div class="logo logo-wrapper">
                 <img src="Images/g2flogo.png"/>
    	  	    </div>
              
    	  	    <div class="menu">
                 <ul>
-                    <li><a href="index.html">home</a></li>
-                    <li><a href="#about_us">about us</a></li>
-                    <li><a href="events.html" class="active">Events</a></li>
-                    <li><a href="program.html">Programs </a></li>
-                    <li><a href="how.html">how it works</a></li>
-                    <li><a href="#contact_us">contact us</a></li>
+                    <li><a href="index.php">Home</a></li>
+                    <li><a href="Event.php" class="active">Events</a></li>
+                    <li><a href="program.php">Programs </a></li>
+                    <li><a href="how.php">How it works</a></li>
+                    
                 </ul>
    	  	    </div>
    	    </div>
@@ -467,9 +539,10 @@
         }
 
         window.addEventListener('scroll', function() {
-            var t0p = document.getElementById('navtop');
-            if (top) {
-                top.classList.toggle("sticky", window.scrollY > 250);
+            // JS bug fix: use the element id 'navTop' and a properly scoped var
+            var navTopEl = document.getElementById('navTop');
+            if (navTopEl) {
+                navTopEl.classList.toggle("sticky", window.scrollY > 250);
             }
         });
         // Album thumbnail gallery

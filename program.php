@@ -6,7 +6,6 @@
     <title>Student program</title>
     <link rel="icon" href="Images/future.png">
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --black: #000;
@@ -20,6 +19,7 @@
             --lpurple: #d8b3ff;
             --lblue: #1a8fcc;
             --purple: #a3309dcc;
+
         }
         * {
             box-sizing: border-box;
@@ -42,6 +42,7 @@
             text-decoration: none;
             color: var(--white);
         }
+        
         ::-webkit-scrollbar {
             width: 8px;
             background: var(--black);
@@ -196,7 +197,7 @@
             border-bottom: 2px solid navy;
             font-weight: 700;
         }
-        .career-section {
+                .career-section {
             width: 100%;
             height: auto;
             background: linear-gradient(var(--lblue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
@@ -392,33 +393,127 @@
         .skill-section .skill-box button:hover {
             box-shadow: inset 1px 1.5px 6px rgba(0, 0, 0, .9);
         }
+        footer {
+            width: 100%;
+            height: 50px;
+            text-align: center;
+            line-height: 30px;
+            padding: 10px 0;
+            margin: 0;
+            font-size: 14px;
+            font-family: calibri;
+            letter-spacing: 1px;
+            color: var(--white);
+            background: #03364e;
+            box-shadow: 0 0 9px rgba(22, 129, 180, .4);
+        }
 
+        /* Responsive navigation for program.php — copy of Event.php responsive nav rules */
+        @media (max-width: 992px) {
+            .header .nav {
+                flex-direction: column;
+                align-items: center;
+                height: auto;
+                padding: 8px 10px;
+            }
+            .header .nav.container-inner {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .header .nav .logo,
+            .header .nav .logo.logo-wrapper {
+                margin-left: 0;
+                padding: 6px 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .header .nav .logo img {
+                max-height: 60px;
+                width: auto;
+            }
+            .header .nav .menu {
+                width: 100%;
+                margin: 8px 0 0 0;
+                font-size: 16px;
+            }
+            .header .nav .menu ul {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+                margin: 0;
+                padding: 0;
+            }
+            .header .nav .menu ul li {
+                margin: 6px 6px;
+                text-align: center;
+            }
+            .header .nav .menu ul li a {
+                padding: 8px 10px;
+                display: inline-block;
+                color: #000;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header .nav {
+                padding: 6px 8px;
+            }
+            .header .nav .logo img {
+                max-height: 52px;
+            }
+            .header .nav .menu ul {
+                flex-direction: column;
+            }
+            .header .nav .menu ul li {
+                width: 100%;
+                margin: 4px 0;
+            }
+            .header .nav .menu ul li a {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+                text-align: center;
+            }
+        }
     </style>
-</head>
-<body>
-
-    <!-- NAVBAR - MATCHING index.php and Event.php -->
-    <nav style="position: fixed; top: 0; width: 100%; background: linear-gradient(90deg, rgba(253, 253, 253, 0.98) 0%, #f0a5e6 100%); padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <div style="font-weight: bold; font-size: 1.5rem; color: #1a3c7a; letter-spacing: 1px; text-transform: uppercase; font-family: Montserrat, sans-serif;">Glorious God's Family Christian School</div>
-        <div style="display: flex; gap: 2rem;">
-            <a href="index.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Home</a>
-            <a href="program.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Programs</a>
-            <a href="Event.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Events</a>
-            <a href="index.php" style="text-decoration: none; color: #333; font-weight: 500; transition: color 0.3s; font-family: Montserrat, sans-serif; font-size: 14px;" onmouseover="this.style.color='#1a3c7a'; this.style.fontWeight='700';" onmouseout="this.style.color='#333'; this.style.fontWeight='500';">Contact Us</a>
-        </div>
-    </nav>
-
-    <!-- Add top spacing for fixed navbar -->
-    <div style="height: 80px;"></div>
-
-    
+        
+	
+	<!-- Keep Google Fonts link; moved CSS rules to style.css -->
+	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+	
+    <div class="welcome" id="top">Welcome to Glorious God's Family Christian School
+         <button onclick="cancel()">&#10540</button>
+	</div>
 
 	<!-------------------header_start--------------------->
- 
+    <header class="header">
+        <!-- Add id and container class so sticky JS works the same -->
+        <div class="nav container-inner" id="navTop">
+            <div class="logo logo-wrapper">
+                <img src="Images/g2flogo.png"/>
+            </div>
+             
+   	  	    <div class="menu">
+                <ul>
+                    <li><a href="index.php">Home</a></li>
+                    
+                    <li><a href="Event.php">Events</a></li>
+                    <li><a href="program.php" class="active">Programs </a></li>
+                    <li><a href="how.php">how it works</a></li>
+                    
+                </ul>
+   	  	    </div>
+   	    </div>
+    </header>
+</head>
+<body>
     
   <!------------skills_start---------------->
     <div class="career-section" id="career">
-    	<h1 style="font-family:Montserrat; color:#EDFFF0;">Student Programs</h1>
+    	<h1 style="font-family:Montserrat;">Student Programs</h1>
           
             <div class="sect">
 
@@ -448,7 +543,7 @@
             </div>
        
     	 
-    	<p class="para"><em style="color:#EDFFF0">"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
+    	<p class="para"><em>"Glorious God's Family — nurturing hearts and minds for a brighter tomorrow."</em></p>
 
     </div>
     <div class="skill-section" id="job_criteria">
@@ -492,8 +587,8 @@
 
         <div class="skill-box">
             <span>7</span>
-            <h2>Coding & Robotics</h2>
-            <p>Introductory lessons in computational thinking and simple coding using kid-friendly tools.</p>
+            <h2>Creative Arts & Imagination Program</h2>
+            <p>Children explore colors, shapes, and textures while building confidence and improving their fine motor skills.</p>
         </div>
 
         <div class="skill-box">
@@ -501,7 +596,26 @@
             <h2>Library & Storytime</h2>
             <p>Daily story sessions and library time to develop listening skills and a love for books.</p>
         </div>
-
+        
     </div>
+    <footer>
+         <div class="bottom"><i class="fa fa-copyright"></i>2025 Glorious God's Family Christian School || all rights reserved.</div>
+    </footer>
+    <script type="text/javascript">
+        function cancel() {
+            const topEl = document.getElementById('top');
+            if (topEl) {
+                topEl.style.marginTop = '-50px';
+            }
+        }
+
+        // Toggle sticky nav on scroll (will work due to id="navTop")
+        window.addEventListener("scroll", function () {
+            var top = document.getElementById('navTop');
+            if (top) {
+                top.classList.toggle("sticky", window.scrollY > 250);
+            }
+        });
+    </script>
 </body>
 </html>

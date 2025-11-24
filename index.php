@@ -851,11 +851,10 @@ marquee::-webkit-scrollbar,
    	  	  </div>
    	  	  <div class="menu">
    	  	  	 <ul>
-   	  	  	 	<li><a href="index.php">home</a></li>
-   	  	  	 	
+   	  	  	 	<li><a href="index.php">Home</a></li>
    	  	  	 	<li><a href="Event.php">Events</a></li>
    	  	  	 	<li><a href="program.php">Programs </a></li>
-              <li><a href="index.php">Contact Us</a></li>
+              <li><a href="how.php">How It Works</a></li>
    	  	  	    
    	  	  	 	
    	  	  	 	<li class="login-nav"><a href="login.php">Login</a></li>
