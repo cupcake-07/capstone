@@ -3,203 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Hope Academy | Community Outreach</title>
+    <title>Student program</title>
+    <!-- Font Awesome (icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    
     <style>
-        /* --- CSS VARIABLES & RESET --- */
         :root {
-            --primary-color: #1a3c7a; /* School Navy */
-            --accent-color: #f4a261;  /* Warm Gold/Orange */
-            --text-dark: #333;
-            --text-light: #fff;
-            --bg-light: #f9f9f9;
-            --transition-speed: 0.8s;
+            --black: #000;
+            --lblack: #222;
+            --white: #fff;
+            --Dwhite: #f5f5f5;
+            --lyellow: #ebf4b6;
+            --grey: #708090;
+            --blue: #3d85f8;
+            --pink: #fd4ba7;
+            --lpink: #fd6bb6;
+            --lpurple: #d8b3ff;
+            --lblue: #1a8fcc;
+            --purple: #a3309dcc;
+            --dblue: #1a3c7a; /* School Navy */
         }
-
         * {
+            box-sizing: border-box;
+        }
+        *, body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        html {
+            scroll-behavior: smooth;
+        }
         body {
-            overflow-x: hidden; /* Prevent horizontal scroll */
-            background-color: var(--bg-light);
+            overflow-x: hidden;
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, sans-serif;
+            font-size: 16px;
+            color: var(--lblack);
+            line-height: 1.6;
         }
-
-        /* --- NAVIGATION --- */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: linear-gradient(90deg, rgba(253, 253, 253, 0.98) 0%, #f0a5e6 100%);
-            padding: 1.2rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .logo {
-            font-weight: bold;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .nav-links a {
+        a {
             text-decoration: none;
-            color: var(--text-dark);
-            margin-left: 2rem;
-            font-weight: 500;
-            transition: color 0.3s;
+            color: var(--white);
         }
-
-        .nav-links a:hover {
-            color: var(--accent-color);
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: var(--black);
         }
-
-        .cta-btn {
-            background-color: var(--primary-color);
-            color: var(--text-light) !important;
-            padding: 0.5rem 1.5rem;
-            border-radius: 50px;
+        ::-webkit-scrollbar-thumb {
+            background: var(--Dwhite);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
         }
-
-        .cta-btn:hover {
-            background-color: #132c5a;
+        #top {
+            margin-top: 0;
         }
-
-        /* --- HERO SECTION (SLIDING BACKGROUND) --- */
-        .hero {
+        .welcome {
             position: relative;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            height: 50px;
             text-align: center;
-            color: var(--text-light);
-            padding: 0 20px;
-            overflow: hidden;
-        }
-
-        /* The Dark Blue Overlay */
-        .hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
+            background: var(--lyellow);
+            color: var(--black);
+            line-height: 40px;
+            font-size: 16px;
+            letter-spacing: 1.2px;
+            font-family: calibri;
+            animation: 3.6s down;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(26, 60, 122, 0.85), rgba(26, 60, 122, 0.5));
-            z-index: 1;
+            transition: 0.4s;
         }
-
-        /* Container for the sliding images */
-        .hero-slider {
+        div {
+            display: block;
+            unicode-bidi: isolate;
+        }
+        .side-link, .welcome button {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        /* Individual Slide Styling */
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            transform: scale(1);
-            animation: slideAnimation 15s infinite;
-        }
-
-        /* Slide Images & Delays */
-        .slide:nth-child(1) { 
-            background-image: url('Images/school12.jpg');
-            animation-delay: 0s; 
-        }
-        .slide:nth-child(2) { 
-            background-image: url('Images/school13.jpg');
-            animation-delay: 5s; 
-        }
-        .slide:nth-child(3) { 
-            background-image: url('Images/school21.jpg');
-            animation-delay: 10s; 
-        }
-
-        /* Keyframes for Background Slider (Fade + Zoom) */
-        @keyframes slideAnimation {
-            0% { opacity: 0; transform: scale(1); }
-            5% { opacity: 1; }
-            33% { opacity: 1; }
-            38% { opacity: 0; transform: scale(1.1); }
-            100% { opacity: 0; }
-        }
-
-        /* Content Styling */
-        .hero-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Hero Text Load Animation */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            opacity: 0;
-            animation: fadeInUp 1s ease-out forwards;
-            animation-delay: 0.2s;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin-bottom: 2rem;
-            margin-left: auto;
-            margin-right: auto;
-            opacity: 0;
-            animation: fadeInUp 1s ease-out forwards;
-            animation-delay: 0.6s;
-        }
-
-        .hero-btn {
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
-            background-color: var(--accent-color);
-            color: #fff;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            opacity: 0;
-            animation: fadeInUp 1s ease-out forwards;
-            animation-delay: 1s;
-            transition: transform 0.3s, background-color 0.3s;
+        }
+        .welcome button {
+            position: absolute;
+            cursor: pointer;
+            width: 25px;
+            height: 20px;
+            border: 0;
+            outline: 0;
+            background: 0 0;
+            color: var(--white);
+            right: 25px;
+            top: 10px;
+            padding: 2px 0;
+            line-height: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: .3s;
+        }
+        .welcome button:hover {
+	        background: rgba(214, 22, 22, .9);
+        }
+        .side-link,
+        .welcome button {
+            position: absolute;
+            cursor: pointer;
+        }
+        .side-link {
+            top: 240px;
+            right: 50px;
+            width: auto;
+            display: block;
+            animation: 3.4s link;
+        }
+        .side-link a {
+            background: var(--black);
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            border-radius: 6px;
+            margin: 7px 5px;
+            display: block;
+            padding: 10px 0;
+            text-align: center;
+            line-height: 20px;
+            border: 1px solid var(--grey);
+            transition: .4s;
+        }
+        .side-link a:hover {
+            border: 0;
+            background: linear-gradient(#2499ca, #0b5d80);
+            transform: scale(.84);
         }
 
-        .hero-btn:hover {
-            transform: scale(1.05);
-            background-color: #e08e50;
+        /* Header and navigation */
+        .header {
+            width: 100vw;
+            height: auto;
+            transition: .5s;
+            animation: 18s linear infinite show;
         }
-
-        /* --- ALBUM SECTION (replaces modal) --- */
+        .header .nav {
+            height: 70px;
+            background: linear-gradient(180deg, var(--blue) 0%, var(--pink) 100%);
+            animation: 1s left;
+            width: 100%;
+            transition: .4s;
+            display: flex;
+            align-items: center;
+        }
+        .header .nav .logo {
+            height: 100%;
+            font-size: 20px;
+            font-family: calibri;
+            margin-left: 50px;
+            padding: 24px 40px;
+            transition: .3s;
+            animation: 2.5s left;
+            display: flex;
+            align-items: center;
+        }
+        .header .nav .logo img {
+            height: 65px;
+            width: auto;
+        }
+        .header .nav .menu {
+            width: 50%;
+            height: 100%;
+            font-size: 20px;
+            margin: 0 10px 0 360px;
+            transition: .3s;
+            animation: 1.8s top;
+        }
+        .header .nav .menu ul {
+            width: 100%;
+            height: 100%;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header .nav .menu ul li {
+            font-weight: 100px;
+            margin: 6px 0 0 25px;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-family: sans-serif;
+            letter-spacing: 1.2px;
+            word-spacing: 1.3px;
+        }
+        .header .nav .menu ul li a {
+            /* changed: use solid black for maximum readability */
+            color: var(--black);
+            padding: 22px 6px;
+            transition: .4s;
+            border-bottom: 2px solid transparent;
+        }
+        .header .nav .menu ul li a:hover {
+            color: navy;
+            border-bottom: 2px solid navy;
+            font-weight: 700;
+        }
+/* --- ALBUM SECTION (replaces modal) --- */
         .album-section {
-            background-color: var(--bg-light);
+            background-color: var(--Dwhite);
+            background: linear-gradient(var(--blue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
             padding: 5rem 10%;
         }
 
@@ -209,11 +211,11 @@
         }
 
         .album-header {
-            background: var(--primary-color);
-            color: #fff;
+            background: linear-gradient(90deg, #ffffff46, #3d85f8a1, #fd4ba793, #ffffff50);
+            color: var(--black);
             padding: 2rem;
             text-align: center;
-            border-radius: 8px;
+            border-radius: 15px;
             margin-bottom: 3rem;
         }
 
@@ -269,7 +271,7 @@
         }
 
         .album-thumb {
-            background: #f0f0f0;
+            background: var(--white);
             border: 2px solid transparent;
             border-radius: 4px;
             cursor: pointer;
@@ -290,7 +292,7 @@
         }
 
         .album-thumb:hover {
-            border-color: var(--accent-color);
+            border-color: var(--lyellow);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
@@ -299,24 +301,26 @@
         }
 
         .album-thumb.active {
-            border-color: var(--primary-color);
+            border-color: var(--blue);
             box-shadow: 0 4px 12px rgba(26, 60, 122, 0.3);
         }
 
         .album-right {
-            background: white;
+            background: rgba(255, 255, 255, 0.716);
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             color: var(--text-dark);
-            height: fit-content;
+            max-height: 400px; /* keep right panel height bounded */
+            overflow-y: auto;   /* enable vertical scrolling when content overflows */
+            height: auto;
         }
 
         .album-right h3 {
             font-size: 1.8rem;
             margin-bottom: 1.5rem;
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--accent-color);
+            color: var(--pink);
+            border-bottom: 3px solid var(--blue);
             padding-bottom: 0.5rem;
         }
 
@@ -329,7 +333,7 @@
         .album-right li {
             margin-bottom: 1rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--lpink);
             line-height: 1.6;
         }
 
@@ -340,7 +344,7 @@
         }
 
         .album-right li strong {
-            color: var(--primary-color);
+            color: var(--blue);
         }
 
         .album-actions {
@@ -350,8 +354,8 @@
         }
 
         .album-cta {
-            background-color: var(--primary-color);
-            color: #fff;
+            background-color: var(--blue);
+            color: var(--white);
             padding: 1rem;
             border-radius: 4px;
             text-align: center;
@@ -364,200 +368,46 @@
         }
 
         .album-cta:hover {
-            background-color: #132c5a;
+            background-color: var(--dblue);
         }
 
-        /* --- FOOTER STYLING --- */
-        .footer {
-            background-color: #1a1a1a;
-            color: #fff;
-            padding: 3rem 5%;
-            text-align: center;
-        }
-
-        .footer h1 {
-            font-size: 2rem;
-            margin-bottom: 2rem;
-            color: rgb(108, 120, 230)
-        }
-
-        .footer .section {
-            max-width: 1200px;
-            margin: 0 auto 3rem;
-        }
-
-        .footer .content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            text-align: left;
-            margin-bottom: 2rem;
-        }
-
-        .footer ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .footer ul h4 {
-            color: rgb(92, 160, 223)
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-        }
-
-        .footer ul li {
-            margin-bottom: 0.5rem;
-            line-height: 1.6;
-            color: #aaa;
-        }
-
-        .footer ul li a {
-            color: #aaa;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer ul li a:hover {
-            color: var(--accent-color);
-        }
-
-        /* --- SOCIAL MEDIA ICONS --- */
-        .link {
-            margin: 2rem 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .link h4 {
-            color: var(--accent-color);
-            font-size: 1.2rem;
-            margin: 0;
-        }
-
-        .link a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            background-color: var(--primary-color);
-            color: #fff;
-            border-radius: 50%;
-            text-decoration: none;
-            font-size: 1.5rem;
-            transition: all 0.3s;
-            margin: 0 0.5rem;
-        }
-
-        .link a:hover {
-            background-color: var(--accent-color);
-            transform: scale(1.1);
-            color: #000;
-        }
-
-        .link a i {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* --- TOP ARROW --- */
-        .top-arrow {
-            margin-top: 2rem;
-        }
-
-        .top-arrow a {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 45px;
-            height: 45px;
-            background-color: var(--accent-color);
-            color: #000;
-            border-radius: 50%;
-            text-decoration: none;
-            font-size: 1.5rem;
-            transition: all 0.3s;
-        }
-
-        .top-arrow a:hover {
-            background-color: #fff;
-            transform: translateY(-5px);
-        }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .mission-container { grid-template-columns: 1fr; }
-            .nav-links { display: none; }
+        /* Responsive: remove the fixed max-height on narrow screens so the panel flows naturally */
+        @media (max-width: 780px) {
+            .album-right { max-height: none; overflow: visible; }
             .album-body { grid-template-columns: 1fr; }
-            .album-left { width: 100%; }
-            .album-preview { height: 300px; }
-            .album-title { font-size: 2rem; }
-            .section-title { font-size: 2rem; }
-            .footer .content { grid-template-columns: 1fr; }
-            .link a {
-                width: 45px;
-                height: 45px;
-                font-size: 1.2rem;
-            }
         }
+
     </style>
+      
+	
+	<!-- Keep Google Fonts link; moved CSS rules to style.css -->
+	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+	
+    <div class="welcome" id="top">Welcome to Glorious God's Family Christian School
+         <button onclick="cancel()">&#10540</button>
+	</div>
+
+	<!-------------------header_start--------------------->
+    <header class="header">
+   	    <div class="nav">
+   	  	    <div class="logo">
+                <img src="Images/g2flogo.png"/>
+   	  	    </div>
+             
+   	  	    <div class="menu">
+                <ul>
+                    <li><a href="index.html">home</a></li>
+                    <li><a href="#about_us">about us</a></li>
+                    <li><a href="events.html" class="active">Events</a></li>
+                    <li><a href="program.html">Programs </a></li>
+                    <li><a href="how.html">how it works</a></li>
+                    <li><a href="#contact_us">contact us</a></li>
+                </ul>
+   	  	    </div>
+   	    </div>
+    </header>
 </head>
 <body>
-
-    <!-- Navbar -->
-    <nav>
-        <div class="logo">Glorious God's Family Christian School</div>
-        <div class="nav-links">
-            <a href="index.php">Home</a>
-            <a href="program.php">Programs</a>
-             <a href="Event.php">Events</a>
-             <a href="index.php">Contact Us</a>
-             
-             
-            
-            
-            
-        </div>
-    </nav>
-
-    <!-- Hero Section (Sliding Background + Content) -->
-    <header class="hero">
-        <!-- Background Slider -->
-        <div class="hero-slider">
-            <div class="slide"></div>
-            <div class="slide"></div>
-            <div class="slide"></div>
-        </div>
-
-        <!-- Overlay -->
-        <div class="hero-overlay"></div>
-
-        <!-- Text Content -->
-        <div class="hero-content">
-            <h1>Empowering The Next Generation</h1>
-            <p>Join the Hope Academy Outreach Program. We bring education, supplies, and smiles to remote communities.</p>
-            <a href="#album" class="hero-btn">See Our Work</a>
-        </div>
-    </header>
-
-    <!-- Mission Section (Scroll Animation) -->
-    <section id="about">
-        <div class="mission-container">
-           
-            
-        </div>
-    </section>
-
-    <!-- Stats Section (Scroll Animation) -->
-    
-
-    <!-- Programs Section (Scroll Animation) -->
-   
-    <!-- Album & Achievements Section (NEW - replaces modal) -->
     <section id="album" class="album-section">
         <div class="album-container">
             <div class="album-header reveal">
@@ -571,18 +421,19 @@
                         <img src="Images/fieldtrip.jpg" alt="Preview image" id="albumPreviewImg">
                     </div>
                     <div class="album-grid" id="albumGrid" role="list">
+                        <button class="album-thumb" data-src="Images/school18.jpg" aria-label="Open image 4" role="listitem">
+                            <img src="Images/school18_thumb.jpg" onerror="this.src='Images/school18.jpg'" alt="Event 4">
+                        </button>
                         <button class="album-thumb active" data-src="Images/fieldtrip.jpg" aria-label="Open image 1" role="listitem">
                             <img src="Images/fieldtrip.jpg" onerror="this.src='Images/fieldtrip.jpg'" alt="Event 1">
                         </button>
-                        <button class="album-thumb" data-src="Images/recog.jpg" aria-label="Open image 2" role="listitem">
-                            <img src="Images/recog.jpg" onerror="this.src='Images/recog.jpg'" alt="Event 2">
+                        <button class="album-thumb" data-src="Images/foundation day.jpg" aria-label="Open image 2" role="listitem">
+                            <img src="Images/foundation day.jpg" onerror="this.src='Images/foundation day.jpg'" alt="Event 2">
                         </button>
                         <button class="album-thumb" data-src="Images/yearend.jpg" aria-label="Open image 3" role="listitem">
                             <img src="Images/yearend.jpg" onerror="this.src='Images/yearend.jpg'" alt="Event 3">
                         </button>
-                        <button class="album-thumb" data-src="Images/school18.jpg" aria-label="Open image 4" role="listitem">
-                            <img src="Images/school18_thumb.jpg" onerror="this.src='Images/school18.jpg'" alt="Event 4">
-                        </button>
+                        
                         <button class="album-thumb" data-src="Images/school19.jpg" aria-label="Open image 5" role="listitem">
                             <img src="Images/school19_thumb.jpg" onerror="this.src='Images/school19.jpg'" alt="Event 5">
                         </button>
@@ -595,81 +446,32 @@
                 <aside class="album-right" aria-label="Achievements">
                     <h3>Events</h3>
                     <ul>
-                        <li><strong>Field Trip (February 2019)</strong> — Students participated in a hands-on educational tour to explore nature and history firsthand.</li>
-                        <li><strong>Year-end Party (December 2022)</strong> — Celebrated student achievements with games,  food, and awards recognizing.</li>
                         <li><strong>Buwan ng Wika (August 2017)</strong> — Celebrating Buwan ng wika.</li>
-                        <li><strong>Film Showing(Dec 2024)</strong> — Memorable Film Showing</li>
+                        <li><strong>Field Trip (February 2019)</strong> — Students participated in a hands-on educational tour to explore nature and history firsthand.</li>
                         <li><strong>Foundation Day (March 2020)</strong> — Promoting teamwork and healthy lifestyles through athletic competitions and wellness activities.</li>
+                        <li><strong>Year-end Party (December 2022)</strong> — Celebrated student achievements with games,  food, and awards recognizing.</li>
+                        <li><strong>Film Showing(Dec 2024)</strong> — Memorable Film Showing</li>
+                        <li><strong>8th moving up and commencement Exercise</strong> - celebrating student's achievements, recognized successful completion completion, and formally marked the transistion to their next academic level,</li>
                     </ul>
                    
                 </aside>
             </div>
         </div>
     </section>
+    <script type="text/javascript">
+        function cancel() {
+            const topEl = document.getElementById("top");
+            if (topEl) {
+                topEl.style.marginTop = '-50px';
+            }
+        }
 
-    <!-- CTA Section -->
-    
-
-   <footer class="footer" id="contact_us">
-           <h1>Contact us...</h1>
-          <section class="section">
-              <div class="content">
-                 <ul>
-                    <h4>Contact</h4>
-                    <li>Glorious God's Family Christian School</li>
-                    <li>123 Community St., (Your City)</li>
-                    <li>Phone: +46 40 902 58</li>
-                    <li>Email: <a href="mailto:arnel.shin@gmail.com">arnel.shin@gmail.com</a></li>
-                 </ul>
-
-                 <ul>
-                    <h4>Quick Links</h4>
-                    <li><a href="#about_us">About</a></li>
-                    <li><a href="#mission">Mission & Vision</a></li>
-                    <li><a href="#job_criteria">Programs</a></li>
-                    
-                 </ul>
-
-                 <!-- optional third column for office hours -->
-                 <ul>
-                    <h4>Office Hours</h4>
-                    <li>Mon–Fri: 07:00 – 17:00</li>
-                    <li>Sat: 10:00 – 12:00</li>
-                    <li>Sun: Closed</li>
-                 </ul>
-              </div>
-          </section>
-
-             
- 
-             <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-angle-double-up"></i></a>	 
-             </div>
- 
-        </footer>
- 
-    <!-- SCROLL TRIGGER SCRIPT -->
-    <script>
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.15 
-        };
-
-        const observer = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                    observer.unobserve(entry.target); 
-                }
-            });
-        }, observerOptions);
-
-        const elementsToReveal = document.querySelectorAll('.reveal');
-        elementsToReveal.forEach(el => {
-            observer.observe(el);
+        window.addEventListener('scroll', function() {
+            var t0p = document.getElementById('navtop');
+            if (top) {
+                top.classList.toggle("sticky", window.scrollY > 250);
+            }
         });
-
         // Album thumbnail gallery
         (function() {
             const previewImg = document.getElementById('albumPreviewImg');
@@ -688,22 +490,8 @@
                     }
                 });
             });
-
-            // Arrow key navigation
-            document.addEventListener('keydown', function(e) {
-                const current = thumbs.findIndex(t => t.classList.contains('active'));
-                if(current === -1) return;
-                
-                let next = current;
-                if(e.key === 'ArrowLeft') next = (current - 1 + thumbs.length) % thumbs.length;
-                if(e.key === 'ArrowRight') next = (current + 1) % thumbs.length;
-                
-                if(next !== current && thumbs[next]) {
-                    thumbs[next].click();
-                    thumbs[next].focus();
-                }
-            });
         })();
     </script>
+
 </body>
 </html>
