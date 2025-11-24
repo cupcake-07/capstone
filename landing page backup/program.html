@@ -6,7 +6,6 @@
     <title>Student program</title>
     <link rel="icon" href="Images/future.png">
     <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --black: #000;
@@ -20,6 +19,7 @@
             --lpurple: #d8b3ff;
             --lblue: #1a8fcc;
             --purple: #a3309dcc;
+
         }
         * {
             box-sizing: border-box;
@@ -42,6 +42,7 @@
             text-decoration: none;
             color: var(--white);
         }
+        
         ::-webkit-scrollbar {
             width: 8px;
             background: var(--black);
@@ -196,7 +197,7 @@
             border-bottom: 2px solid navy;
             font-weight: 700;
         }
-        .career-section {
+                .career-section {
             width: 100%;
             height: auto;
             background: linear-gradient(var(--lblue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
@@ -392,18 +393,29 @@
         .skill-section .skill-box button:hover {
             box-shadow: inset 1px 1.5px 6px rgba(0, 0, 0, .9);
         }
-
+        footer {
+            width: 100%;
+            height: 50px;
+            text-align: center;
+            line-height: 30px;
+            padding: 10px 0;
+            margin: 0;
+            font-size: 14px;
+            font-family: calibri;
+            letter-spacing: 1px;
+            color: var(--white);
+            background: #03364e;
+            box-shadow: 0 0 9px rgba(22, 129, 180, .4);
+        }
     </style>
-</head>
-<body>
-
-    <!-- NAVBAR - MATCHING Event.html -->
-    
-
-    <!-- Add top spacing for fixed navbar -->
-    <div style="height: 80px;"></div>
-
-    
+        
+	
+	<!-- Keep Google Fonts link; moved CSS rules to style.css -->
+	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+	
+    <div class="welcome" id="top">Welcome to Glorious God's Family Christian School
+         <button onclick="cancel()">&#10540</button>
+	</div>
 
 	<!-------------------header_start--------------------->
     <header class="header">
@@ -424,6 +436,8 @@
    	  	    </div>
    	    </div>
     </header>
+</head>
+<body>
     
   <!------------skills_start---------------->
     <div class="career-section" id="career">
@@ -510,15 +524,26 @@
             <h2>Library & Storytime</h2>
             <p>Daily story sessions and library time to develop listening skills and a love for books.</p>
         </div>
+        
+    </div>
+    <footer>
+         <div class="bottom"><i class="fa fa-copyright"></i>2020-2030 Glorious God's Family Christian School || all rights reserved.</div>
+    </footer>
+    <script type="text/javascript">
+        function cancel() {
+            const topEl = document.getElementById('top');
+            if (topEl) {
+                topEl.style.marginTop = '-50px';
+            }
+        }
 
-    </div>
-    <!--
-    <div class="top-arrow" id="navTop">
-        <a href="#top"><i class="fa fa-arrow-up"></i></a>
-    </div>
-    -->
-             <div class="top-arrow" id="navTop">
-                <a href="#top"><i class="fa fa-caret-up"></i></a>
-             </div>
+        // Toggle sticky top arrow on scroll
+        window.addEventListener("scroll", function () {
+            var top = document.getElementById('navTop');
+            if (top) {
+                top.classList.toggle("sticky", window.scrollY > 250);
+            }
+        });
+    </script>
 </body>
 </html>

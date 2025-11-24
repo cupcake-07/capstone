@@ -46,8 +46,8 @@ ul {
 	position: relative;
 	height: 40px;
 	text-align: center;
-	background: #90D5FF;
-	color: #474545;
+	background: #ebf4b6;
+	color: #000000;
 	line-height: 40px;
 	font-size: 16px;
 	letter-spacing: 1.2px;
@@ -111,7 +111,7 @@ ul {
 .header .content .fb-btn:hover,
 .header .content .fb-btn:focus {
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(3, 74, 153, 0.25);
+    box-shadow: 0 6px 12px #034a9940;
     opacity: 0.95;
 }
 
@@ -173,7 +173,7 @@ ul {
 .header .nav {
 	height: 70px;
 	/* changed: pinkish background left-to-right with new second color */
-	background: linear-gradient(90deg, rgba(253,253,253,0.98) 0%, #f0a5e6 100%);
+	background: linear-gradient(180deg, #3d85f8 0%, #fd4ba7 100%);
 	animation: 1s left;
 	width: 100%;
 	transition: .4s;
@@ -184,9 +184,8 @@ ul {
 	height: 100%;
 	font-size: 20px;
 	font-family: calibri;
-	/* reduced left margin and smaller padding so logo doesn't push nav */
-	margin-left: 20px;
-	padding: 12px 18px;
+	margin-left: 50px;
+	padding: 24px 40px;
 	transition: .3s;
 	animation: 2.5s left;
 	display: flex;
@@ -196,22 +195,14 @@ ul {
 	height: 65px;
 	width: auto;
 }
-
-/* replaced the previous width/margins; use flex to center and give the menu room */
 .header .nav .menu {
-	/* changed: use flex with center alignment and allow it to grow */
-	flex: 1;
+	width: 50%;
 	height: 100%;
-	font-size: 14px;
+	font-size: 20px;
+	margin: 0 10px 0 360px;
 	transition: .3s;
 	animation: 1.8s top;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin-right: 48px;
 }
-
-/* keep ul as flex; add consistent gap instead of relying on margins */
 .header .nav .menu ul {
 	width: 100%;
 	height: 100%;
@@ -219,27 +210,20 @@ ul {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 20px; /* spacing between labels */
 }
-
-/* remove invalid font-weight value and prevent wrapping */
 .header .nav .menu ul li {
-	/* corrected font-weight */
-	font-weight: 600;
-	margin: 6px 0 0 0; /* removed left margin; spacing controlled by gap */
+	font-weight: 100px;
+	margin: 6px 0 0 25px;
 	text-transform: uppercase;
 	font-size: 12px;
 	font-family: sans-serif;
 	letter-spacing: 1.2px;
 	word-spacing: 1.3px;
-	white-space: nowrap; /* prevent label wrapping */
 }
-
-/* ensure the anchor content stays on one line and has comfortable padding */
 .header .nav .menu ul li a {
-	display: inline-block;  /* ensure clickable area is correct */
+	/* changed: use solid black for maximum readability */
 	color: #000;
-	padding: 22px 10px;
+	padding: 22px 6px;
 	transition: .4s;
 	border-bottom: 2px solid transparent;
 }
@@ -317,9 +301,9 @@ ul {
 
 /* Use Montserrat for header content */
 .header .content { font-family: 'Montserrat', sans-serif; }
-.header .content h1 { font-weight: 700; }
+.header .content h1 { font-weight: 700;}
 .header .content .border,
-.header .content .slog { font-weight: 300; }
+.header .content .slog { font-weight: 300; font-weight: bold;}
 
 /* Background loop video for .sub (placed behind content) */
 .sub { position: relative; overflow: hidden; }
@@ -487,84 +471,70 @@ ul {
 	display: inline-block;
 	cursor: pointer;
 }
-/* Replace the oblong box with a round (square-sized) avatar box */
 .about-section .marq .box {
-	/* changed: equal width/height for perfect circle */
-	width: 140px;
-	height: 140px;
-	margin: 0 12px;
+	width: 170px;
+	height: 170px;
+	margin: 0 21px;
 	border-radius: 50%;
+	letter-spacing: .5px;
 	display: inline-block;
 	cursor: pointer;
 	border: 2px solid #00bfff;
-	transition: transform .25s ease, box-shadow .25s ease;
+	transition: .4s;
 	overflow: hidden;
-	background-position: center;
-	background-repeat: no-repeat;
-	background-size: cover; /* ensure image fills the circle */
-	box-sizing: border-box;
-	/* preserve any custom background defined for each ID (they'll override background-image) */
 }
-
-/* Hover and focus states remain but kept subtle */
 .about-section .marq .box:hover {
 	transform: scale(1.14);
-	box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+	box-shadow: 0 3px 12px rgba(0, 0, 0, .8);
 }
-
-/* Overlay covers circular thumbnail; keep the same show/hide animation */
 .about-section .marq .box .over {
 	width: 100%;
 	height: 100%;
-	background: rgba(0, 0, 0, .45);
+	background: rgba(0, 0, 0, .8);
 	text-align: center;
-	padding: 8px;
-	transition: transform .6s ease, opacity .3s ease;
-	transform: translateY(70%); /* hidden state, can be adjusted */
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	border-radius: 50%; /* make overlay circular too */
-	pointer-events: none; /* ensures hover still reaches the box */
+	padding: 8px 5px;
+	transition: .6s;
+	transform: translateY(75%);
 }
-
-/* On hover, slide overlay into view */
 .about-section .marq .box:hover .over {
 	transform: translateY(0);
-	pointer-events: auto;
 }
-
-/* make overlay headings nicely centered within the circle */
-.about-section .marq .box .over h4,
-.about-section .marq .box .over h5 {
-	margin: 0;
+.about-section .marq .box .over h4 {
+	border: 0;
 	color: #fff;
 	font-family: calibri;
-	font-size: 14px;
-	text-align: center;
-	line-height: 1.1;
-	padding: 6px; /* small padding for readability */
+	font-weight: 50px;
+	letter-spacing: 1px;
+	transform: translateY(0);
+	transition: 1s;
+}
+.about-section .marq .box:hover .over h4 {
+	transform: translateY(60px);
 }
 
-/* Responsive: smaller circular thumbnails on narrow viewports */
-@media (max-width: 780px) {
-	.about-section .marq .box {
-		width: 80px;
-		height: 80px;
-		margin: 0 8px;
-	}
-	.about-section .marq .box .over h4,
-	.about-section .marq .box .over h5 {
-		font-size: 12px;
-	}
-}
+/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
+.about-section .marq #img1 { background: url(Images/school14.jpg) top center/cover no-repeat; }
+.about-section .marq #img2 { background: url(Images/school15.jpg) top center/cover no-repeat; }
+.about-section .marq #img3 { background: url(Images/school16.jpg) top center/cover no-repeat; }
+.about-section .marq #img4 { background: url(Images/school18.jpg) top center/cover no-repeat; }
+.about-section .marq #img5 { background: url(Images/school19.jpg) top center/cover no-repeat; }
+.about-section .marq #img6 { background: url(Images/school20.jpg) top center/cover no-repeat; }
+.about-section .marq #img7 { background: url(Images/school21.jpg) top center/cover no-repeat; }
+.about-section .marq #img8 { background: url(Images/school22.jpg) center/cover no-repeat; }
+.about-section .marq #img9 { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
+.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
+.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
+.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
+.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
+.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
+.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
+.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
 
 /* Career section */
 .career-section {
 	width: 100%;
 	height: auto;
-	background: #d5aae6;
+	background: #d8bde2;
 	padding: 30px 0 50px;
 	text-align: center;
 }
@@ -610,7 +580,7 @@ ul {
 }
 .career-section .sect .box:hover {
 	transform: scale(1.09);
-	box-shadow: inset .5px 1px 5px rgba(191, 187, 215, .8);
+	box-shadow: inset .5px 1px 5px #bfbbd7cc;
 }
 .career-section .sect .box .icon,
 .how .box .icon {
@@ -1191,91 +1161,9 @@ ul {
 	transform: translateY(-6px);
 }
 
-/* Make the modal accessible and visually consistent: reuse container classes and make mine a bit narrower */
-.container.inquire .box {
-  width: 48%;
-  max-width: 840px;
-  min-width: 320px;
-  height: auto;
-  display: flex;
-  margin: 35px auto;
-  padding: 0;
-}
-
-/* Ensure the inquire modal sits above other modals/overlays */
-.container.inquire {
-  z-index: 10050; /* higher than default container */
-  background: rgba(0, 0, 0, 0.35); /* dim background for focus */
-  padding: 28px 0;
-}
-
-/* Move the cancel button inside the modal to the top-right for smaller modals */
-.container.inquire .cancel {
-  top: 18px;
-  right: 18px;
-  z-index: 10100;
-}
-
-/* Status message styling (errors and feedback inside modal) */
-#inquireStatus {
-  font-family: calibri, Arial, sans-serif;
-  margin-top: 6px;
-  color: #2e7d32; /* success green */
-  font-size: 14px;
-}
-#inquireStatus.error {
-  color: #d32f2f; /* error red */
-}
-
-/* Keep the modal overlay and content responsive and accessible */
-/* Focus outlines for focusable elements inside the modal */
-.container.inquire :focus {
-  outline: 2px solid rgba(10,102,194,0.18);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
-/* Ensure the modal doesn't exceed viewport height on small screens */
-@media (max-width: 780px) {
-  .container.inquire .cancel {
-    top: 12px;
-    right: 12px;
-  }
-}
-
-/* Make the inquire overlay center the modal and show it as a flex overlay when .show is present */
-.container.inquire.show {
-  display: flex;                   /* override default .show (block) so we can center */
-  justify-content: center;
-  align-items: center;
-  padding: 28px;
-  box-sizing: border-box;
-  pointer-events: auto;
-}
-
-/* Entrance animation: scale & fade the box in */
-.container.inquire .box {
-  transform: translateY(6px) scale(.96);
-  opacity: 0;
-  transition: transform .26s cubic-bezier(.2,.9,.2,1), opacity .22s ease;
-  /* existing layout rules remain */
-}
-.container.inquire.show .box {
-  transform: translateY(0) scale(1);
-  opacity: 1;
-}
-
-/* Prevent focusable elements behind the overlay from getting clicks/interactions */
-.container.inquire {
-  pointer-events: none;      /* prevent clicks while not shown */
-}
-.container.inquire.show {
-  pointer-events: auto;      /* enable clicks when shown */
-}
-
-/* Ensure the modal container does not visually hide due to other overlay styles */
-.container.inquire {
-  z-index: 10050;
+/* Container visibility helper */
+.show {
+	display: block;
 }
 
 /* Welcome big (overlay) */
@@ -1298,366 +1186,6 @@ ul {
 	animation: 4.8s scale;
 }
 
-/* Minimal, non-animated modal: override previous animated styles for the inquire modal */
-.container.inquire {
-  z-index: 10050;
-  background: rgba(0, 0, 0, 0.35); /* dim background */
-  padding: 20px;
-}
-
-/* Remove the side-image for the inquire modal to make it plain and image-free */
-.container.inquire .box .side-image {
-  display: none !important;
-}
-
-/* Make the modal box plain, centered and static (no scale/zoom/transforms) */
-.container.inquire .box {
-  width: 520px;
-  max-width: calc(100% - 40px);
-  min-width: 320px;
-  margin: 0 auto;
-  padding: 26px 28px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transform: none !important;
-  animation: none !important;
-  transition: none !important; /* avoid shakiness */
-}
-
-/* Remove any entrance transform/opacity overrides and keep a simple show */
-.container.inquire.show {
-  display: flex;             /* center */
-  justify-content: center;
-  align-items: center;
-}
-
-/* Move cancel control to a consistent position in the modal box */
-.container.inquire .cancel {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  text-align: center;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.6);
-  font-size: 16px;
-  z-index: 10100;
-}
-
-/* Stack labels above inputs and make fields full width for clarity */
-.container.inquire .box .input-group .form .input-field {
-  display: block;
-  margin-bottom: 14px;
-}
-.container.inquire .box .input-group .form .input-field label {
-  display: block;
-  width: 100%;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #2b2b2b;
-  font-family: calibri, 'Segoe UI', sans-serif;
-}
-.container.inquire .box .input-group .form .input-field input,
-.container.inquire .box .input-group .form .input-field textarea,
-.container.inquire .box .input-group .form .input-field select {
-  width: 100%;
-  margin-left: 0;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 1px solid #c3cfd6;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #222;
-  background: #fff;
-}
-
-/* Adjust buttons layout: horizontally aligned and consistent style */
-.container.inquire .box .input-group .form .input-field .reset,
-.container.inquire .box .input-group .form .input-field .submit,
-.container.inquire .box .input-group .form .input-field input[type="reset"],
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  width: auto;
-  padding: 10px 16px;
-  margin-right: 8px;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  background: #001b8a; /* deep blue CTA */
-  color: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
-}
-
-/* Make the status message visible and non-intrusive */
-#inquireStatus {
-  margin-top: 2px;
-  font-size: 13px;
-  color: #2e7d32;
-}
-#inquireStatus.error {
-  color: #d32f2f;
-}
-
-/* On small screens, modal becomes full-width with consistent padding */
-@media (max-width: 540px) {
-  .container.inquire .box {
-    width: 92%;
-    padding: 18px;
-  }
-}
-
-/* Spacing tokens for consistent vertical rhythm */
-:root {
-  --space-xs: 6px;
-  --space-sm: 12px;
-  --space-md: 18px;
-  --space-lg: 28px;
-  --modal-max-width: 520px;
-  --modal-min-width: 300px;
-}
-
-/* Slightly more breathing room around primary sections */
-.about-section,
-.career-section,
-.skill-section,
-.how,
-.mission-section {
-  padding-top: calc(var(--space-lg) + 12px);
-  padding-bottom: calc(var(--space-lg) + 12px);
-}
-
-/* Improve header content spacing */
-.header .content {
-  margin: 80px 80px 48px 50px;
-}
-
-/* INQUIRE MODAL: Clean, improved spacing */
-.container.inquire {
-  z-index: 10050;
-  background: rgba(0, 0, 0, 0.38);
-  padding: 24px;
-  display: none;
-}
-
-.container.inquire.show {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: auto;
-}
-
-.container.inquire .box {
-  width: min(var(--modal-max-width), 90%);
-  max-width: var(--modal-max-width);
-  min-width: var(--modal-min-width);
-  padding: 28px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 20px 40px rgba(5, 20, 34, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-height: 85vh;
-  overflow-y: auto;
-  transform: none !important;
-  animation: none !important;
-}
-
-.container.inquire .box .side-image {
-  display: none !important;
-}
-
-.container.inquire .box .input-group {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.container.inquire .box h1 {
-  margin: 0 0 var(--space-lg) 0;
-  padding: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 0.5px;
-  color: #072;
-}
-
-.container.inquire .box .input-group .form {
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* Stack form fields with consistent vertical spacing */
-.container.inquire .box .input-group .form .input-field {
-  display: block;
-  margin-bottom: var(--space-md);
-  padding: 0;
-  width: 100%;
-}
-
-/* Last field (buttons) gets special treatment */
-.container.inquire .box .input-group .form .input-field:last-of-type {
-  margin-bottom: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-}
-
-.container.inquire .box .input-group .form .input-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #2b2b2b;
-  font-family: calibri, 'Segoe UI', sans-serif;
-}
-
-.container.inquire .box .input-group .form .input-field input,
-.container.inquire .box .input-group .form .input-field textarea,
-.container.inquire .box .input-group .form .input-field select {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d5dfe8;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  min-height: 44px;
-  box-sizing: border-box;
-  background: #fff;
-  color: #222;
-  transition: border-color 0.18s ease;
-}
-
-.container.inquire .box .input-group .form .input-field input:focus,
-.container.inquire .box .input-group .form .input-field textarea:focus,
-.container.inquire .box .input-group .form .input-field select:focus {
-  border-color: #629edb;
-  outline: 3px solid rgba(98, 158, 219, 0.14);
-}
-
-.container.inquire .box .input-group .form .input-field textarea {
-  resize: vertical;
-  min-height: 120px;
-  line-height: 1.5;
-}
-
-/* Buttons: compact, readable, aligned right */
-.container.inquire .box .input-group .form .input-field input[type="reset"],
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  width: auto;
-  min-width: 88px;
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.container.inquire .box .input-group .form .input-field input[type="reset"] {
-  background: #fff;
-  color: #333;
-  border: 1px solid rgba(20, 40, 60, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="reset"]:hover {
-  background: #f8f9fa;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  background: #0a2bd9;
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(10, 24, 72, 0.14);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="submit"]:hover {
-  background: #0823b8;
-  box-shadow: 0 12px 28px rgba(10, 24, 72, 0.18);
-}
-
-/* Close button: positioned and styled consistently */
-.container.inquire .cancel {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 18px;
-  text-align: center;
-  cursor: pointer;
-  border: 0;
-  transition: all 0.18s ease;
-  z-index: 10100;
-}
-
-.container.inquire .cancel:hover {
-  background: rgba(0, 0, 0, 0.75);
-}
-
-/* Status message styling */
-#inquireStatus {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #2e7d32;
-  font-family: calibri, Arial, sans-serif;
-}
-
-#inquireStatus.error {
-  color: #d32f2f;
-}
-
-/* Responsive: mobile adjustments */
-@media (max-width: 540px) {
-  :root {
-    --modal-max-width: 100%;
-  }
-
-  .container.inquire {
-    padding: 12px;
-  }
-
-  .container.inquire .box {
-    width: 100%;
-    padding: 18px;
-    border-radius: 8px;
-  }
-
-  .container.inquire .box h1 {
-    font-size: 1.05rem;
-    margin-bottom: var(--space-md);
-  }
-
-  .container.inquire .box .input-group .form .input-field:last-of-type {
-    flex-direction: column-reverse;
-    gap: 8px;
-  }
-
-  .container.inquire .box .input-group .form .input-field input[type="submit"],
-  .container.inquire .box .input-group .form .input-field input[type="reset"] {
-    width: 100%;
-  }
-}
-
 /* Misc transitions and transforms & keyframes */
 @keyframes down {
 	0%,
@@ -1985,612 +1513,4 @@ ul {
   }
 }
 
-/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
-/* Keep these exact rules (do not remove) so each box has the right background image */
-.about-section .marq #img1  { background: url(Images/school14.jpg) top center/cover no-repeat; }
-.about-section .marq #img2  { background: url(Images/school15.jpg) top center/cover no-repeat; }
-.about-section .marq #img3  { background: url(Images/school16.jpg) top center/cover no-repeat; }
-.about-section .marq #img4  { background: url(Images/school18.jpg) top center/cover no-repeat; }
-.about-section .marq #img5  { background: url(Images/school19.jpg) top center/cover no-repeat; }
-.about-section .marq #img6  { background: url(Images/school20.jpg) top center/cover no-repeat; }
-.about-section .marq #img7  { background: url(Images/school21.jpg) top center/cover no-repeat; }
-.about-section .marq #img8  { background: url(Images/school22.jpg) center/cover no-repeat; }
-.about-section .marq #img9  { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
-.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
-.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
-.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
-.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
-.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
-.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
-.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
-
-/* Spacing tokens for consistent vertical rhythm */
-:root {
-  --space-xs: 6px;
-  --space-sm: 12px;
-  --space-md: 18px;
-  --space-lg: 28px;
-  --modal-max-width: 520px;
-  --modal-min-width: 300px;
-}
-
-/* Slightly more breathing room around primary sections */
-.about-section,
-.career-section,
-.skill-section,
-.how,
-.mission-section {
-  padding-top: calc(var(--space-lg) + 12px);
-  padding-bottom: calc(var(--space-lg) + 12px);
-}
-
-/* Improve header content spacing */
-.header .content {
-  margin: 80px 80px 48px 50px;
-}
-
-/* INQUIRE MODAL: Clean, improved spacing */
-.container.inquire {
-  z-index: 10050;
-  background: rgba(0, 0, 0, 0.38);
-  padding: 24px;
-  display: none;
-}
-
-.container.inquire.show {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: auto;
-}
-
-.container.inquire .box {
-  width: min(var(--modal-max-width), 90%);
-  max-width: var(--modal-max-width);
-  min-width: var(--modal-min-width);
-  padding: 28px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 20px 40px rgba(5, 20, 34, 0.12);
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-height: 85vh;
-  overflow-y: auto;
-  transform: none !important;
-  animation: none !important;
-}
-
-.container.inquire .box .side-image {
-  display: none !important;
-}
-
-.container.inquire .box .input-group {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.container.inquire .box h1 {
-  margin: 0 0 var(--space-lg) 0;
-  padding: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 0.5px;
-  color: #072;
-}
-
-.container.inquire .box .input-group .form {
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* Stack form fields with consistent vertical spacing */
-.container.inquire .box .input-group .form .input-field {
-  display: block;
-  margin-bottom: var(--space-md);
-  padding: 0;
-  width: 100%;
-}
-
-/* Last field (buttons) gets special treatment */
-.container.inquire .box .input-group .form .input-field:last-of-type {
-  margin-bottom: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-}
-
-.container.inquire .box .input-group .form .input-field label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #2b2b2b;
-  font-family: calibri, 'Segoe UI', sans-serif;
-}
-
-.container.inquire .box .input-group .form .input-field input,
-.container.inquire .box .input-group .form .input-field textarea,
-.container.inquire .box .input-group .form .input-field select {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d5dfe8;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  min-height: 44px;
-  box-sizing: border-box;
-  background: #fff;
-  color: #222;
-  transition: border-color 0.18s ease;
-}
-
-.container.inquire .box .input-group .form .input-field input:focus,
-.container.inquire .box .input-group .form .input-field textarea:focus,
-.container.inquire .box .input-group .form .input-field select:focus {
-  border-color: #629edb;
-  outline: 3px solid rgba(98, 158, 219, 0.14);
-}
-
-.container.inquire .box .input-group .form .input-field textarea {
-  resize: vertical;
-  min-height: 120px;
-  line-height: 1.5;
-}
-
-/* Buttons: compact, readable, aligned right */
-.container.inquire .box .input-group .form .input-field input[type="reset"],
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  width: auto;
-  min-width: 88px;
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.container.inquire .box .input-group .form .input-field input[type="reset"] {
-  background: #fff;
-  color: #333;
-  border: 1px solid rgba(20, 40, 60, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="reset"]:hover {
-  background: #f8f9fa;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="submit"] {
-  background: #0a2bd9;
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(10, 24, 72, 0.14);
-}
-
-.container.inquire .box .input-group .form .input-field input[type="submit"]:hover {
-  background: #0823b8;
-  box-shadow: 0 12px 28px rgba(10, 24, 72, 0.18);
-}
-
-/* Close button: positioned and styled consistently */
-.container.inquire .cancel {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 18px;
-  text-align: center;
-  cursor: pointer;
-  border: 0;
-  transition: all 0.18s ease;
-  z-index: 10100;
-}
-
-.container.inquire .cancel:hover {
-  background: rgba(0, 0, 0, 0.75);
-}
-
-/* Status message styling */
-#inquireStatus {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #2e7d32;
-  font-family: calibri, Arial, sans-serif;
-}
-
-#inquireStatus.error {
-  color: #d32f2f;
-}
-
-/* Responsive: mobile adjustments */
-@media (max-width: 540px) {
-  :root {
-    --modal-max-width: 100%;
-  }
-
-  .container.inquire {
-    padding: 12px;
-  }
-
-  .container.inquire .box {
-    width: 100%;
-    padding: 18px;
-    border-radius: 8px;
-  }
-
-  .container.inquire .box h1 {
-    font-size: 1.05rem;
-    margin-bottom: var(--space-md);
-  }
-
-  .container.inquire .box .input-group .form .input-field:last-of-type {
-    flex-direction: column-reverse;
-    gap: 8px;
-  }
-
-  .container.inquire .box .input-group .form .input-field input[type="submit"],
-  .container.inquire .box .input-group .form .input-field input[type="reset"] {
-    width: 100%;
-  }
-}
-
-/* Misc transitions and transforms & keyframes */
-@keyframes down {
-	0%,
-	40%,
-	80% {
-		margin-top: -50px;
-	}
-	100%,
-	99% {
-		margin-top: 0;
-	}
-}
-@keyframes link {
-	0%,
-	80% {
-		transform: translateX(200%);
-	}
-	100% {
-		transform: translateX(0);
-	}
-}
-@keyframes show {
-	0% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school7.jpg) center/cover no-repeat fixed;
-	}
-	20% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school1.jpg) center/cover no-repeat fixed;
-	}
-	40% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school2.jpg) center/cover no-repeat fixed;
-	}
-	60% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school3.jpg) center/cover no-repeat fixed;
-	}
-	80% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school4.jpg) center/cover no-repeat;
-	}
-	100% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school5.jpg) center/cover no-repeat;
-	}
-}
-@keyframes Zooming {
-	0% {
-		transform: scale(0);
-	}
-	20% {
-		transform: scale(1);
-	}
-	40%,
-	70% {
-		transform: scale(.7);
-	}
-	60% {
-		transform: scale(.9);
-	}
-	100% {
-		transform: scale(.85);
-	}
-}
-@keyframes zoom {
-	0%,
-	20%,
-	40%,
-	60%,
-	80% {
-		transform: scale(0);
-	}
-	100% {
-		transform: scale(1.2);
-	}
-}
-/* Note: duplicate keyframes named "zoom" existed in original file, the above follows both occurrences without altering behavior */
-
-/* Additional keyframes used for welcome_big scaling */
-@keyframes scale {
-	0% {
-		opacity: 0;
-		transform: translateY(-100%) scale(0);
-	}
-	45%,
-	55% {
-		opacity: 1;
-		transform: translateY(0) scale(1.2);
-	}
-	100% {
-		opacity: 0;
-		transform: translateY(0) scale(1.4);
-	}
-}
-
-/* Bounce animation used by footer top arrow */
-@keyframes bounce {
-	0%,
-	100% {
-		transform: translateY(0);
-	}
-	50% {
-		transform: translateY(-5px);
-	}
-	80% {
-		transform: translateY(5px);
-	}
-}
-
-/* Animate On Scroll (AOS) - subtle enter/slide/zoom effects */
-.aos {
-  --aos-duration: 700ms;
-  --aos-easing: cubic-bezier(.18,.9,.22,1);
-  --aos-delay: 0ms;
-  will-change: transform, opacity;
-  opacity: 0;
-  transform: translateY(18px); /* default slide up offset */
-  transition:
-    transform var(--aos-duration) var(--aos-easing) var(--aos-delay),
-    opacity var(--aos-duration) var(--aos-easing) var(--aos-delay);
-  /* Make sure the animation does not affect layout */
-  pointer-events: auto;
-}
-
-/* When element becomes visible */
-.aos.in-view {
-  opacity: 1;
-  transform: none;
-}
-
-/* Variants */
-.aos.slide-up { transform: translateY(18px); }
-.aos.slide-right { transform: translateX(36px); }
-.aos.slide-left { transform: translateX(-36px); }
-.aos.fade-in { opacity: 0; transform: none; /* just fade */ }
-.aos.zoom-in { transform: scale(.96); }
-
-/* Reset transforms when in view */
-.aos.in-view.slide-up,
-.aos.in-view.slide-left,
-.aos.in-view.slide-right,
-.aos.in-view.fade-in,
-.aos.in-view.zoom-in { transform: none; opacity: 1; }
-
-/* Make the transition slightly faster on small screens and reduce movement */
-@media (max-width: 780px) {
-  .aos { --aos-duration: 520ms; --aos-delay: 0ms; transform: translateY(12px); }
-  .aos.slide-left, .aos.slide-right { transform: translateX(18px); }
-}
-
-/* Support for per-element stagger via inline CSS variable --aos-delay */
-/* Example: el.style.setProperty('--aos-delay', '120ms'); */
-
-/* Accessibility: reduce motion support (respects user's OS preference) */
-@media (prefers-reduced-motion: reduce) {
-  .aos,
-  .aos.in-view {
-    transition: none !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
-}
-
-/* Photo: make the container fully transparent and remove borders/shadows/padding.
-   Keep explicit width via grid column so spacing and alignment remain unchanged. */
-.about-section .sub.abs-photo {
-	/* larger photo column, slightly larger gap for breathing room */
-	display: grid;
-	grid-template-columns: 1fr 560px; /* increased from 1fr 380px */
-	column-gap: 28px;                 /* slightly larger gap */
-	align-items: center;
-	position: relative;
-	padding-right: 0;
-}
-
-/* keep the text readable but limit width so it doesn't collide with the bigger photo */
-.about-section .sub.abs-photo .para {
-	width: 100%;
-	max-width: 85ch;  /* slightly narrower to fit with larger photo */
-	margin: 2px 0;
-	padding: 0;
-	box-sizing: border-box;
-	margin-top: -12px;
-}
-
-/* transparent photo container but larger and defined height */
-.about-section .sub .photo,
-.about-section .sub.abs-photo .photo {
-	background: transparent !important;
-	border: none !important;
-	box-shadow: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	width: 560px;      /* match the grid column */
-	height: 520px;     /* large, defined height for prominence */
-	max-width: 100%;
-	display: block;
-	overflow: visible;
-}
-
-/* image fills the container now, using cover so it appears large and fills card */
-.about-section .sub .photo img,
-.about-section .sub.abs-photo .photo img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;               /* fill and crop to maintain aspect */
-	background: transparent !important;
-	display: block;
-}
-
-/* Medium screens: scale photo down while maintaining alignment */
-@media (max-width: 1200px) and (min-width: 781px) {
-	.about-section .sub.abs-photo {
-		grid-template-columns: 1fr 480px;  /* slightly smaller for medium screens */
-		column-gap: 22px;
-	}
-	.about-section .sub.abs-photo .para {
-		max-width: 64ch;
-	}
-	.about-section .sub .photo,
-	.about-section .sub.abs-photo .photo {
-		width: 480px;
-		height: 420px;
-	}
-}
-
-/* Small screens: stacked layout remains — full width and reduced height */
-@media (max-width: 780px) {
-	.about-section .sub.abs-photo {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-		padding-right: 0;
-	}
-	.about-section .sub .photo,
-	.about-section .sub.abs-photo .photo {
-		width: 100%;
-		max-width: none;
-		height: 300px;
-		padding: 0;
-		border-radius: 0;
-	}
-	.about-section .sub .photo img,
-	.about-section .sub.abs-photo .photo img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-}
-
-/* Mission / Vision / Philosophy cards */
-.mission-section {
-  width: 100%;
-  padding: 56px 4%;           /* more breathing room */
-  box-sizing: border-box;
-  background: #fff;
-}
-.mission-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  /* responsive grid: cards will wrap as needed */
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 28px;
-  align-items: start;
-}
-
-/* Card */
-.mission-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 26px;
-  border-radius: 12px;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 10px 32px rgba(3, 10, 23, .06);
-  transition: transform .22s cubic-bezier(.2,.9,.3,1), box-shadow .22s cubic-bezier(.2,.9,.3,1), filter .22s ease;
-  text-align: center;          /* center text inside each box for visual balance */
-  align-items: center;         /* center icon/title */
-  min-height: 210px;           /* keep consistent heights */
-  /* stronger layered shadow for realistic depth */
-  box-shadow:
-    0 22px 48px rgba(7, 22, 34, 0.10),  /* large soft ambient shadow */
-    0 6px 20px rgba(7, 28, 44, 0.06),   /* mid blur for depth */
-    0 1px 0 rgba(255, 255, 255, 0.02);  /* subtle top highlight */
-  position: relative;
-  overflow: visible;
-}
-
-/* Soft glow behind the card for subtle separation */
-.mission-card::before {
-  content: "";
-  position: absolute;
-  inset: -12px;
-  border-radius: inherit;
-  background: radial-gradient(ellipse at center, rgba(26,143,204,0.06) 0%, rgba(26,143,204,0) 45%);
-  z-index: -1;
-  pointer-events: none;
-  filter: blur(18px);
-  opacity: 0.85;
-  transition: opacity .22s ease;
-}
-
-/* Hover state: lift the card and intensify the shadow */
-.mission-card:hover {
-  transform: translateY(-10px) scale(1.01);
-  box-shadow:
-    0 36px 66px rgba(7, 22, 34, 0.16),
-    0 10px 30px rgba(7, 28, 44, 0.10),
-    0 2px 0 rgba(255, 255, 255, 0.02);
-}
-.mission-card:hover::before {
-  opacity: 1;
-}
-
-/* Focus-visible for keyboard accessibility */
-.mission-card:focus-within,
-.mission-card:focus {
-  outline: 3px solid rgba(10,102,194,0.12);
-  outline-offset: 4px;
-}
-
-/* Reduced-motion preference: scale/transform turned off */
-@media (prefers-reduced-motion: reduce) {
-  .mission-card,
-  .mission-card:hover {
-    transform: none !important;
-    transition: none !important;
-  }
-}
-
-/* Marq specific image selectors (preserve backgrounds) — unique selector per ID */
-/* Keep these exact rules (do not remove) so each box has the right background image */
-.about-section .marq #img1  { background: url(Images/school14.jpg) top center/cover no-repeat; }
-.about-section .marq #img2  { background: url(Images/school15.jpg) top center/cover no-repeat; }
-.about-section .marq #img3  { background: url(Images/school16.jpg) top center/cover no-repeat; }
-.about-section .marq #img4  { background: url(Images/school18.jpg) top center/cover no-repeat; }
-.about-section .marq #img5  { background: url(Images/school19.jpg) top center/cover no-repeat; }
-.about-section .marq #img6  { background: url(Images/school20.jpg) top center/cover no-repeat; }
-.about-section .marq #img7  { background: url(Images/school21.jpg) top center/cover no-repeat; }
-.about-section .marq #img8  { background: url(Images/school22.jpg) center/cover no-repeat; }
-.about-section .marq #img9  { background: url(Images/school23.jpg) top center/cover no-repeat; }   /* reuse file if needed */
-.about-section .marq #img10 { background: url(Images/school24.jpg) top center/cover no-repeat; }
-.about-section .marq #img11 { background: url(Images/school25.jpg) top center/cover no-repeat; }
-.about-section .marq #img12 { background: url(Images/school26.jpg) top center/cover no-repeat; }
-.about-section .marq #img13 { background: url(Images/school27.jpg) top center/cover no-repeat; }
-.about-section .marq #img14 { background: url(Images/school28.jpg) top center/cover no-repeat; }
-.about-section .marq #img15 { background: url(Images/school29.jpg) top center/cover no-repeat; }
-.about-section .marq #img16 { background: url(Images/school30.jpg) center/cover no-repeat; }
+/* ...existing code... */
