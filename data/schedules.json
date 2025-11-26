@@ -4470,54 +4470,5 @@
             "room": ""
         }
     ],
-    "K1_A": [
-        {
-            "room": "",
-            "time": "",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "Maria DB",
-                "subject": "English"
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
-        },
-        {
-            "room": "",
-            "time": "",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "Maria DB",
-                "subject": "Computer"
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
-        }
-    ]
+    "K1_A": []
 }

@@ -144,6 +144,8 @@ if ($allTeachersResult) {
           <label for="grade">Grade</label>
           <select name="grade" id="grade">
             <option value="">-- Select grade --</option>
+            <option value="K1">Kinder 1</option>
+            <option value="K2">Kinder 2</option>
             <option value="1">Grade 1</option>
             <option value="2">Grade 2</option>
             <option value="3">Grade 3</option>
@@ -476,9 +478,20 @@ if ($allTeachersResult) {
 				body: payload,
 				credentials: 'same-origin'
 			})
-			.then(res => {
-				if (!res.ok) throw new Error('Network response not ok: ' + res.status);
-				return res.json();
+			.then(async res => {
+				// Get raw text so we can surface non-JSON responses for debugging
+				const text = await res.text();
+				if (!res.ok) {
+					// Include server text to help debug HTML error output
+					throw new Error('Network response not ok: ' + res.status + ' - ' + text);
+				}
+				// Try parse JSON and throw if invalid
+				try {
+					return JSON.parse(text);
+				} catch (err) {
+					console.error('Invalid JSON response from server:', text);
+					throw new Error('Invalid JSON returned from server. See console for details.');
+				}
 			})
 			.then(data => {
 				if (data && data.success) {
@@ -515,7 +528,7 @@ if ($allTeachersResult) {
 			})
 			.catch(err => {
 				console.error('Save failed', err);
-				alert('Request failed');
+				alert('Request failed: ' + (err && err.message ? err.message : 'Unknown error'));
 			})
 			.finally(() => {
 				if (saveBtn) saveBtn.disabled = false;
