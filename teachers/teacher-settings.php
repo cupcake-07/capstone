@@ -365,7 +365,9 @@ if ($user_id > 0) {
     <!--Top Navbar-->
     <nav class="navbar">
         <div class="navbar-brand">
-            <div class="navbar-logo">GGF</div>
+            <div class="navbar-logo">
+                <img src="g2flogo.png" class="logo-image"/>
+            </div>
             <div class="navbar-text">
                 <div class="navbar-title">Glorious God's Family</div>
                 <div class="navbar-subtitle">Christian School</div>
