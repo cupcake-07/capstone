@@ -34,32 +34,87 @@ if (!empty($_SESSION['user_id'])) {
 
 // --- REPLACE: helper to load schedule for a grade+section ---
 function load_schedule_for($grade, $section) {
-    // use shared project-wide data file (same as admin)
-    $schedules_file = __DIR__ . '/data/schedules.json';
-    if (!file_exists($schedules_file)) return null;
-    $json = @file_get_contents($schedules_file);
-    if ($json === false) return null;
-    $data = json_decode($json, true);
-    if (!is_array($data)) return null;
+    // Use server host (avoid hardcoded "localhost") and prefer cURL to fetch JSON from admin API
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $adminUrl = 'http://' . $host . '/capstone/admin/schedule.php?fetch_schedule=1&grade=' . urlencode($grade) . '&section=' . urlencode($section);
 
-    // normalize inputs
-    $g = trim((string)$grade);
-    $s = trim((string)$section);
-    if ($g === '') return null;
-    // normalize section to single upper-case letter if present
-    $s = strtoupper($s);
-    if ($s === '' || strtolower($s) === 'n/a') $s = 'A';
+    // Attempt to fetch with cURL
+    $sched = null;
+    if (function_exists('curl_version')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $adminUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_FOLLOWLOCATION => true,
+        ]);
+        $json = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
 
-    $key = $g . '_' . $s;
-    if (isset($data[$key]) && is_array($data[$key])) return $data[$key];
-
-    // try fallback: sometimes sections stored without underscore or different casing
-    foreach ($data as $k => $val) {
-        if (!is_string($k)) continue;
-        if (strcasecmp($k, $key) === 0) return $val;
+        if ($json !== false && $httpCode >= 200 && $httpCode < 300) {
+            $data = @json_decode($json, true);
+            if (is_array($data) && isset($data['schedule']) && is_array($data['schedule'])) {
+                $sched = $data['schedule'];
+            } elseif (is_array($data)) {
+                // fallback: some responses might return schedule directly
+                $sched = $data;
+            }
+        }
+    } else {
+        // fallback to file_get_contents if cURL isn't available
+        $json = @file_get_contents($adminUrl);
+        $data = @json_decode($json, true);
+        if (is_array($data) && isset($data['schedule']) && is_array($data['schedule'])) {
+            $sched = $data['schedule'];
+        } elseif (is_array($data)) {
+            $sched = $data;
+        }
     }
 
-    return null;
+    // If remote fetch failed, try local data file (project-wide)
+    if (!is_array($sched)) {
+        $schedules_file = __DIR__ . '/data/schedules.json';
+        if (!file_exists($schedules_file)) return null;
+        $jsonLocal = @file_get_contents($schedules_file);
+        if ($jsonLocal === false) return null;
+        $dataLocal = json_decode($jsonLocal, true);
+        if (!is_array($dataLocal)) return null;
+        $key = trim((string)$grade) . '_' . strtoupper(trim((string)$section));
+        if (isset($dataLocal[$key]) && is_array($dataLocal[$key])) {
+            $sched = $dataLocal[$key];
+        } else {
+            // try case-insensitive match fallback
+            foreach ($dataLocal as $k => $val) {
+                if (!is_string($k)) continue;
+                if (strcasecmp($k, $key) === 0) {
+                    $sched = $val;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Ensure schedule rows are normalized (room/time/days) to avoid undefined index usage later
+    if (is_array($sched)) {
+        foreach ($sched as &$row) {
+            if (!is_array($row)) $row = [];
+            $row['room'] = isset($row['room']) ? (string)$row['room'] : '';
+            $row['time'] = isset($row['time']) ? (string)$row['time'] : '';
+            foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
+                if (!isset($row[$d]) || !is_array($row[$d])) {
+                    $row[$d] = ['teacher' => '', 'subject' => ''];
+                } else {
+                    $row[$d]['teacher'] = isset($row[$d]['teacher']) ? (string)$row[$d]['teacher'] : '';
+                    $row[$d]['subject'] = isset($row[$d]['subject']) ? (string)$row[$d]['subject'] : '';
+                }
+            }
+        }
+        unset($row);
+    }
+
+    return is_array($sched) ? $sched : null;
 }
 
 // --- SMALL ADJUSTMENT: prefer grade/section from query parameters when provided ---
@@ -137,6 +192,7 @@ if ($student_grade && $student_section) {
                 <table class="schedule-table">
                   <thead>
                     <tr>
+                      <th>Room</th>
                       <th>Time</th>
                       <th>Monday</th>
                       <th>Tuesday</th>
@@ -150,8 +206,10 @@ if ($student_grade && $student_section) {
 // If we have schedule loaded, render week -> use $displaySched
 if ($displaySched && is_array($displaySched)) {
     foreach ($displaySched as $r) {
+        $room = htmlspecialchars($r['room'] ?? '');
         $time = htmlspecialchars($r['time'] ?? '');
         echo "<tr>\n";
+        echo "<td>" . $room . "</td>\n";
         echo "<td class=\"time-slot\">" . $time . "</td>\n";
         foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
             $entry = $r[$d] ?? ['teacher'=>'','subject'=>''];
@@ -168,7 +226,7 @@ if ($displaySched && is_array($displaySched)) {
     }
 } else {
     // fallback: no schedule found for given grade/section
-    echo '<tr><td colspan="6" style="text-align:center;color:#666;padding:20px;">No schedule found for the selected grade/section.</td></tr>';
+    echo '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px;">No schedule found for the selected grade/section.</td></tr>';
 }
 ?>
                     </tbody>
@@ -190,8 +248,9 @@ if ($displaySched && is_array($displaySched)) {
             $subject = trim($entry['subject'] ?? '');
             $teacher = trim($entry['teacher'] ?? '');
             $time = trim($row['time'] ?? '');
+            $room = trim($row['room'] ?? '');
             if ($subject !== '' || $teacher !== '') {
-                $dayItems[] = ['time'=>$time, 'subject'=>$subject, 'teacher'=>$teacher];
+                $dayItems[] = ['time'=>$time, 'subject'=>$subject, 'teacher'=>$teacher, 'room'=>$room];
             }
         }
         echo '<div class="schedule-day">';
@@ -208,6 +267,9 @@ if ($displaySched && is_array($displaySched)) {
                 if ($it['subject'] && $it['teacher']) {
                     echo '<div style="font-size:13px;color:#666;">' . htmlspecialchars($it['teacher']) . '</div>';
                 }
+                if ($it['room']) {
+                    echo '<div style="font-size:13px;color:#666;">Room: ' . htmlspecialchars($it['room']) . '</div>';
+                }
                 echo '</div>'; // item-detail
                 echo '</div>'; // schedule-item
             }
@@ -217,9 +279,9 @@ if ($displaySched && is_array($displaySched)) {
     }
     echo '</div>'; // schedule-list
 } else {
-    // fallback sample when no schedule
+    // fallback: no schedule found for given grade/section
     echo '<div class="schedule-list">';
-    echo '<div class="schedule-item"><div class="item-time">Monday, 08:00</div><div class="item-detail"><strong>Mathematics</strong><p>Room 101 • Mr. Johnson</p></div></div>';
+    echo '<div style="text-align:center;color:#666;padding:20px;">No schedule found for the selected grade/section.</div>';
     echo '</div>';
 }
 ?>

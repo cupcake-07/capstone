@@ -4472,7 +4472,7 @@
     ],
     "K1_A": [
         {
-            "room": "2",
+            "room": "",
             "time": "",
             "monday": {
                 "teacher": "",
@@ -4487,8 +4487,8 @@
                 "subject": ""
             },
             "thursday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Maria DB",
+                "subject": "English"
             },
             "friday": {
                 "teacher": "",
@@ -4496,11 +4496,11 @@
             }
         },
         {
-            "room": "30",
-            "time": "5:00 PM - 6:00 PM",
+            "room": "",
+            "time": "",
             "monday": {
-                "teacher": "Maria DB",
-                "subject": "Music"
+                "teacher": "",
+                "subject": ""
             },
             "tuesday": {
                 "teacher": "",
@@ -4511,32 +4511,8 @@
                 "subject": ""
             },
             "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
-        },
-        {
-            "room": "101",
-            "time": "10:00 AM - 11:00 AM",
-            "monday": {
                 "teacher": "Maria DB",
-                "subject": "Arts"
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
+                "subject": "Computer"
             },
             "friday": {
                 "teacher": "",

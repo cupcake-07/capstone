@@ -156,7 +156,17 @@ if (isset($_GET['fetch_schedule']) && $_GET['fetch_schedule']) {
     if ($grade && $section && in_array($grade, $GRADES) && in_array($section, $SECTIONS)) {
         $key = $grade . '_' . $section;
         $schedule = isset($all[$key]) ? $all[$key] : default_schedule();
-        echo json_encode(['schedule' => $schedule]);
+
+        // Ensure each row is normalized and includes 'room' => '' if missing
+        foreach ($schedule as &$row) {
+            normalize_schedule_row($row);
+        }
+        unset($row);
+
+        echo json_encode(['success' => true, 'schedule' => $schedule]);
+    } else {
+        // return valid JSON error to help debugging on the client
+        echo json_encode(['success' => false, 'message' => 'Invalid grade/section or not allowed']);
     }
     exit;
 }
