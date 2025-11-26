@@ -84,6 +84,21 @@ function get_teachers($conn) {
     return $teachers;
 }
 
+// add normalization helper for schedule rows
+function normalize_schedule_row(&$row) {
+    if (!is_array($row)) $row = [];
+    $row['room'] = isset($row['room']) ? (string)$row['room'] : '';
+    $row['time'] = isset($row['time']) ? (string)$row['time'] : '';
+    foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
+        if (!isset($row[$d]) || !is_array($row[$d])) {
+            $row[$d] = ['teacher' => '', 'subject' => ''];
+        } else {
+            $row[$d]['teacher'] = isset($row[$d]['teacher']) ? (string)$row[$d]['teacher'] : '';
+            $row[$d]['subject'] = isset($row[$d]['subject']) ? (string)$row[$d]['subject'] : '';
+        }
+    }
+}
+
 function load_all_schedules($grades, $sections) {
     // Ensure data folder exists
     if (!file_exists(DATA_FILE)) {
@@ -107,6 +122,19 @@ function load_all_schedules($grades, $sections) {
             }
         }
     }
+
+    // Normalize all loaded rows so older/malformed JSON will not trigger "Undefined index" warnings
+    foreach ($data as $key => &$sched) {
+        if (!is_array($sched)) {
+            $data[$key] = default_schedule();
+        } else {
+            foreach ($sched as &$row) {
+                normalize_schedule_row($row);
+            }
+        }
+    }
+    unset($sched);
+    unset($row);
     return $data;
 }
 
@@ -353,7 +381,7 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
         </section>
 
         <?php if (isset($saved_msg)): ?>
-            <div style="color:#155724; background:#d4edda; border:1px solid #c3e6cb; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-weight:500;">✓ <?php echo htmlspecialchars($saved_msg) ?></div>
+            <div id="serverSavedMsg" style="color:#155724; background:#d4edda; border:1px solid #c3e6cb; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-weight:500;">✓ <?php echo htmlspecialchars($saved_msg) ?></div>
         <?php endif; ?>
 
         <section class="data-table" id="schedule">
@@ -377,12 +405,12 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
                         <tbody>
                         <?php foreach ($sched as $r): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($r['room']) ?></td>
-                                <td><?php echo htmlspecialchars($r['time']) ?></td>
+                                <td><?php echo htmlspecialchars(isset($r['room']) ? $r['room'] : '') ?></td>
+                                <td><?php echo htmlspecialchars(isset($r['time']) ? $r['time'] : '') ?></td>
                                 <?php foreach (['monday','tuesday','wednesday','thursday','friday'] as $d): ?>
                                     <td>
-                                        <div><strong><?php echo htmlspecialchars($r[$d]['teacher']) ?></strong></div>
-                                        <div><?php echo htmlspecialchars($r[$d]['subject']) ?></div>
+                                        <div><strong><?php echo htmlspecialchars(isset($r[$d]['teacher']) ? $r[$d]['teacher'] : '') ?></strong></div>
+                                        <div><?php echo htmlspecialchars(isset($r[$d]['subject']) ? $r[$d]['subject'] : '') ?></div>
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
@@ -402,6 +430,10 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
                         </button>
                         <button type="button" class="btn" style="background:#27ae60;" onclick="saveSchedule()">
                             <span>💾</span> Save Changes
+                        </button>
+                        <!-- New Clear All button -->
+                        <button type="button" class="btn" style="background:#c92a2a; margin-left:8px;" onclick="clearAll()">
+                            <span>🧹</span> Clear All
                         </button>
                     </div>
                     <div id="tableContainer"></div>
@@ -428,6 +460,8 @@ const initialSchedule = <?php
 
 let schedule = null;
 let autosaveTimer = null;
+let statusTimer = null; // <-- track notification timeout
+const STATUS_DURATION_MS = 1000; // 1 second default
 
 function createTable() {
     const container = document.getElementById('tableContainer');
@@ -442,100 +476,114 @@ function createTable() {
     thead.appendChild(headerRow); table.appendChild(thead);
     const tbody = document.createElement('tbody');
 
-    schedule.forEach((row, rIdx) => {
+    // If schedule is empty, show a single placeholder row
+    if (!schedule || schedule.length === 0) {
         const tr = document.createElement('tr');
-        // room
-        const tdRoom = document.createElement('td');
-        const inpRoom = document.createElement('input');
-        inpRoom.className = 'small';
-        inpRoom.placeholder = 'Room No.';
-        inpRoom.value = row.room || '';
-        inpRoom.onchange = () => schedule[rIdx].room = inpRoom.value;
-        tdRoom.appendChild(inpRoom);
-        tr.appendChild(tdRoom);
-        // time (select)
-        const tdTime = document.createElement('td');
-        const selectTime = document.createElement('select');
-        selectTime.className = 'small';
-        const optPlaceholder = document.createElement('option');
-        optPlaceholder.value = '';
-        optPlaceholder.textContent = '-- Select Time --';
-        selectTime.appendChild(optPlaceholder);
-        timeSlots.forEach(ts => {
-            const o = document.createElement('option');
-            o.value = ts;
-            o.textContent = ts;
-            selectTime.appendChild(o);
-        });
-        if (row.time && !timeSlots.includes(row.time)) {
-            const customOpt = document.createElement('option');
-            customOpt.value = row.time;
-            customOpt.textContent = row.time;
-            selectTime.appendChild(customOpt);
-        }
-        selectTime.value = row.time || '';
-        selectTime.onchange = () => {
-            schedule[rIdx].time = selectTime.value;
-        };
-        tdTime.appendChild(selectTime);
-        tr.appendChild(tdTime);
-        // days
-        ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
-            const td = document.createElement('td');
-            const div = document.createElement('div');
-            div.className = 'day-cell';
-            // Teacher dropdown
-            const selectTeacher = document.createElement('select');
-            selectTeacher.className = 'small';
-            const optEmpty = document.createElement('option');
-            optEmpty.value = '';
-            optEmpty.textContent = '-- Select Teacher --';
-            selectTeacher.appendChild(optEmpty);
-            teachers.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
-                selectTeacher.appendChild(opt);
-            });
-            selectTeacher.value = (row[day] && row[day].teacher) ? row[day].teacher : '';
-            selectTeacher.onchange = () => {
-                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                schedule[rIdx][day].teacher = selectTeacher.value;
-            };
-            // Subject dropdown
-            const selectSubject = document.createElement('select');
-            selectSubject.className = 'small';
-            const optEmptyS = document.createElement('option');
-            optEmptyS.value = '';
-            optEmptyS.textContent = '-- Select Subject --';
-            selectSubject.appendChild(optEmptyS);
-            subjects.forEach(subj => {
-                const op = document.createElement('option');
-                op.value = subj;
-                op.textContent = subj;
-                selectSubject.appendChild(op);
-            });
-            selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
-            selectSubject.onchange = () => {
-                if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
-                schedule[rIdx][day].subject = selectSubject.value;
-            };
-            div.appendChild(selectTeacher);
-            div.appendChild(selectSubject);
-            td.appendChild(div);
-            tr.appendChild(td);
-        });
-        // Actions column
-        const tdActions = document.createElement('td');
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn';
-        removeBtn.textContent = '🗑️ Remove';
-        removeBtn.onclick = () => removeRow(rIdx);
-        tdActions.appendChild(removeBtn);
-        tr.appendChild(tdActions);
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.style.textAlign = 'center';
+        td.style.padding = '18px';
+        td.style.color = '#666';
+        td.textContent = 'No periods defined. Use "Add New Schedule" or "Clear All" to modify.';
+        tr.appendChild(td);
         tbody.appendChild(tr);
-    });
+    } else {
+        schedule.forEach((row, rIdx) => {
+            const tr = document.createElement('tr');
+            // room
+            const tdRoom = document.createElement('td');
+            const inpRoom = document.createElement('input');
+            inpRoom.className = 'small';
+            inpRoom.placeholder = 'Room No.';
+            inpRoom.value = row.room || '';
+            inpRoom.onchange = () => schedule[rIdx].room = inpRoom.value;
+            tdRoom.appendChild(inpRoom);
+            tr.appendChild(tdRoom);
+            // time (select)
+            const tdTime = document.createElement('td');
+            const selectTime = document.createElement('select');
+            selectTime.className = 'small';
+            const optPlaceholder = document.createElement('option');
+            optPlaceholder.value = '';
+            optPlaceholder.textContent = '-- Select Time --';
+            selectTime.appendChild(optPlaceholder);
+            timeSlots.forEach(ts => {
+                const o = document.createElement('option');
+                o.value = ts;
+                o.textContent = ts;
+                selectTime.appendChild(o);
+            });
+            if (row.time && !timeSlots.includes(row.time)) {
+                const customOpt = document.createElement('option');
+                customOpt.value = row.time;
+                customOpt.textContent = row.time;
+                selectTime.appendChild(customOpt);
+            }
+            selectTime.value = row.time || '';
+            selectTime.onchange = () => {
+                schedule[rIdx].time = selectTime.value;
+            };
+            tdTime.appendChild(selectTime);
+            tr.appendChild(tdTime);
+            // days
+            ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
+                const td = document.createElement('td');
+                const div = document.createElement('div');
+                div.className = 'day-cell';
+                // Teacher dropdown
+                const selectTeacher = document.createElement('select');
+                selectTeacher.className = 'small';
+                const optEmpty = document.createElement('option');
+                optEmpty.value = '';
+                optEmpty.textContent = '-- Select Teacher --';
+                selectTeacher.appendChild(optEmpty);
+                teachers.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    selectTeacher.appendChild(opt);
+                });
+                selectTeacher.value = (row[day] && row[day].teacher) ? row[day].teacher : '';
+                selectTeacher.onchange = () => {
+                    if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
+                    schedule[rIdx][day].teacher = selectTeacher.value;
+                };
+                // Subject dropdown
+                const selectSubject = document.createElement('select');
+                selectSubject.className = 'small';
+                const optEmptyS = document.createElement('option');
+                optEmptyS.value = '';
+                optEmptyS.textContent = '-- Select Subject --';
+                selectSubject.appendChild(optEmptyS);
+                subjects.forEach(subj => {
+                    const op = document.createElement('option');
+                    op.value = subj;
+                    op.textContent = subj;
+                    selectSubject.appendChild(op);
+                });
+                selectSubject.value = (row[day] && row[day].subject) ? row[day].subject : '';
+                selectSubject.onchange = () => {
+                    if (!schedule[rIdx][day]) schedule[rIdx][day]={teacher:'',subject:''};
+                    schedule[rIdx][day].subject = selectSubject.value;
+                };
+                div.appendChild(selectTeacher);
+                div.appendChild(selectSubject);
+                td.appendChild(div);
+                tr.appendChild(td);
+            });
+            // Actions column
+            const tdActions = document.createElement('td');
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn';
+            removeBtn.textContent = '🗑️ Remove';
+            removeBtn.onclick = () => removeRow(rIdx);
+            tdActions.appendChild(removeBtn);
+            tr.appendChild(tdActions);
+            tbody.appendChild(tr);
+        });
+    }
+
     table.appendChild(tbody);
     container.appendChild(table);
 }
@@ -546,25 +594,43 @@ function loadScheduleData(data) {
 }
 
 function addRow(){
-    const newRoom = String(schedule.length + 1);
-    schedule.push({room:newRoom,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
+    // Do not auto-number rooms when adding a new schedule row
+    schedule.push({room:'',time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
     createTable();
 }
 
 function removeRow(index) {
-    if (schedule.length > 1) { // Prevent removing the last row to avoid empty schedule
-        schedule.splice(index, 1);
-        createTable();
-        // autosave immediately after removal (AJAX)
-        saveSchedule(true).then(() => {
-            showStatus('Saved (autosave)');
-        }).catch(err => {
-            showStatus('Save failed', true);
-            console.error('Autosave failed', err);
-        });
-    } else {
-        alert('Cannot remove the last period.');
+    // Allow removing any row (including last) after confirmation
+    if (!confirm('Are you sure you want to remove this period?')) {
+        return;
     }
+    schedule.splice(index, 1);
+    createTable();
+    // autosave immediately after removal (AJAX)
+    saveSchedule(true).then(() => {
+        console.log('Removed successfully');
+        showStatus('Removed successfully');
+    }).catch(err => {
+        showStatus('Save failed', true);
+        console.error('Autosave failed', err);
+    });
+}
+
+// New: Clear all periods
+function clearAll() {
+    if (!confirm('Are you sure you want to clear all periods for this Grade and Section? This action cannot be undone.')) {
+        return;
+    }
+    schedule = []; // empty the schedule array
+    createTable();
+    // autosave cleared schedule
+    saveSchedule(true).then(() => {
+        console.log('All periods removed successfully');
+        showStatus('All periods removed');
+    }).catch(err => {
+        showStatus('Save failed', true);
+        console.error('Clear all failed', err);
+    });
 }
 
 // saveSchedule supports AJAX flag; returns Promise that resolves after POST
@@ -581,8 +647,26 @@ function saveSchedule(ajax = false) {
     // AJAX save: POST to schedule.php with form data including ajax=1
     const url = new URL(window.location.href);
     const fd = new FormData();
-    fd.append('grade', selectedGrade);
-    fd.append('section', selectedSection);
+
+    // Prefer current DOM values for grade/section (hidden inputs if present, otherwise select values)
+    let gradeValue = selectedGrade;
+    let sectionValue = selectedSection;
+    const gradeInput = document.querySelector('input[name="grade"]');
+    const sectionInput = document.querySelector('input[name="section"]');
+    if (gradeInput && sectionInput) {
+        gradeValue = gradeInput.value;
+        sectionValue = sectionInput.value;
+    } else {
+        const gradeSelect = document.getElementById('gradeSelect');
+        const sectionSelect = document.getElementById('sectionSelect');
+        if (gradeSelect && sectionSelect) {
+            gradeValue = gradeSelect.value;
+            sectionValue = sectionSelect.value;
+        }
+    }
+
+    fd.append('grade', gradeValue);
+    fd.append('section', sectionValue);
     fd.append('schedule_json', JSON.stringify(schedule));
     fd.append('ajax', '1');
     showStatus('Saving...');
@@ -613,16 +697,36 @@ function saveSchedule(ajax = false) {
 }
 
 // small helper to show status messages next to Export button
-function showStatus(msg, isError = false) {
+function showStatus(msg, isError = false, duration = STATUS_DURATION_MS) {
     const el = document.getElementById('saveStatus');
     if (!el) return;
+    // Clear any existing timeout so new messages reset the timer
+    if (statusTimer) {
+        clearTimeout(statusTimer);
+        statusTimer = null;
+    }
     el.textContent = msg;
     el.style.color = isError ? '#c92a2a' : '#2d6a4f';
-    // clear after a short delay if not error
+    // clear after a short delay if not error (1 second)
     if (!isError) {
-        setTimeout(() => { el.textContent = ''; }, 3500);
+        statusTimer = setTimeout(() => { 
+            el.textContent = '';
+            statusTimer = null;
+        }, duration);
     }
 }
+
+// hide any server-rendered "saved message" banner after the same duration
+(function hideServerSavedMsg() {
+    const el = document.getElementById('serverSavedMsg');
+    if (!el) return;
+    setTimeout(() => {
+        // fade out visually if you like, otherwise remove directly
+        el.style.transition = 'opacity 200ms';
+        el.style.opacity = '0';
+        setTimeout(() => { el.remove(); }, 220);
+    }, STATUS_DURATION_MS);
+})();
 
 if (initialSchedule !== null) {
     loadScheduleData(initialSchedule);
@@ -654,10 +758,21 @@ function fetchSchedule(grade, section) {
         });
 }
 
+// Helper: is the page currently the server-rendered "all" view
+function currentViewIsAll() {
+    const params = new URLSearchParams(location.search);
+    const g = params.get('grade');
+    const s = params.get('section');
+    // If URL explicitly set to 'all', or server rendered selectedGrade/selectedSection is 'all'
+    return (g === 'all' || s === 'all' || selectedGrade === 'all' || selectedSection === 'all');
+}
+
 document.getElementById('gradeSelect').addEventListener('change', function(){
     const g = this.value;
     const s = document.getElementById('sectionSelect').value;
-    if (g !== 'all' && s !== 'all') {
+    const viewIsAll = currentViewIsAll();
+    // Only use AJAX when both selected values are specific AND the current view is already a specific schedule.
+    if (g !== 'all' && s !== 'all' && !viewIsAll) {
         const qs = new URLSearchParams(location.search);
         qs.set('grade', g);
         qs.set('section', s);
@@ -667,6 +782,7 @@ document.getElementById('gradeSelect').addEventListener('change', function(){
         const qs = new URLSearchParams(location.search);
         qs.set('grade', g);
         qs.set('section', s);
+        // Force a full navigation so the server renders the proper form/view
         location.search = qs.toString();
     }
 });
@@ -674,7 +790,8 @@ document.getElementById('gradeSelect').addEventListener('change', function(){
 document.getElementById('sectionSelect').addEventListener('change', function(){
     const g = document.getElementById('gradeSelect').value;
     const s = this.value;
-    if (g !== 'all' && s !== 'all') {
+    const viewIsAll = currentViewIsAll();
+    if (g !== 'all' && s !== 'all' && !viewIsAll) {
         const qs = new URLSearchParams(location.search);
         qs.set('grade', g);
         qs.set('section', s);

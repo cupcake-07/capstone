@@ -1,226 +1,125 @@
 {
-    "1_A": [
-        {
-            "period": "1",
-            "time": "7:00 AM - 8:00 AM",
-            "monday": {
-                "teacher": "teacher2",
-                "subject": "Mathematics"
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "teacher2",
-                "subject": "English"
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "3",
-            "time": "5:00 PM - 6:00 PM",
-            "monday": {
-                "teacher": "Maria DB",
-                "subject": "English"
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "4",
-            "time": "10:30 - 11:15",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "Cardio Training",
-                "subject": "Arts"
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "5",
-            "time": "11:20 - 12:05",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        }
-    ],
+    "1_A": [],
     "1_B": [
-        {
-            "period": "1",
-            "time": "8:00 - 8:45",
-            "monday": {
-                "subject": "",
-                "room": ""
-            },
-            "tuesday": {
-                "subject": "",
-                "room": ""
-            },
-            "wednesday": {
-                "subject": "",
-                "room": ""
-            },
-            "thursday": {
-                "subject": "",
-                "room": ""
-            },
-            "friday": {
-                "subject": "",
-                "room": ""
-            }
-        },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "1_C": [
@@ -229,120 +128,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "1_D": [
@@ -351,242 +280,272 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "2_A": [
         {
-            "period": "1",
-            "time": "8:00 - 8:45",
-            "monday": {
-                "subject": "",
-                "room": ""
-            },
-            "tuesday": {
-                "subject": "",
-                "room": ""
-            },
-            "wednesday": {
-                "subject": "",
-                "room": ""
-            },
-            "thursday": {
-                "subject": "",
-                "room": ""
-            },
-            "friday": {
-                "subject": "",
-                "room": ""
-            }
-        },
-        {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "2_B": [
@@ -595,120 +554,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "2_C": [
@@ -717,120 +706,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "2_D": [
@@ -839,120 +858,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "3_A": [
@@ -961,120 +1010,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "3_B": [
@@ -1083,120 +1162,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "3_C": [
@@ -1205,120 +1314,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "3_D": [
@@ -1327,120 +1466,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "4_A": [
@@ -1449,120 +1618,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "4_B": [
@@ -1571,120 +1770,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "4_C": [
@@ -1693,120 +1922,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "4_D": [
@@ -1815,120 +2074,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "5_A": [
@@ -1937,120 +2226,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "5_B": [
@@ -2059,120 +2378,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "5_C": [
@@ -2181,120 +2530,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "5_D": [
@@ -2303,120 +2682,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "6_A": [
@@ -2425,120 +2834,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "6_B": [
@@ -2547,120 +2986,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "6_C": [
@@ -2669,120 +3138,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "6_D": [
@@ -2791,120 +3290,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K1_B": [
@@ -2913,242 +3442,272 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K1_C": [
         {
-            "period": "1",
-            "time": "8:00 - 8:45",
-            "monday": {
-                "subject": "",
-                "room": ""
-            },
-            "tuesday": {
-                "subject": "",
-                "room": ""
-            },
-            "wednesday": {
-                "subject": "",
-                "room": ""
-            },
-            "thursday": {
-                "subject": "",
-                "room": ""
-            },
-            "friday": {
-                "subject": "",
-                "room": ""
-            }
-        },
-        {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K1_D": [
@@ -3157,120 +3716,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K2_A": [
@@ -3279,120 +3868,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K2_B": [
@@ -3401,120 +4020,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K2_C": [
@@ -3523,120 +4172,150 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K2_D": [
@@ -3645,151 +4324,156 @@
             "time": "8:00 - 8:45",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "2",
             "time": "8:50 - 9:35",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         },
         {
             "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "tuesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "wednesday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "thursday": {
                 "subject": "",
-                "room": ""
+                "room": "",
+                "teacher": ""
             },
             "friday": {
                 "subject": "",
-                "room": ""
-            }
+                "room": "",
+                "teacher": ""
+            },
+            "room": ""
         }
     ],
     "K1_A": [
         {
-            "period": "1",
-            "time": "7:00 AM - 8:00 AM",
-            "monday": {
-                "teacher": "teacher2",
-                "subject": "Mathematics"
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "teacher2",
-                "subject": "English"
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "3",
-            "time": "9:40 - 10:25",
+            "room": "2",
+            "time": "",
             "monday": {
                 "teacher": "",
                 "subject": ""
@@ -3809,41 +4493,39 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            },
-            "room": ""
+            }
         },
         {
-            "period": "4",
-            "time": "10:30 - 11:15",
+            "room": "30",
+            "time": "5:00 PM - 6:00 PM",
             "monday": {
+                "teacher": "Maria DB",
+                "subject": "Music"
+            },
+            "tuesday": {
                 "teacher": "",
                 "subject": ""
             },
-            "tuesday": {
-                "teacher": "Cardio Training",
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        },
+        {
+            "room": "101",
+            "time": "10:00 AM - 11:00 AM",
+            "monday": {
+                "teacher": "Maria DB",
                 "subject": "Arts"
             },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "5",
-            "time": "11:20 - 12:05",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
             "tuesday": {
                 "teacher": "",
                 "subject": ""
@@ -3859,8 +4541,7 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            },
-            "room": ""
+            }
         }
     ]
 }
