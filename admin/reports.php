@@ -56,6 +56,23 @@ $paymentsHasStudentId = $paymentsTableExists && columnExists($conn, 'payments', 
 $feesHasAmount = $feesTableExists && columnExists($conn, 'fees', 'amount');
 $feesHasStudentId = $feesTableExists && columnExists($conn, 'fees', 'student_id');
 
+// ----- Added: Build a safe student name expression based on your schema -----
+$studentNameExpr = 'id'; // fallback to id if no name column exists
+if (columnExists($conn, 'students', 'name')) {
+    // Use simple name column if available
+    $studentNameExpr = 'name';
+} elseif (columnExists($conn, 'students', 'first_name') && columnExists($conn, 'students', 'last_name')) {
+    // Use first_name + last_name if both available
+    $studentNameExpr = "TRIM(CONCAT_WS(' ', first_name, last_name))";
+} elseif (columnExists($conn, 'students', 'first_name')) {
+    // Only first_name available
+    $studentNameExpr = 'first_name';
+} elseif (columnExists($conn, 'students', 'last_name')) {
+    // Only last_name available
+    $studentNameExpr = 'last_name';
+}
+// ---------------------------------------------------------------------------
+
 // Detect a grade column on students table
 $hasGradeColumn = false;
 $gradeColumnName = null;
@@ -205,6 +222,23 @@ function runDateAggregationQuery($conn, $sql) {
         }
     }
     return $data;
+}
+// -------------------------------------------------------------------------------------------------------
+
+// ----- NEW helper: fetch rows keyed by k with named fields (unique_payers + payer_names) -----
+function runNamedAggregationQuery($conn, $sql) {
+    $rows = [];
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($r = $res->fetch_assoc()) {
+            $k = $r['k'];
+            $rows[$k] = [
+                'unique_payers' => isset($r['unique_payers']) ? (int)$r['unique_payers'] : 0,
+                'payer_names' => isset($r['payer_names']) ? (string)$r['payer_names'] : ''
+            ];
+        }
+    }
+    return $rows;
 }
 // -------------------------------------------------------------------------------------------------------
 
@@ -377,6 +411,230 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
     $paymentsTimeseries['yearly']['total'] = array_sum($yearlyVals);
 }
 // -------------------------------------------------------------------------------------------------------
+
+// ----- NEW: compute payer count time-series for daily, weekly, monthly, yearly -----
+$payerTimeseries = [
+    'daily'   => ['labels' => [], 'data' => [], 'names' => [], 'total' => 0],
+    'weekly'  => ['labels' => [], 'data' => [], 'names' => [], 'total' => 0],
+    'monthly' => ['labels' => [], 'data' => [], 'names' => [], 'total' => 0],
+    'yearly'  => ['labels' => [], 'data' => [], 'names' => [], 'total' => 0],
+];
+
+// Helper: Get student name map for quick lookup
+$studentNameMap = [];
+$studentQuery = $conn->query("SELECT id, " . $studentNameExpr . " AS name FROM students");
+if ($studentQuery) {
+    while ($s = $studentQuery->fetch_assoc()) {
+        $studentNameMap[(int)$s['id']] = $s['name'] ?: 'Unknown';
+    }
+}
+
+if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
+
+    // DAILY: last 10 days only - count unique payers and collect names
+    $dailyEnd = new DateTime('today');
+    $dailyStart = (clone $dailyEnd)->modify('-9 days');
+    $dailyLabels = fillDateRange($dailyStart, $dailyEnd, new DateInterval('P1D'), function($d) { return $d->format('Y-m-d'); });
+
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlDailyPayers = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS k, 
+                   GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                   COUNT(DISTINCT s.id) AS unique_payers
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            JOIN students s ON f.student_id = s.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$dailyStart->format('Y-m-d')}' AND '{$dailyEnd->format('Y-m-d')}'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            GROUP BY DATE(p.`{$paymentDateCol}`)
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } elseif ($paymentsHasStudentId) {
+        $sqlDailyPayers = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS k, 
+                   GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                   COUNT(DISTINCT p.student_id) AS unique_payers
+            FROM payments p
+            JOIN students s ON p.student_id = s.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$dailyStart->format('Y-m-d')}' AND '{$dailyEnd->format('Y-m-d')}'
+            GROUP BY DATE(p.`{$paymentDateCol}`)
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlDailyPayers = null;
+    }
+    $dailyPayerResult = $sqlDailyPayers ? runNamedAggregationQuery($conn, $sqlDailyPayers) : [];
+
+    // Map names and counts safely
+    $payerTimeseries['daily']['labels'] = array_map(function($d){ return (new DateTime($d))->format('M j'); }, $dailyLabels);
+    $payerTimeseries['daily']['data'] = array_map(function($d) use ($dailyPayerResult) { return (int)($dailyPayerResult[$d]['unique_payers'] ?? 0); }, $dailyLabels);
+    $payerTimeseries['daily']['names'] = array_map(function($d) use ($dailyPayerResult) { return $dailyPayerResult[$d]['payer_names'] ?? ''; }, $dailyLabels);
+    $payerTimeseries['daily']['total'] = array_sum($payerTimeseries['daily']['data']);
+
+    // WEEKLY: last 10 weeks only - count unique payers and collect names
+    $weekEnd = new DateTime('today');
+    $weekStart = (clone $weekEnd)->modify('-69 days'); // approximately 10 weeks back
+    $weekLabels = [];
+    $weekPayerData = [];
+    $weekPayerNames = [];
+    
+    // Generate 10 week boundaries
+    for ($i = 9; $i >= 0; $i--) {
+        $wStart = (clone $weekEnd)->modify('-' . ($i * 7 + 7) . ' days');
+        $wEnd = (clone $weekEnd)->modify('-' . ($i * 7) . ' days');
+        $weekLabels[] = $wStart->format('M j');
+        $weekPayerData[] = [];
+        $weekPayerNames[] = [];
+    }
+
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlWeeklyPayers = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS payment_date, s.id AS student_id, s.name AS student_name
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            JOIN students s ON f.student_id = s.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$weekStart->format('Y-m-d')}' AND '{$weekEnd->format('Y-m-d')}'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } elseif ($paymentsHasStudentId) {
+        $sqlWeeklyPayers = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS payment_date, p.student_id, s.name AS student_name
+            FROM payments p
+            JOIN students s ON p.student_id = s.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$weekStart->format('Y-m-d')}' AND '{$weekEnd->format('Y-m-d')}'
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlWeeklyPayers = null;
+    }
+    
+    if ($sqlWeeklyPayers) {
+        $weeklyPayerRes = $conn->query($sqlWeeklyPayers);
+        if ($weeklyPayerRes) {
+            while ($row = $weeklyPayerRes->fetch_assoc()) {
+                $payDate = new DateTime($row['payment_date']);
+                $daysDiff = (int)$payDate->diff($weekStart)->format('%a');
+                $weekIdx = (int)floor($daysDiff / 7);
+                if ($weekIdx >= 0 && $weekIdx < 10) {
+                    $studentId = (int)$row['student_id'];
+                    $studentName = $row['student_name'] ?: $studentNameMap[$studentId] ?: 'Unknown';
+                    if (!isset($weekPayerData[$weekIdx][$studentId])) {
+                        $weekPayerData[$weekIdx][$studentId] = true;
+                        $weekPayerNames[$weekIdx][] = $studentName;
+                    }
+                }
+            }
+        }
+    }
+    $payerTimeseries['weekly']['labels'] = $weekLabels;
+    $payerTimeseries['weekly']['data'] = array_map('count', $weekPayerData);
+    $payerTimeseries['weekly']['names'] = array_map(function($names) { sort($names); return implode(', ', $names); }, $weekPayerNames);
+    $payerTimeseries['weekly']['total'] = array_sum($payerTimeseries['weekly']['data']);
+
+    // MONTHLY: last 10 months only - count unique payers and collect names
+    $monthEnd = new DateTime('first day of this month');
+    $monthStart = (clone $monthEnd)->modify('-9 months');
+    $monthLabels = [];
+    $monthKeys = [];
+    $m = clone $monthStart;
+    while ($m <= $monthEnd) {
+        $monthKeys[] = $m->format('Y-m');
+        $monthLabels[] = $m->format('M Y');
+        $m->modify('+1 month');
+    }
+
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlMonthlyPayers = "
+           SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, 
+                  GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                  COUNT(DISTINCT s.id) AS unique_payers
+           FROM payments p
+           JOIN fees f ON p.fee_id = f.id
+           JOIN students s ON f.student_id = s.id
+           WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$monthStart->format('Y-m-d')}' AND LAST_DAY('{$monthEnd->format('Y-m-d')}')
+             AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+           GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+           ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+        ";
+    } elseif ($paymentsHasStudentId) {
+        $sqlMonthlyPayers = "
+           SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, 
+                  GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                  COUNT(DISTINCT p.student_id) AS unique_payers
+           FROM payments p
+           JOIN students s ON p.student_id = s.id
+           WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$monthStart->format('Y-m-d')}' AND LAST_DAY('{$monthEnd->format('Y-m-d')}')
+           GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+           ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+        ";
+    } else {
+        $sqlMonthlyPayers = null;
+    }
+    $monthlyPayerRaw = $sqlMonthlyPayers ? runNamedAggregationQuery($conn, $sqlMonthlyPayers) : [];
+    $monthlyPayerVals = [];
+    $monthlyPayerNames = [];
+    foreach ($monthKeys as $k) {
+        $monthlyPayerVals[] = (int)($monthlyPayerRaw[$k]['unique_payers'] ?? 0);
+        $monthlyPayerNames[] = $monthlyPayerRaw[$k]['payer_names'] ?? '';
+    }
+    $payerTimeseries['monthly']['labels'] = $monthLabels;
+    $payerTimeseries['monthly']['data'] = $monthlyPayerVals;
+    $payerTimeseries['monthly']['names'] = $monthlyPayerNames;
+    $payerTimeseries['monthly']['total'] = array_sum($monthlyPayerVals);
+
+    // YEARLY: current year + next 4 years - count unique payers and collect names
+    $yearStart = (int)(new DateTime())->format('Y');
+    $yearEnd = $yearStart + 4; // 5 years total: current + 4 future
+    $yearKeys = [];
+    $yearLabels = [];
+    // Generate years from START to END (ascending: 2025, 2026, 2027, 2028, 2029)
+    for ($iy = $yearStart; $iy <= $yearEnd; $iy++) {
+        $yearKeys[] = (string)$iy;
+        $yearLabels[] = (string)$iy;
+    }
+
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlYearlyPayers = "
+            SELECT YEAR(p.`{$paymentDateCol}`) AS k, 
+                   GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                   COUNT(DISTINCT s.id) AS unique_payers
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            JOIN students s ON f.student_id = s.id
+            WHERE p.`{$paymentDateCol}` BETWEEN '{$yearStart}-01-01' AND '{$yearEnd}-12-31'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            GROUP BY YEAR(p.`{$paymentDateCol}`)
+            ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+        ";
+    } elseif ($paymentsHasStudentId) {
+        $sqlYearlyPayers = "
+            SELECT YEAR(p.`{$paymentDateCol}`) AS k, 
+                   GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS payer_names,
+                   COUNT(DISTINCT p.student_id) AS unique_payers
+            FROM payments p
+            JOIN students s ON p.student_id = s.id
+            WHERE p.`{$paymentDateCol}` BETWEEN '{$yearStart}-01-01' AND '{$yearEnd}-12-31'
+            GROUP BY YEAR(p.`{$paymentDateCol}`)
+            ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlYearlyPayers = null;
+    }
+    $yearlyPayerRaw = $sqlYearlyPayers ? runNamedAggregationQuery($conn, $sqlYearlyPayers) : [];
+    $yearlyPayerVals = [];
+    $yearlyPayerNames = [];
+    // Map values in ascending order (2025, 2026, 2027, 2028, 2029)
+    for ($iy = $yearStart; $iy <= $yearEnd; $iy++) {
+        $yearlyPayerVals[] = (int)($yearlyPayerRaw[(string)$iy]['unique_payers'] ?? 0);
+        $yearlyPayerNames[] = $yearlyPayerRaw[(string)$iy]['payer_names'] ?? '';
+    }
+    $payerTimeseries['yearly']['labels'] = $yearLabels;
+    $payerTimeseries['yearly']['data'] = $yearlyPayerVals;
+    $payerTimeseries['yearly']['names'] = $yearlyPayerNames;
+    $payerTimeseries['yearly']['total'] = array_sum($yearlyPayerVals);
+}
+// -------------------------------------------------------------------------------------------------------
 ?>
 <!doctype html>
 <html lang="en">
@@ -462,6 +720,43 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 				<!-- main payments trend chart -->
 				<div style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
 					<canvas id="paymentsTrendChart" style="width:100%; height:220px;"></canvas>
+				</div>
+			</div>
+
+			<!-- NEW: Payer count analytics -->
+			<div style="margin-top:18px;">
+				<h3>Payer Reports</h3>
+				<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:center; margin-bottom:14px;">
+					<div class="stat" style="min-width:140px;">
+						<h4>Daily</h4>
+						<div class="val"><?php echo number_format((int)($payerTimeseries['daily']['total'] ?? 0)); ?> payers</div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Weekly</h4>
+						<div class="val"><?php echo number_format((int)($payerTimeseries['weekly']['total'] ?? 0)); ?> payers</div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Monthly</h4>
+						<div class="val"><?php echo number_format((int)($payerTimeseries['monthly']['total'] ?? 0)); ?> payers</div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Yearly</h4>
+						<div class="val"><?php echo number_format((int)($payerTimeseries['yearly']['total'] ?? 0)); ?> payers</div>
+					</div>
+					<div style="display:flex; flex-direction:column; align-items:center;">
+						<label for="payersPeriodSelect" style="font-weight:700; margin-bottom:6px;">Period</label>
+						<select id="payersPeriodSelect" style="width:180px; padding:8px;border-radius:8px;">
+							<option value="daily">Daily</option>
+							<option value="weekly">Weekly</option>
+							<option value="monthly">Monthly</option>
+							<option value="yearly">Yearly</option>
+						</select>
+					</div>
+				</div>
+
+				<!-- main payers trend chart -->
+				<div style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+					<canvas id="payersTrendChart" style="width:100%; height:220px;"></canvas>
 				</div>
 			</div>
 
@@ -636,6 +931,96 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 			lt.data.labels = payload.labels;
 			lt.data.datasets[0].data = payload.data;
 			lt.update();
+		});
+	})();
+
+	// NEW: Prepare payer timeseries data from PHP for Chart rendering
+	const payerTimeseriesData = {
+		daily: {
+			labels: <?php echo json_encode($payerTimeseries['daily']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($payerTimeseries['daily']['data'] ?? []); ?>,
+			names: <?php echo json_encode($payerTimeseries['daily']['names'] ?? []); ?>
+		},
+		weekly: {
+			labels: <?php echo json_encode($payerTimeseries['weekly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($payerTimeseries['weekly']['data'] ?? []); ?>,
+			names: <?php echo json_encode($payerTimeseries['weekly']['names'] ?? []); ?>
+		},
+		monthly: {
+			labels: <?php echo json_encode($payerTimeseries['monthly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($payerTimeseries['monthly']['data'] ?? []); ?>,
+			names: <?php echo json_encode($payerTimeseries['monthly']['names'] ?? []); ?>
+		},
+		yearly: {
+			labels: <?php echo json_encode($payerTimeseries['yearly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($payerTimeseries['yearly']['data'] ?? []); ?>,
+			names: <?php echo json_encode($payerTimeseries['yearly']['names'] ?? []); ?>
+		}
+	};
+
+	(function initPayersTrendChart() {
+		const ctx = document.getElementById('payersTrendChart').getContext('2d');
+		const cfg = {
+			type: 'line',
+			data: {
+				labels: payerTimeseriesData.daily.labels,
+				datasets: [{
+					label: 'Unique Payers',
+					data: payerTimeseriesData.daily.data,
+					backgroundColor: 'rgba(34,197,94,0.08)',
+					borderColor: '#22c55e',
+					borderWidth: 2,
+					pointRadius: 2,
+					fill: true,
+					tension: 0.25
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: { display: false },
+					tooltip: {
+						callbacks: {
+							label: function(ctx) {
+								const count = Number(ctx.parsed.y);
+								const index = ctx.dataIndex;
+								const names = payerTimeseriesData[document.getElementById('payersPeriodSelect').value || 'daily'].names[index] || '';
+								let label = count + ' unique payer' + (count !== 1 ? 's' : '');
+								if (names) {
+									label += ': ' + names;
+								}
+								return label;
+							}
+						}
+					}
+				},
+				scales: {
+					x: {
+						display: true,
+						ticks: { maxRotation: 0, minRotation: 0}
+					},
+					y: {
+						display: true,
+						beginAtZero: true,
+						ticks: { precision: 0 }
+					}
+				}
+			}
+		};
+		const pt = new Chart(ctx, cfg);
+
+		// period selector handler: switch data/dataset
+		const sel = document.getElementById('payersPeriodSelect');
+		if (!sel) return;
+		sel.addEventListener('change', function(e) {
+			const val = sel.value || 'daily';
+			const payload = payerTimeseriesData[val] || payerTimeseriesData.daily;
+			pt.data.labels = payload.labels;
+			pt.data.datasets[0].data = payload.data;
+			// Store current names for tooltip
+			window.currentPayerNames = payload.names;
+			pt.update();
 		});
 	})();
 
