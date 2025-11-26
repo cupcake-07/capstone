@@ -26,36 +26,11 @@
             "room": ""
         },
         {
-            "period": "2",
-            "time": "8:50 - 9:35",
+            "period": "3",
+            "time": "5:00 PM - 6:00 PM",
             "monday": {
                 "teacher": "Maria DB",
                 "subject": "English"
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "room": ""
-        },
-        {
-            "period": "3",
-            "time": "9:40 - 10:25",
-            "monday": {
-                "teacher": "",
-                "subject": ""
             },
             "tuesday": {
                 "teacher": "",
@@ -3788,10 +3763,10 @@
     ],
     "K1_A": [
         {
-            "room": "12",
-            "time": "8:00 - 8:45",
+            "period": "1",
+            "time": "7:00 AM - 8:00 AM",
             "monday": {
-                "teacher": "Maria DB",
+                "teacher": "teacher2",
                 "subject": "Mathematics"
             },
             "tuesday": {
@@ -3799,8 +3774,8 @@
                 "subject": ""
             },
             "wednesday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "teacher2",
+                "subject": "English"
             },
             "thursday": {
                 "teacher": "",
@@ -3809,34 +3784,11 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            }
+            },
+            "room": ""
         },
         {
-            "room": "2",
-            "time": "8:50 - 9:35",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
-        },
-        {
-            "room": "3",
+            "period": "3",
             "time": "9:40 - 10:25",
             "monday": {
                 "teacher": "",
@@ -3857,18 +3809,19 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            }
+            },
+            "room": ""
         },
         {
-            "room": "4",
+            "period": "4",
             "time": "10:30 - 11:15",
             "monday": {
                 "teacher": "",
                 "subject": ""
             },
             "tuesday": {
-                "teacher": "",
-                "subject": ""
+                "teacher": "Cardio Training",
+                "subject": "Arts"
             },
             "wednesday": {
                 "teacher": "",
@@ -3881,10 +3834,11 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            }
+            },
+            "room": ""
         },
         {
-            "room": "5",
+            "period": "5",
             "time": "11:20 - 12:05",
             "monday": {
                 "teacher": "",
@@ -3905,55 +3859,8 @@
             "friday": {
                 "teacher": "",
                 "subject": ""
-            }
-        },
-        {
-            "room": "6",
-            "time": "",
-            "monday": {
-                "teacher": "",
-                "subject": ""
             },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
-        },
-        {
-            "room": "7",
-            "time": "",
-            "monday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "tuesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "wednesday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "thursday": {
-                "teacher": "",
-                "subject": ""
-            },
-            "friday": {
-                "teacher": "",
-                "subject": ""
-            }
+            "room": ""
         }
     ]
 }

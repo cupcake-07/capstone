@@ -200,59 +200,62 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
         if (!is_array($sched)) continue;
         
         foreach ($sched as $row) {
-            $period = trim((string)($row['period'] ?? ''));
+            // Use 'room' (admin schedule) instead of 'period' which is not in admin schedule format
+            $room = trim((string)($row['room'] ?? ''));
             $time = trim((string)($row['time'] ?? ''));
             
-            foreach (['monday','tuesday','wednesday','thursday','friday'] as $day) {
-                $cellTeacher = trim((string)($row[$day]['teacher'] ?? ''));
-                if ($cellTeacher === '') continue;
-                
-                if (strcasecmp($cellTeacher, $teacherLookup) !== 0) continue;
-                
-                $subject = trim((string)($row[$day]['subject'] ?? ''));
-                
-                if (!isset($matches[$key])) {
-                    $matches[$key] = [];
-                }
-                
-                $matches[$key][] = [
-                    'day' => ucfirst($day),
-                    'period' => $period,
-                    'time' => $time,
-                    'subject' => $subject
-                ];
-            }
-        }
-    }
+             foreach (['monday','tuesday','wednesday','thursday','friday'] as $day) {
+                 $cellTeacher = trim((string)($row[$day]['teacher'] ?? ''));
+                 if ($cellTeacher === '') continue;
+                 
+                 if (strcasecmp($cellTeacher, $teacherLookup) !== 0) continue;
+                 
+                 $subject = trim((string)($row[$day]['subject'] ?? ''));
+                 
+                 if (!isset($matches[$key])) {
+                     $matches[$key] = [];
+                 }
+                 
+                 // store room (room no.) so we can display it on the dashboard
+                 $matches[$key][] = [
+                     'day' => ucfirst($day),
+                     'room' => $room,
+                     'time' => $time,
+                     'subject' => $subject
+                 ];
+             }
+         }
+     }
+ 
+     if (!empty($matches)) {
+         $parts = [];
+         foreach ($matches as $key => $entries) {
+             if (strpos($key, '_') !== false) {
+                 list($g, $s) = explode('_', $key, 2);
+             } else {
+                 $g = $key;
+                 $s = '';
+             }
 
-    if (!empty($matches)) {
-        $parts = [];
-        foreach ($matches as $key => $entries) {
-            if (strpos($key, '_') !== false) {
-                list($g, $s) = explode('_', $key, 2);
-            } else {
-                $g = $key;
-                $s = '';
-            }
-
-            $html = '<div class="schedule-peek" id="sched_' . htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]/', '', $g . '_' . $s)) . '"><strong>Grade ' . htmlspecialchars($g) . ($s !== '' ? ' — Section ' . htmlspecialchars($s) : '') . '</strong>';
-            $html .= '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
-            $html .= '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Period</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
+             $html = '<div class="schedule-peek" id="sched_' . htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]/', '', $g . '_' . $s)) . '"><strong>Grade ' . htmlspecialchars($g) . ($s !== '' ? ' — Section ' . htmlspecialchars($s) : '') . '</strong>';
+             $html .= '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
+            // Add 'Room' column so room numbers are displayed as managed by admin/schedule.php
+            $html .= '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Room No.</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
             
-            foreach ($entries as $e) {
-                $html .= '<tr>'
+             foreach ($entries as $e) {
+                 $html .= '<tr>'
                        . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['day']) . '</td>'
+                       . '<td style="padding:6px 8px;vertical-align:top">' . ($e['room'] !== '' ? htmlspecialchars($e['room']) : '&nbsp;') . '</td>'
                        . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['time']) . '</td>'
-                       . '<td style="padding:6px 8px;vertical-align:top">' . htmlspecialchars($e['period']) . '</td>'
-                       . '<td style="padding:6px 8px;vertical-align:top">' . ($e['subject'] !== '' ? htmlspecialchars($e['subject']) : '&nbsp;') . '</td>'
-                       . '</tr>';
-            }
-            $html .= '</tbody></table></div>';
-            $parts[] = $html;
-        }
-        $scheduleDisplay = implode('<br>', $parts);
-    }
-}
+                        . '<td style="padding:6px 8px;vertical-align:top">' . ($e['subject'] !== '' ? htmlspecialchars($e['subject']) : '&nbsp;') . '</td>'
+                        . '</tr>';
+             }
+             $html .= '</tbody></table></div>';
+             $parts[] = $html;
+         }
+         $scheduleDisplay = implode('<br>', $parts);
+     }
+ }
 // --- END schedule display ---
 ?>
 <!DOCTYPE html>
@@ -537,6 +540,106 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
           };
           return text.replace(/[&<>"']/g, m => map[m]);
       }
+
+      // Add teacher name accessible in JS (for matching)
+      const TEACHER_LOOKUP = <?php echo json_encode(trim($_SESSION['user_name'] ?? '')); ?>;
+
+      // Build HTML schedule from raw schedules JSON (similar to PHP logic)
+      function buildScheduleHtmlFromJson(jsSchedules) {
+          if (!jsSchedules) return '<div>No schedule file.</div>';
+          const teacherName = (TEACHER_LOOKUP || '').trim();
+          if (!teacherName) return '<div>No schedule available.</div>';
+
+          const matches = {};
+
+          Object.keys(jsSchedules).forEach(key => {
+              const sched = jsSchedules[key];
+              if (!Array.isArray(sched)) return;
+
+              sched.forEach(row => {
+                  const room = (row.room || '').toString().trim();
+                  const time = (row.time || '').toString().trim();
+
+                  ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
+                      const cell = row[day];
+                      if (!cell || typeof cell !== 'object') return;
+                      const cellTeacher = ((cell.teacher || '').toString()).trim();
+                      if (!cellTeacher) return;
+                      if (cellTeacher.localeCompare(teacherName, undefined, {sensitivity: 'accent'}) !== 0) return;
+
+                      const subject = (cell.subject || '').toString().trim();
+                      if (!matches[key]) matches[key] = [];
+                      matches[key].push({
+                          day: day.charAt(0).toUpperCase() + day.slice(1),
+                          room: room,
+                          time: time,
+                          subject: subject
+                      });
+                  });
+              });
+          });
+
+          if (Object.keys(matches).length === 0) {
+              return '<div>No schedule available.</div>';
+          }
+
+          const parts = [];
+          Object.keys(matches).forEach(key => {
+              const entries = matches[key];
+              let g = key, s = '';
+              if (key.indexOf('_') !== -1) {
+                  [g, s] = key.split('_', 2);
+              }
+
+              let html = '<div class="schedule-peek" id="sched_' + (g + '_' + s).replace(/[^A-Za-z0-9_-]/g, '') + '">';
+              html += '<strong>Grade ' + escapeHtml(g) + (s ? ' — Section ' + escapeHtml(s) : '') + '</strong>';
+              html += '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
+              html += '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Room No.</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
+
+              entries.forEach(e => {
+                  html += '<tr>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.day) + '</td>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + (e.room ? escapeHtml(e.room) : '&nbsp;') + '</td>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.time) + '</td>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + (e.subject ? escapeHtml(e.subject) : '&nbsp;') + '</td>'
+                      + '</tr>';
+              });
+
+              html += '</tbody></table></div>';
+              parts.push(html);
+          });
+
+          return parts.join('<br>');
+      }
+
+      // Fetch schedules.json and update the schedule card if changed
+      let lastScheduleJson = null;
+      function fetchAndUpdateSchedule() {
+          fetch('../data/schedules.json?ts=' + Date.now(), { credentials: 'same-origin' })
+              .then(response => {
+                  if (!response.ok) throw new Error('Network error');
+                  return response.json();
+              })
+              .then(json => {
+                  const jsonStr = JSON.stringify(json);
+                  if (jsonStr !== lastScheduleJson) {
+                      lastScheduleJson = jsonStr;
+                      const scheduleHtml = buildScheduleHtmlFromJson(json);
+                      const scheduleEl = document.getElementById('schedule');
+                      if (scheduleEl) scheduleEl.innerHTML = scheduleHtml;
+                  }
+              })
+              .catch(err => {
+                  // keep current schedule if error occurs; log for debugging
+                  console.error('Failed to refresh schedule:', err);
+              });
+      }
+
+      // Poll every 20 seconds for updates
+      (function initSchedulePolling(){
+          fetchAndUpdateSchedule(); // initial fetch
+          setInterval(fetchAndUpdateSchedule, 20000);
+      })();
 
       // Update the year in the footer
       (function(){

@@ -156,6 +156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['grade']) && isset($_P
         $all[$key] = $sched;
         save_schedules($all);
         $saved_msg = "Schedule for Grade $grade - Section $section saved.";
+
+        // If this was an AJAX save request, return JSON and exit (prevents full page render)
+        if (isset($_POST['ajax']) && $_POST['ajax'] === '1') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => $saved_msg]);
+            exit;
+        }
     }
 }
 
@@ -340,6 +347,8 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
                         <span>📥</span> Export CSV
                     </a>
                 </div>
+                <!-- Add autosave status -->
+                <div id="saveStatus" style="display:inline-block;margin-left:12px; color:#2d6a4f;"></div>
             </div>
         </section>
 
@@ -389,7 +398,7 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
                     <input type="hidden" name="schedule_json" id="schedule_json" value="">
                     <div class="row-controls">
                         <button type="button" class="btn" onclick="addRow()">
-                            <span>➕</span> Add New Period
+                            <span>➕</span> Add New Schedule
                         </button>
                         <button type="button" class="btn" style="background:#27ae60;" onclick="saveSchedule()">
                             <span>💾</span> Save Changes
@@ -418,6 +427,7 @@ const initialSchedule = <?php
 ?>;
 
 let schedule = null;
+let autosaveTimer = null;
 
 function createTable() {
     const container = document.getElementById('tableContainer');
@@ -545,14 +555,73 @@ function removeRow(index) {
     if (schedule.length > 1) { // Prevent removing the last row to avoid empty schedule
         schedule.splice(index, 1);
         createTable();
+        // autosave immediately after removal (AJAX)
+        saveSchedule(true).then(() => {
+            showStatus('Saved (autosave)');
+        }).catch(err => {
+            showStatus('Save failed', true);
+            console.error('Autosave failed', err);
+        });
     } else {
         alert('Cannot remove the last period.');
     }
 }
 
-function saveSchedule() {
-    document.getElementById('schedule_json').value = JSON.stringify(schedule);
-    document.getElementById('scheduleForm').submit();
+// saveSchedule supports AJAX flag; returns Promise that resolves after POST
+function saveSchedule(ajax = false) {
+    if (!ajax) {
+        // Non-AJAX: submit form as before (fallback)
+        if (!document.getElementById('scheduleForm')) return;
+        document.getElementById('schedule_json').value = JSON.stringify(schedule);
+        document.getElementById('scheduleForm').submit();
+        // no return value
+        return Promise.resolve();
+    }
+
+    // AJAX save: POST to schedule.php with form data including ajax=1
+    const url = new URL(window.location.href);
+    const fd = new FormData();
+    fd.append('grade', selectedGrade);
+    fd.append('section', selectedSection);
+    fd.append('schedule_json', JSON.stringify(schedule));
+    fd.append('ajax', '1');
+    showStatus('Saving...');
+    return fetch(url.toString(), {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: fd,
+        headers: {
+            // No special headers - fetch will work; X-Requested-With optional
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(r => {
+        if (!r.ok) throw new Error('Network error saving');
+        return r.json();
+    }).then(json => {
+        if (!json || json.success !== true) {
+            const msg = json && json.message ? json.message : 'Save failed';
+            showStatus(msg, true);
+            return Promise.reject(new Error(msg));
+        }
+        showStatus(json.message || 'Saved');
+        return Promise.resolve(json);
+    }).catch(err => {
+        showStatus('Save failed', true);
+        console.error('Save error: ', err);
+        return Promise.reject(err);
+    });
+}
+
+// small helper to show status messages next to Export button
+function showStatus(msg, isError = false) {
+    const el = document.getElementById('saveStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = isError ? '#c92a2a' : '#2d6a4f';
+    // clear after a short delay if not error
+    if (!isError) {
+        setTimeout(() => { el.textContent = ''; }, 3500);
+    }
 }
 
 if (initialSchedule !== null) {
