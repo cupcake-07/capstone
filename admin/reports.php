@@ -208,7 +208,7 @@ function runDateAggregationQuery($conn, $sql) {
 }
 // -------------------------------------------------------------------------------------------------------
 
-// ----- NEW: compute payments time-series for daily(7d), weekly(12w), monthly(12m), yearly(5y) -----
+// ----- NEW: compute payments time-series for daily, weekly, monthly, yearly (LAST 10 ONLY) -----
 $paymentsTimeseries = [
     'daily'   => ['labels' => [], 'data' => [], 'total' => 0],
     'weekly'  => ['labels' => [], 'data' => [], 'total' => 0],
@@ -218,182 +218,163 @@ $paymentsTimeseries = [
 
 if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 
-    // DAILY: last 7 days (today included)
-    $end = new DateTime('today');
-    $start = (clone $end)->modify('-6 days');
-    $dailyLabels = fillDateRange($start, $end, new DateInterval('P1D'), function($d) { return $d->format('Y-m-d'); });
+    // DAILY: last 10 days only
+    $dailyEnd = new DateTime('today');
+    $dailyStart = (clone $dailyEnd)->modify('-9 days');
+    $dailyLabels = fillDateRange($dailyStart, $dailyEnd, new DateInterval('P1D'), function($d) { return $d->format('Y-m-d'); });
 
-    // Query: group by DATE(...)
-    if ($paymentsTableExists) {
-        if ($paymentsHasFeeId && $feesTableExists) {
-            $sqlDaily = "
-                SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                JOIN fees f ON p.fee_id = f.id
-                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$start->format('Y-m-d')}' AND '{$end->format('Y-m-d')}'
-                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
-                GROUP BY DATE(p.`{$paymentDateCol}`)
-                ORDER BY DATE(p.`{$paymentDateCol}`) ASC
-            ";
-        } else {
-            // No fee_id or fees table: can't filter by category; fallback to payments only
-            $sqlDaily = "
-                SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$start->format('Y-m-d')}' AND '{$end->format('Y-m-d')}'
-                GROUP BY DATE(p.`{$paymentDateCol}`)
-                ORDER BY DATE(p.`{$paymentDateCol}`) ASC
-            ";
-        }
-        $dailyResult = runDateAggregationQuery($conn, $sqlDaily);
-
-        // populate labels and data with zero-fill
-        $paymentsTimeseries['daily']['labels'] = array_map(function($d){ return (new DateTime($d))->format('M j'); }, $dailyLabels);
-        $paymentsTimeseries['daily']['data'] = array_map(function($d) use ($dailyResult) { return (float)($dailyResult[$d] ?? 0); }, $dailyLabels);
-        $paymentsTimeseries['daily']['total'] = array_sum($paymentsTimeseries['daily']['data']);
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlDaily = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$dailyStart->format('Y-m-d')}' AND '{$dailyEnd->format('Y-m-d')}'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            GROUP BY DATE(p.`{$paymentDateCol}`)
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlDaily = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+            FROM payments p
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$dailyStart->format('Y-m-d')}' AND '{$dailyEnd->format('Y-m-d')}'
+            GROUP BY DATE(p.`{$paymentDateCol}`)
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
     }
+    $dailyResult = runDateAggregationQuery($conn, $sqlDaily);
+    $paymentsTimeseries['daily']['labels'] = array_map(function($d){ return (new DateTime($d))->format('M j'); }, $dailyLabels);
+    $paymentsTimeseries['daily']['data'] = array_map(function($d) use ($dailyResult) { return (float)($dailyResult[$d] ?? 0); }, $dailyLabels);
+    $paymentsTimeseries['daily']['total'] = array_sum($paymentsTimeseries['daily']['data']);
 
-    // WEEKLY: last 12 ISO weeks (group by YEAR-WEEK)
-    $weeks = 12;
-    $endWeek = new DateTime('monday this week'); // week alignment
-    $startWeek = (clone $endWeek)->modify('-' . ($weeks - 1) . ' weeks');
-
-    // Build labels for the 12 weeks (use ISO week-year combination)
-    $weekKeys = [];
+    // WEEKLY: last 10 weeks only (simplified approach)
+    $weekEnd = new DateTime('today');
+    $weekStart = (clone $weekEnd)->modify('-69 days'); // approximately 10 weeks back
     $weekLabels = [];
-    $wk = clone $startWeek;
-    for ($i = 0; $i < $weeks; $i++, $wk->modify('+1 week')) {
-        $yr = $wk->format('o'); // ISO year
-        $n = $wk->format('W');  // Week number
-        $key = $yr . '-' . $n;
-        $weekKeys[] = $key;
-        // show week label like 'Mon 11/01' (week start)
-        $weekLabels[] = $wk->format('M j');
+    $weekData = [];
+    
+    // Generate 10 week boundaries
+    for ($i = 9; $i >= 0; $i--) {
+        $wStart = (clone $weekEnd)->modify('-' . ($i * 7 + 7) . ' days');
+        $wEnd = (clone $weekEnd)->modify('-' . ($i * 7) . ' days');
+        $weekLabels[] = $wStart->format('M j');
     }
 
-    // SQL for weekly: group by YEARWEEK using ISO-week week mode 1 (MYSQL WEEK(date,1) or YEARWEEK(date,1))
-    if ($paymentsTableExists) {
-        if ($paymentsHasFeeId && $feesTableExists) {
-            $sqlWeekly = "
-                SELECT CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                JOIN fees f ON p.fee_id = f.id
-                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startWeek->format('Y-m-d')}' AND '{$endWeek->format('Y-m-d')}' 
-                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
-                GROUP BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1))
-                ORDER BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) ASC
-            ";
-        } else {
-            $sqlWeekly = "
-                SELECT CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startWeek->format('Y-m-d')}' AND '{$endWeek->format('Y-m-d')}' 
-                GROUP BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1))
-                ORDER BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) ASC
-            ";
-        }
-        // Run and map keys to "YYYYWW" numeric: we have week keys numeric, convert them into comparable
-        $weeklyResultRaw = runDateAggregationQuery($conn, $sqlWeekly);
-
-        // Normalize keys to the same format produced by PHP labels: YEARWEEK returns integer YYYYWW, with possible leading zeros for week not included
-        // We'll map weekKeys to YEARWEEK numeric
-        $vals = [];
-        foreach ($weekKeys as $idx => $k) {
-            // convert 'YYYY-WW' to YEARWEEK numeric: must be the same as SQL's YEARWEEK function result
-            $p = DateTime::createFromFormat('Y-m-d', (new DateTime($startWeek->format('Y-m-d')))->modify('+' . ($idx) . ' weeks')->format('Y-m-d'));
-            $sqlKeyNum = (int)$p->format('o') . str_pad((int)$p->format('W'), 2, '0', STR_PAD_LEFT);
-            $vals[] = (float)($weeklyResultRaw[$sqlKeyNum] ?? 0);
-        }
-
-        $paymentsTimeseries['weekly']['labels'] = $weekLabels;
-        $paymentsTimeseries['weekly']['data'] = $vals;
-        $paymentsTimeseries['weekly']['total'] = array_sum($vals);
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlWeekly = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS payment_date, p.`{$paymentAmountCol}` AS amount
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$weekStart->format('Y-m-d')}' AND '{$weekEnd->format('Y-m-d')}'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlWeekly = "
+            SELECT DATE(p.`{$paymentDateCol}`) AS payment_date, p.`{$paymentAmountCol}` AS amount
+            FROM payments p
+            WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$weekStart->format('Y-m-d')}' AND '{$weekEnd->format('Y-m-d')}'
+            ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+        ";
     }
+    
+    $weeklyRes = $conn->query($sqlWeekly);
+    $weekData = array_fill(0, 10, 0);
+    
+    if ($weeklyRes) {
+        while ($row = $weeklyRes->fetch_assoc()) {
+            $payDate = new DateTime($row['payment_date']);
+            $daysDiff = (int)$payDate->diff($weekStart)->format('%a');
+            $weekIdx = (int)floor($daysDiff / 7);
+            if ($weekIdx >= 0 && $weekIdx < 10) {
+                $weekData[$weekIdx] += (float)$row['amount'];
+            }
+        }
+    }
+    
+    $paymentsTimeseries['weekly']['labels'] = $weekLabels;
+    $paymentsTimeseries['weekly']['data'] = $weekData;
+    $paymentsTimeseries['weekly']['total'] = array_sum($weekData);
 
-    // MONTHLY: last 12 months
-    $months = 12;
-    $endMonth = new DateTime('first day of this month');
-    $startMonth = (clone $endMonth)->modify('-' . ($months - 1) . ' months');
-
-    // labels: generate 12 months
+    // MONTHLY: last 10 months only
+    $monthEnd = new DateTime('first day of this month');
+    $monthStart = (clone $monthEnd)->modify('-9 months');
     $monthLabels = [];
     $monthKeys = [];
-    $m = clone $startMonth;
-    for ($i = 0; $i < $months; $i++, $m->modify('+1 month')) {
+    $m = clone $monthStart;
+    while ($m <= $monthEnd) {
         $monthKeys[] = $m->format('Y-m');
         $monthLabels[] = $m->format('M Y');
+        $m->modify('+1 month');
     }
 
-    if ($paymentsTableExists) {
-       if ($paymentsHasFeeId && $feesTableExists) {
-           $sqlMonthly = "
-              SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-              FROM payments p
-              JOIN fees f ON p.fee_id = f.id
-              WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startMonth->format('Y-m-d')}' AND LAST_DAY('{$endMonth->format('Y-m-d')}')
-                AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
-              GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
-              ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
-           ";
-       } else {
-           $sqlMonthly = "
-              SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-              FROM payments p
-              WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startMonth->format('Y-m-d')}' AND LAST_DAY('{$endMonth->format('Y-m-d')}')
-              GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
-              ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
-           ";
-       }
-       $monthlyRaw = runDateAggregationQuery($conn, $sqlMonthly);
-       $monthlyVals = [];
-       foreach ($monthKeys as $k) {
-           $monthlyVals[] = (float)($monthlyRaw[$k] ?? 0);
-       }
-       $paymentsTimeseries['monthly']['labels'] = $monthLabels;
-       $paymentsTimeseries['monthly']['data'] = $monthlyVals;
-       $paymentsTimeseries['monthly']['total'] = array_sum($monthlyVals);
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlMonthly = "
+           SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+           FROM payments p
+           JOIN fees f ON p.fee_id = f.id
+           WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$monthStart->format('Y-m-d')}' AND LAST_DAY('{$monthEnd->format('Y-m-d')}')
+             AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+           GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+           ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+        ";
+    } else {
+        $sqlMonthly = "
+           SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+           FROM payments p
+           WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$monthStart->format('Y-m-d')}' AND LAST_DAY('{$monthEnd->format('Y-m-d')}')
+           GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+           ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+        ";
     }
+    $monthlyRaw = runDateAggregationQuery($conn, $sqlMonthly);
+    $monthlyVals = [];
+    foreach ($monthKeys as $k) {
+        $monthlyVals[] = (float)($monthlyRaw[$k] ?? 0);
+    }
+    $paymentsTimeseries['monthly']['labels'] = $monthLabels;
+    $paymentsTimeseries['monthly']['data'] = $monthlyVals;
+    $paymentsTimeseries['monthly']['total'] = array_sum($monthlyVals);
 
-    // YEARLY: last 5 years - START at 2025 for this report (fixed window 2025..2029)
-    $years = 5;
-    $startYear = 2025;
-    $endYear = $startYear + $years - 1; // 2029
+    // YEARLY: current year + next 4 years (5 years total forward: 2025-2029)
+    $yearStart = (int)(new DateTime())->format('Y');
+    $yearEnd = $yearStart + 4; // 5 years total: current + 4 future
     $yearKeys = [];
     $yearLabels = [];
-    for ($iy = $startYear; $iy <= $endYear; $iy++) {
+    // Generate years from START to END (ascending: 2025, 2026, 2027, 2028, 2029)
+    for ($iy = $yearStart; $iy <= $yearEnd; $iy++) {
         $yearKeys[] = (string)$iy;
         $yearLabels[] = (string)$iy;
     }
 
-    if ($paymentsTableExists) {
-        if ($paymentsHasFeeId && $feesTableExists) {
-            $sqlYearly = "
-                SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                JOIN fees f ON p.fee_id = f.id
-                WHERE p.`{$paymentDateCol}` BETWEEN '{$startYear}-01-01' AND '{$endYear}-12-31'
-                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
-                GROUP BY YEAR(p.`{$paymentDateCol}`)
-                ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
-            ";
-        } else {
-            $sqlYearly = "
-                SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
-                FROM payments p
-                WHERE p.`{$paymentDateCol}` BETWEEN '{$startYear}-01-01' AND '{$endYear}-12-31'
-                GROUP BY YEAR(p.`{$paymentDateCol}`)
-                ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
-            ";
-        }
-        $yearlyRaw = runDateAggregationQuery($conn, $sqlYearly);
-        $yearlyVals = [];
-        foreach ($yearKeys as $k) {
-            $yearlyVals[] = (float)($yearlyRaw[$k] ?? 0);
-        }
-        $paymentsTimeseries['yearly']['labels'] = $yearLabels;
-        $paymentsTimeseries['yearly']['data'] = $yearlyVals;
-        $paymentsTimeseries['yearly']['total'] = array_sum($yearlyVals);
+    if ($paymentsHasFeeId && $feesTableExists) {
+        $sqlYearly = "
+            SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+            FROM payments p
+            JOIN fees f ON p.fee_id = f.id
+            WHERE p.`{$paymentDateCol}` BETWEEN '{$yearStart}-01-01' AND '{$yearEnd}-12-31'
+              AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+            GROUP BY YEAR(p.`{$paymentDateCol}`)
+            ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+        ";
+    } else {
+        $sqlYearly = "
+            SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+            FROM payments p
+            WHERE p.`{$paymentDateCol}` BETWEEN '{$yearStart}-01-01' AND '{$yearEnd}-12-31'
+            GROUP BY YEAR(p.`{$paymentDateCol}`)
+            ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+        ";
     }
+    $yearlyRaw = runDateAggregationQuery($conn, $sqlYearly);
+    $yearlyVals = [];
+    // Map values in ascending order (2025, 2026, 2027, 2028, 2029)
+    for ($iy = $yearStart; $iy <= $yearEnd; $iy++) {
+        $yearlyVals[] = (float)($yearlyRaw[(string)$iy] ?? 0);
+    }
+    $paymentsTimeseries['yearly']['labels'] = $yearLabels;
+    $paymentsTimeseries['yearly']['data'] = $yearlyVals;
+    $paymentsTimeseries['yearly']['total'] = array_sum($yearlyVals);
 }
 // -------------------------------------------------------------------------------------------------------
 ?>
