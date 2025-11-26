@@ -391,85 +391,6 @@ if (!empty($balances)) {
     }
 }
 
-// ----- NEW: Fetch and organize fees/payments by student for the Details section -----
-$feesByStudent = [];
-$paymentBreakdowns = [];
-
-if ($feesExists && $feesHasStudentId) {
-    $sqlFees = "SELECT id, student_id, title, amount FROM fees ORDER BY student_id, id";
-    $resFees = $conn->query($sqlFees);
-    if ($resFees) {
-        while ($f = $resFees->fetch_assoc()) {
-            $sid = (int)$f['student_id'];
-            if (!isset($feesByStudent[$sid])) $feesByStudent[$sid] = [];
-            $feesByStudent[$sid][] = [
-                'id' => (int)$f['id'],
-                'title' => $f['title'] ?? 'Fee',
-                'amount' => (float)($f['amount'] ?? 0)
-            ];
-        }
-    }
-}
-
-if ($paymentsExists) {
-    // Detect which columns exist
-    $paymentDateCol = columnExists($conn, 'payments', 'date') ? 'date' : (columnExists($conn, 'payments', 'payment_date') ? 'payment_date' : null);
-    $paymentAmountCol = columnExists($conn, 'payments', 'amount') ? 'amount' : null;
-    $paymentNoteCol = columnExists($conn, 'payments', 'note') ? 'note' : (columnExists($conn, 'payments', 'notes') ? 'notes' : null);
-    $paymentFeeIdCol = columnExists($conn, 'payments', 'fee_id') ? 'fee_id' : null;
-    $paymentStudentIdCol = columnExists($conn, 'payments', 'student_id') ? 'student_id' : null;
-
-    if ($paymentAmountCol) {
-        $dateExpr = $paymentDateCol ? "p.`{$paymentDateCol}`" : "NOW()";
-        $noteExpr = $paymentNoteCol ? "p.`{$paymentNoteCol}`" : "''";
-        $feeIdExpr = $paymentFeeIdCol ? "p.`{$paymentFeeIdCol}`" : "NULL";
-
-        // Build query based on available columns
-        if ($paymentFeeIdCol && $feesExists && $feesHasStudentId) {
-            // Payments linked to fees
-            $sqlPayments = "
-                SELECT f.student_id, p.id, {$dateExpr} AS date, p.`{$paymentAmountCol}` AS amount, 
-                       {$feeIdExpr} AS fee_id, {$noteExpr} AS note
-                FROM payments p
-                JOIN fees f ON p.fee_id = f.id
-                ORDER BY f.student_id, {$dateExpr} DESC
-            ";
-        } else if ($paymentStudentIdCol) {
-            // Payments with direct student_id
-            $sqlPayments = "
-                SELECT p.student_id, p.id, {$dateExpr} AS date, p.`{$paymentAmountCol}` AS amount,
-                       {$feeIdExpr} AS fee_id, {$noteExpr} AS note
-                FROM payments p
-                ORDER BY p.student_id, {$dateExpr} DESC
-            ";
-        } else {
-            $sqlPayments = null;
-        }
-
-        if ($sqlPayments) {
-            $resPayments = $conn->query($sqlPayments);
-            if ($resPayments) {
-                while ($p = $resPayments->fetch_assoc()) {
-                    $sid = (int)$p['student_id'];
-                    if (!isset($paymentBreakdowns[$sid])) $paymentBreakdowns[$sid] = [];
-                    
-                    // Get the note value - ensure it's being captured correctly
-                    $noteValue = isset($p['note']) && !empty(trim($p['note'])) ? trim($p['note']) : '';
-                    
-                    $paymentBreakdowns[$sid][] = [
-                        'id' => (int)($p['id'] ?? 0),
-                        'date' => $p['date'] ?? '—',
-                        'amount' => (float)($p['amount'] ?? 0),
-                        'fee_id' => $p['fee_id'] ?? null,
-                        'note' => $noteValue
-                    ];
-                }
-            }
-        }
-    }
-}
-// ---------------------------------------------------------------------------
-
 // ----- New: Fetch distinct grades to build grade buttons (if column exists) -----
 $grades = [];
 if ($hasGradeColumn && $gradeColumnName) {
@@ -865,56 +786,6 @@ if (!empty($balances)) {
 	.analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
 	.analytics .stat.red .val { color:#b21f2d; }
 	.analytics .stat.green .val { color:#10b981; }
-
-	/* NEW: Payment For input enhancements */
-	.input-with-icon {
-		position: relative;
-		display: block;
-	}
-	.input-with-icon .icon {
-		position: absolute;
-		left: 10px;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 18px;
-		height: 18px;
-		opacity: 0.7;
-		pointer-events: none; /* does not interfere with clicking / focusing the input */
-		fill: #6b7280;
-	}
-	.input-with-icon input {
-		padding-left: 40px; /* leave space for the icon */
-		border: 1px solid #d1d5db;
-		background: #ffffff;
-		border-radius: 8px;
-		height: 38px;
-		box-sizing: border-box;
-		transition: border-color .12s ease, box-shadow .12s ease, transform .12s;
-	}
-	.input-with-icon input::placeholder {
-		color: #9ca3af;
-		font-style: italic;
-	}
-	.input-with-icon input:focus {
-		outline: none;
-		border-color: #2563eb;
-		box-shadow: 0 8px 20px rgba(37,99,235,0.08);
-	}
-
-	/* small helper description under the input */
-	.input-helper { 
-		font-size: 0.85rem;
-		color: #6b7280;
-		margin-top: 6px;
-	}
-
-	/* Make sure the modal modal rows don't shift on smaller screens for icon padding */
-	@media (max-width: 480px) {
-		.input-with-icon input {
-			padding-left: 40px;
-			height: 40px;
-		}
-	}
 	</style>
 </head>
 <body>
@@ -1052,19 +923,21 @@ if (!empty($balances)) {
 																<thead>
 																	<tr>
 																		<th>Date</th>
-																		<th class="text-right">Amount</th>
-																		<th>Payment for:</th>
+																		<th>Amount</th>
+																		<th>Fee / Category</th>
+																		<th>Note</th>
 																	</tr>
 																</thead>
 																<tbody>
 																	<?php foreach ($paymentBreakdowns[$studentId] as $pay): ?>
-                                                		<tr>
-                                                			<td><?= htmlspecialchars($pay['date'] ?? '—') ?></td>
-                                                			<td class="text-right">₱<?= number_format($pay['amount'], 2) ?></td>
-                                                			<td><?= !empty($pay['note']) ? htmlspecialchars($pay['note']) : '—' ?></td>
-                                                		</tr>
-                                                	<?php endforeach; ?>
-                                                </tbody>
+																		<tr>
+																			<td><?= htmlspecialchars($pay['date'] ?? '—') ?></td>
+																			<td class="text-right">₱<?= number_format($pay['amount'], 2) ?></td>
+																			<td><?= htmlspecialchars(($pay['fee_id'] ?? '') ? ('Fee #' . $pay['fee_id']) : 'General') ?></td>
+																			<td><?= htmlspecialchars($pay['note'] ?? '') ?></td>
+																		</tr>
+																	<?php endforeach; ?>
+																</tbody>
 															</table>
 														<?php else: ?>
 															<div style="margin:6px 0;">No payments found for this student.</div>
@@ -1124,68 +997,33 @@ if (!empty($balances)) {
 				<div id="modalTotalFee">—</div>
 			</div>
 			<div class="row">
-				<label>Total Paid</label>
+				<label>Already Paid</label>
 				<div id="modalTotalPaid">—</div>
 			</div>
+
+			<!-- New: Payments breakdown in modal (list of previous payments) -->
 			<div class="row">
-				<label>Outstanding Balance</label>
-				<div id="modalBalance" style="font-weight:700; color:#b21f2d;">—</div>
+				<label>Payments</label>
+				<div id="modalPaymentsList">—</div>
 			</div>
 
-			<!-- Outstanding Fees Breakdown -->
+			<!-- New: Payment for / fee select -->
 			<div class="row">
-				<label>Outstanding Fees Breakdown</label>
-				<div id="modalFeesBreakdown" style="background:#f9f9f9; padding:8px; border-radius:6px; max-height:100px; overflow-y:auto;">
-					—
-				</div>
+				<label for="modalFeeSelect">Payment For</label>
+				<select id="modalFeeSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;">
+					<option value="">General Payment (no fee)</option>
+				</select>
+				<input id="modalPaymentForText" type="text" placeholder="Or write what payment is for (optional)" style="margin-top:6px; width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; display:none;" />
 			</div>
 
-			<!-- Previous payments history -->
 			<div class="row">
-				<label>Payment History</label>
-				<div id="modalPaymentsList" style="background:#f9f9f9; padding:8px; border-radius:6px; max-height:100px; overflow-y:auto;">
-					—
-				</div>
+				<label for="modalAmount">Payment Amount</label>
+				<input id="modalAmount" type="number" min="0" step="0.01" placeholder="Enter amount paid" />
+				<div id="modalError" class="alert-inline" style="display:none;"></div>
 			</div>
-
-			<!-- NEW: Payment Date -->
-			<div class="row">
-				<label for="modalPaymentDate">Payment Date</label>
-				<input id="modalPaymentDate" type="date" />
-			</div>
-
-			<!-- NEW: Payment Amount -->
-			<div class="row">
-				<label for="modalAmount">Amount to Pay</label>
-				<input id="modalAmount" type="number" min="0" step="0.01" placeholder="Enter amount to pay" />
-			</div>
-
-			<!-- NEW: What payment is for - improved design (keeps same input ID and functionality) -->
-			<div class="row">
-				<label for="modalPaymentFor">Payment For (Optional)</label>
-
-				<!-- Wrapped with an icon and helper text for better design -->
-				<div class="input-with-icon">
-					<!-- Inline SVG: simple tag icon; purely decorative -->
-					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img">
-						<path d="M21 11.5L12.5 3 3.5 12v7.5A1.5 1.5 0 0 0 5 21h7.5L21 11.5zM9.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
-					</svg>
-
-					<input 
-						id="modalPaymentFor" 
-						type="text" 
-						placeholder="e.g., Tuition, School Supplies" 
-						aria-label="Payment For (Optional)" 
-					/>
-				</div>
-				<div class="input-helper" aria-hidden="true">Optional: a short description to track the payment.</div>
-			</div>
-
-			<div id="modalError" class="alert-inline" style="display:none;"></div>
-
 			<div class="modal-actions">
 				<button id="modalCancel" class="btn-cancel" type="button">Cancel</button>
-				<button id="modalSubmit" class="btn-submit" type="button">Record Payment</button>
+				<button id="modalSubmit" class="btn-submit" type="button">Save</button>
 			</div>
 		</div>
 	</div>
@@ -1267,23 +1105,22 @@ if (!empty($balances)) {
 		});
 	})();
 
-	// Manage payment modal logic
+	// Manage payment modal logic (updated)
 	(function() {
 		const modalBackdrop = document.getElementById('manageModalBackdrop');
 		const modalStudentName = document.getElementById('modalStudentName');
 		const modalTotalFee = document.getElementById('modalTotalFee');
 		const modalTotalPaid = document.getElementById('modalTotalPaid');
-		const modalBalance = document.getElementById('modalBalance');
-		const modalPaymentDate = document.getElementById('modalPaymentDate');
 		const modalAmount = document.getElementById('modalAmount');
-		const modalPaymentFor = document.getElementById('modalPaymentFor');
 		const modalError = document.getElementById('modalError');
 		const modalSubmit = document.getElementById('modalSubmit');
 		const modalCancel = document.getElementById('modalCancel');
-		const modalFeesBreakdown = document.getElementById('modalFeesBreakdown');
+		const modalFeeSelect = document.getElementById('modalFeeSelect');
+		const modalPaymentForText = document.getElementById('modalPaymentForText');
 		const modalPaymentsList = document.getElementById('modalPaymentsList');
 
-		let activeStudentId = null;
+		// Register cancel handler safely
+		if (modalCancel) modalCancel.addEventListener('click', closeModal);
 
 		function closeModal() {
 			activeStudentId = null;
@@ -1291,6 +1128,7 @@ if (!empty($balances)) {
 			modalBackdrop.setAttribute('aria-hidden', 'true');
 		}
 
+		// Manage button click handler (direct attach)
 		function handleManageClick(e) {
 			const btn = e.currentTarget;
 			if (!btn) return;
@@ -1303,6 +1141,7 @@ if (!empty($balances)) {
 			openModal(sid, studentName, totalFees, totalPaid, feesJson, paymentsJson);
 		}
 
+		// Details button click handler (direct attach)
 		function handleDetailsClick(e) {
 			const btn = e.currentTarget;
 			if (!btn) return;
@@ -1315,149 +1154,136 @@ if (!empty($balances)) {
 			btn.setAttribute('aria-expanded', shown ? 'false' : 'true');
 		}
 
+		// --- Add: active student id + helpers that were removed accidentally ---
+		let activeStudentId = null;
+
+		// parse currency text from a cell like '₱12,345.00' or '12,345.00' -> number
+		function parseCurrencyCell(node) {
+			if (!node) return NaN;
+			const txt = (node.textContent || '').replace(/[^\d\.\-]+/g, '').trim();
+			if (!txt) return NaN;
+			const v = parseFloat(txt);
+			return isNaN(v) ? NaN : v;
+		}
+
 		function openModal(studentId, studentName, totalFees, totalPaid, feesJson, paymentsJson) {
 			activeStudentId = studentId;
 			modalStudentName.textContent = studentName || '—';
 
-			const totalFeesNum = (totalFees === '' || totalFees === null) ? NaN : Number(totalFees);
-			const totalPaidNum = Number(totalPaid || 0);
-			const balanceNum = isFinite(totalFeesNum) ? (totalFeesNum - totalPaidNum) : NaN;
-
-			// Display totals
-			modalTotalFee.textContent = isFinite(totalFeesNum) 
-				? totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-				: '—';
-			modalTotalPaid.textContent = totalPaidNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-			modalBalance.textContent = isFinite(balanceNum)
-				? balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-				: '—';
-
-			// Set payment date to today
-			const today = new Date().toISOString().split('T')[0];
-			modalPaymentDate.value = today;
-
-			// Display outstanding fees breakdown
-			try {
-				const fees = Array.isArray(feesJson) ? feesJson : [];
-				modalFeesBreakdown.innerHTML = '';
-				if (fees.length === 0) {
-					modalFeesBreakdown.textContent = 'No fees recorded.';
-				} else {
-					const ul = document.createElement('ul');
-					ul.style.margin = '0';
-					ul.style.paddingLeft = '20px';
-					fees.forEach(f => {
-						const li = document.createElement('li');
-						li.style.marginBottom = '4px';
-						li.textContent = (f.title ? f.title : ('Fee #' + f.id)) + ' — ₱' + 
-							Number(f.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-						ul.appendChild(li);
-					});
-					modalFeesBreakdown.appendChild(ul);
-				}
-			} catch (e) {
-				console.error('Failed to populate fees breakdown', e);
-				modalFeesBreakdown.textContent = 'Error loading fees.';
-			}
-
-			// Display payment history in modal
+			// populate payments list
 			try {
 				const payments = Array.isArray(paymentsJson) ? paymentsJson : [];
 				modalPaymentsList.innerHTML = '';
 				if (payments.length === 0) {
-					modalPaymentsList.textContent = 'No payment history.';
+					modalPaymentsList.textContent = 'No payments yet.';
 				} else {
 					const tbl = document.createElement('table');
-					tbl.style.width = '100%';
-					tbl.style.fontSize = '0.85rem';
-					tbl.style.borderCollapse = 'collapse';
+					tbl.className = 'table table-sm';
 					tbl.style.margin = '0';
-					
 					const thead = document.createElement('thead');
-					thead.innerHTML = '<tr style="border-bottom:1px solid #ddd;"><th style="text-align:left;padding:4px;">Date</th><th style="text-align:right;padding:4px;">Amount</th><th style="text-align:left;padding:4px;">Payment for:</th></tr>';
+					thead.innerHTML = '<tr><th>Date</th><th>Amount</th><th>Fee</th><th>Note</th></tr>';
 					tbl.appendChild(thead);
-					
 					const tbody = document.createElement('tbody');
 					payments.forEach(p => {
 						const tr = document.createElement('tr');
-						tr.style.borderBottom = '1px solid #eee';
-						// Only show payment note if it exists and has actual content
-						const paymentFor = (p.note && String(p.note).trim().length > 0) ? String(p.note).trim() : '';
-						tr.innerHTML = '<td style="padding:4px;">' + (p.date || '—') + '</td>' +
-							'<td style="text-align:right;padding:4px;">₱' + 
-							Number(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-							'<td style="padding:4px;">' + paymentFor + '</td>';
+						const tdDate = document.createElement('td'); tdDate.textContent = p.date || '—';
+						const tdAmt = document.createElement('td'); tdAmt.className = 'text-right'; tdAmt.textContent = '₱' + Number(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+						const tdFee = document.createElement('td'); tdFee.textContent = p.fee_id ? ('Fee #' + p.fee_id) : 'General';
+						const tdNote = document.createElement('td'); tdNote.textContent = p.note || '';
+						tr.appendChild(tdDate); tr.appendChild(tdAmt); tr.appendChild(tdFee); tr.appendChild(tdNote);
 						tbody.appendChild(tr);
 					});
 					tbl.appendChild(tbody);
 					modalPaymentsList.appendChild(tbl);
 				}
 			} catch (e) {
-				console.error('Failed to populate payment history', e);
-				modalPaymentsList.textContent = 'Error loading payments.';
+				console.error('openModal: failed to populate payments list', e);
+				modalPaymentsList.textContent = 'No payments yet.';
 			}
 
-			// Enable/disable form based on whether total fees is set
+			// populate fee select
+			try {
+				const fees = Array.isArray(feesJson) ? feesJson : [];
+				if (modalFeeSelect) {
+					modalFeeSelect.innerHTML = '<option value="">General Payment (no fee)</option>';
+					if (fees.length) {
+						fees.forEach(f => {
+							const opt = document.createElement('option');
+							opt.value = f.id;
+							opt.textContent = (f.title ? f.title : ('Fee #' + f.id)) + (typeof f.amount !== 'undefined' && f.amount !== null ? ' — ₱' + Number(f.amount).toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 }) : '');
+							modalFeeSelect.appendChild(opt);
+						});
+						modalPaymentForText.style.display = 'none';
+					} else {
+						modalPaymentForText.style.display = '';
+					}
+				}
+			} catch (e) {
+				console.error('openModal: failed to populate fee select', e);
+				if (modalFeeSelect) modalFeeSelect.innerHTML = '<option value="">General Payment (no fee)</option>';
+				if (modalPaymentForText) modalPaymentForText.style.display = '';
+			}
+
+			// show totals (localized)
+			const totalFeesNum = (totalFees === '' || totalFees === null) ? NaN : Number(totalFees);
 			if (!isFinite(totalFeesNum) || totalFeesNum <= 0) {
+				modalTotalFee.textContent = '—';
+				modalTotalPaid.textContent = Number(totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 				modalSubmit.disabled = true;
 				modalAmount.disabled = true;
-				modalPaymentFor.disabled = true;
-				modalAmount.placeholder = 'Grade not set - cannot accept payment';
 			} else {
+				modalTotalFee.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalTotalPaid.textContent = Number(totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 				modalSubmit.disabled = false;
 				modalAmount.disabled = false;
-				modalPaymentFor.disabled = false;
-				modalAmount.placeholder = 'Enter amount to pay (max ₱' + balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
 			}
 
-			modalAmount.value = '';
-			modalPaymentFor.value = '';
-			modalError.style.display = 'none';
-			modalBackdrop.classList.add('show');
-			modalBackdrop.setAttribute('aria-hidden', 'false');
-			modalAmount.focus();
+			if (modalAmount) modalAmount.value = '';
+			if (modalError) modalError.style.display = 'none';
+			if (modalBackdrop) {
+				modalBackdrop.classList.add('show');
+				modalBackdrop.setAttribute('aria-hidden', 'false');
+			}
+			if (modalAmount) modalAmount.focus();
 		}
 
-		if (modalCancel) {
-			modalCancel.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
-		}
-
+		// Keep the backdrop click handler safe
 		if (modalBackdrop) {
 			modalBackdrop.addEventListener('click', function(e) {
 				if (e.target === modalBackdrop) closeModal();
 			});
 		}
 
+		// ESC to close
 		document.addEventListener('keydown', function(e) {
-			if (e.key === 'Escape' && modalBackdrop && modalBackdrop.classList.contains('show')) {
-				closeModal();
+			if (e.key === 'Escape') {
+				// if modal is shown
+				if (modalBackdrop && modalBackdrop.classList.contains('show')) closeModal();
 			}
 		});
 
+		// Attach handlers (also useful if rows are server rendered)
 		document.querySelectorAll('.btn-manage').forEach(function(b) {
-			b.removeEventListener('click', handleManageClick);
+			b.removeEventListener('click', handleManageClick); // safe remove
 			b.addEventListener('click', handleManageClick);
 		});
-
 		document.querySelectorAll('.details-toggle').forEach(function(b) {
-			b.removeEventListener('click', handleDetailsClick);
+			b.removeEventListener('click', handleDetailsClick); // safe remove
 			b.addEventListener('click', handleDetailsClick);
 		});
 
+		// Make cancel button call closeModal (ensure we are using function reference)
+		if (modalCancel) {
+			modalCancel.removeEventListener('click', closeModal);
+			modalCancel.addEventListener('click', function(e){ e.preventDefault(); closeModal(); });
+		}
+
 		modalSubmit.addEventListener('click', async function() {
+			// guard
 			if (modalSubmit.disabled) return;
 
+			// validate
 			modalError.style.display = 'none';
-
-			// Validate date
-			const paymentDate = modalPaymentDate.value.trim();
-			if (!paymentDate) {
-				modalError.textContent = 'Please select a payment date.';
-				modalError.style.display = 'block';
-				return;
-			}
-
-			// Validate amount
 			const val = modalAmount.value.trim();
 			if (!val || isNaN(val) || Number(val) <= 0) {
 				modalError.textContent = 'Please enter a valid positive amount.';
@@ -1465,7 +1291,10 @@ if (!empty($balances)) {
 				return;
 			}
 			const amount = parseFloat(val);
-			const paymentFor = modalPaymentFor.value.trim() || null;
+
+			// determine fee_id or custom note
+			const feeId = modalFeeSelect && modalFeeSelect.value ? modalFeeSelect.value : null;
+			const paymentForText = modalPaymentForText && modalPaymentForText.value ? modalPaymentForText.value.trim() : '';
 
 			modalSubmit.disabled = true;
 			try {
@@ -1476,113 +1305,80 @@ if (!empty($balances)) {
 					body: JSON.stringify({
 						student_id: activeStudentId,
 						amount: amount,
-						payment_date: paymentDate,
-						payment_for: paymentFor
+						fee_id: feeId,
+						payment_for: paymentForText
 					})
 				});
 				const data = await res.json();
-				if (!res.ok) throw new Error(data.message || 'Server error');
+				if (!res.ok) {
+					throw new Error(data.message || 'Server error');
+				}
 
-				const saved = data.data || {};
-				const savedId = saved.id || null;
-				const savedDate = saved.date || paymentDate;
-				const savedAmount = Number(saved.amount || amount);
-				const savedNote = (saved.note || saved.payment_for || '') .toString();
+				// Success -> update row UI (use DOM cells to be robust)
+				const sid = activeStudentId;
+				const totalPaidTD = document.getElementById('total-paid-' + sid);
+				const balanceTD = document.getElementById('balance-' + sid);
+				const totalFeesTD = document.getElementById('total-fees-' + sid);
 
-				// 1) Update modal payments list (create/append first row)
-				(function appendModalPayment(){
-					const existingTbl = modalPaymentsList.querySelector('table');
-					if (existingTbl) {
-						let tb = existingTbl.querySelector('tbody');
-						if (!tb) {
-							tb = document.createElement('tbody');
-							existingTbl.appendChild(tb);
-						}
-						const tr = document.createElement('tr');
-						tr.style.borderBottom = '1px solid #eee';
-						tr.innerHTML = '<td style="padding:4px;">' + (savedDate || '—') + '</td>' +
-							'<td style="text-align:right;padding:4px;">₱' +
-							Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-							'<td style="padding:4px;">' + (savedNote || '—') + '</td>';
-						tb.insertBefore(tr, tb.firstChild);
-					} else {
-						const tbl = document.createElement('table');
-						tbl.style.width = '100%';
-						tbl.style.fontSize = '0.85rem';
-						tbl.style.borderCollapse = 'collapse';
-						tbl.style.margin = '0';
-						const thead = document.createElement('thead');
-						thead.innerHTML = '<tr style="border-bottom:1px solid #ddd;"><th style="text-align:left;padding:4px;">Date</th><th style="text-align:right;padding:4px;">Amount</th><th style="text-align:left;padding:4px;">Payment for:</th></tr>';
-						tbl.appendChild(thead);
-						const tbody = document.createElement('tbody');
-						tbody.innerHTML = '<tr style="border-bottom:1px solid #eee;"><td style="padding:4px;">' + (savedDate || '—') + '</td><td style="text-align:right;padding:4px;">₱' + Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td><td style="padding:4px;">' + (savedNote || '—') + '</td></tr>';
-						tbl.appendChild(tbody);
-						modalPaymentsList.innerHTML = '';
-						modalPaymentsList.appendChild(tbl);
-					}
-				})();
+				// Use DOM to determine the total fee (trust page mapping). Fallback to server value only if DOM cannot provide numeric fee.
+				let domTotalFees = parseCurrencyCell(totalFeesTD);
+				if (!isFinite(domTotalFees)) domTotalFees = NaN;
 
-				// 2) Update main table totals (total paid, balance)
-				(function updateTotalsInMainTable(){
-					const totalPaidCell = document.getElementById('total-paid-' + activeStudentId);
-					if (totalPaidCell) {
-						const currentPaid = parseFloat((totalPaidCell.textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const newPaid = currentPaid + savedAmount;
-						totalPaidCell.textContent = newPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-					}
-					const totalFeesCell = document.getElementById('total-fees-' + activeStudentId);
-					const balanceCell = document.getElementById('balance-' + activeStudentId);
-					if (totalFeesCell && balanceCell) {
-						const totalFeesVal = parseFloat((totalFeesCell.textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const totalPaidVal = parseFloat((document.getElementById('total-paid-' + activeStudentId).textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const newBalance = (isNaN(totalFeesVal) || totalFeesVal === 0) ? NaN : (totalFeesVal - totalPaidVal);
-						if (isNaN(newBalance)) {
-							balanceCell.textContent = '—';
-						} else {
-							balanceCell.textContent = newBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-							if (newBalance > 0) {
-								balanceCell.classList.remove('text-success');
-                                balanceCell.classList.add('text-danger');
-							} else {
-								balanceCell.classList.remove('text-danger');
-                                balanceCell.classList.add('text-success');
-							}
-						}
-					}
-				})();
+				// Use server-supplied total_payments when provided; otherwise compute locally
+				let totalPaidNum = NaN;
+				if (data.totals && typeof data.totals.total_payments !== 'undefined') {
+					const parsedServerPaid = parseFloat(data.totals.total_payments);
+					if (!isNaN(parsedServerPaid)) totalPaidNum = parsedServerPaid;
+				}
+				if (!isFinite(totalPaidNum)) {
+					// fallback to existing UI value plus amount
+					let domTotalPaid = parseCurrencyCell(totalPaidTD);
+					if (!isFinite(domTotalPaid)) domTotalPaid = 0;
+					totalPaidNum = domTotalPaid + amount;
+				}
 
-				// 3) Append details-row if visible
-				(function appendToDetails(){
-					const detailsTbl = document.querySelector('#details-row-' + activeStudentId + ' table');
-					if (detailsTbl) {
-						let tbody = detailsTbl.querySelector('tbody');
-						if (!tbody) {
-							tbody = document.createElement('tbody');
-							detailsTbl.appendChild(tbody);
-						}
-						const tr2 = document.createElement('tr');
-						tr2.innerHTML = '<td>' + (savedDate || '—') + '</td>' +
-							'<td class="text-right">₱' + Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-							'<td>' + (savedNote || '—') + '</td>';
-						tbody.insertBefore(tr2, tbody.firstChild);
+				// Determine total fee - prefer DOM (map-based value displayed) unless it's not available
+				let totalFeesNum = domTotalFees;
+				if (!isFinite(totalFeesNum)) {
+					// If dom doesn't have a fee, try server response
+					if (data.totals && typeof data.totals.total_fees !== 'undefined') {
+						const parsedServerFee = parseFloat(data.totals.total_fees);
+						if (!isNaN(parsedServerFee)) totalFeesNum = parsedServerFee;
 					}
-				})();
+				}
 
-				// 4) Update manage button data-payments attribute so it includes the new record (so re-open shows the new payment)
-				(function updateManageButtonDataPayments(){
-					const manageBtn = document.querySelector('.btn-manage[data-student-id="' + activeStudentId + '"]');
-					if (manageBtn) {
-						try {
-							const existingJson = manageBtn.getAttribute('data-payments') || '[]';
-							const arr = JSON.parse(existingJson);
-							// prepend new record
-							arr.unshift({ id: savedId, date: savedDate, amount: savedAmount, note: savedNote });
-							manageBtn.setAttribute('data-payments', JSON.stringify(arr));
-						} catch(e) {
-							console.error('Failed to update manage button payments attribute', e);
-						}
-					}
-				})();
+				// If still no numeric fee -> treat as 0 for computation (but this shouldn't happen since Manage is disabled for those)
+				if (!isFinite(totalFeesNum)) totalFeesNum = 0;
+
+				// Compute balance strictly as total_fees - total_payments
+				const balanceNum = roundTo2(totalFeesNum - totalPaidNum);
+
+				// Update DOM formatted (keep thousands and decimals)
+				totalFeesTD.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+				totalPaidTD.textContent = totalPaidNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+				balanceTD.textContent = balanceNum.toLocaleString(undefined, { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+				// Update color based on sign
+				if (balanceNum > 0) {
+					balanceTD.classList.remove('text-success');
+					balanceTD.classList.add('text-danger');
+				} else {
+					balanceTD.classList.remove('text-danger');
+					balanceTD.classList.add('text-success');
+				}
+
+				// Update dataset attributes on the Manage button for subsequent opens (including total fees)
+				const rowBtn = document.querySelector('button.btn-manage[data-student-id="' + sid + '"]');
+				if (rowBtn) {
+					rowBtn.setAttribute('data-total-paid', totalPaidNum);
+					rowBtn.setAttribute('data-balance', balanceNum);
+					// keep total-fees dataset consistent with DOM value
+					rowBtn.setAttribute('data-total-fees', totalFeesNum);
+				}
+
+				// Update modal totalPaid and totalFee displays (optional)
+				modalTotalFee.textContent = totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				modalTotalPaid.textContent = totalPaidNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 				closeModal();
 			} catch (err) {
@@ -1593,7 +1389,15 @@ if (!empty($balances)) {
 				modalSubmit.disabled = false;
 			}
 		});
+
+		// Helper to round to 2 decimal places consistently
+		function roundTo2(v) {
+			return Math.round((v + Number.EPSILON) * 100) / 100;
+		}
 	})();
+
+	// Remove the old details-toggle listener (replaced above)
+	// ...existing JS...
 	</script>
 </body>
 </html>

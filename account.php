@@ -42,6 +42,8 @@ if (!function_exists('detectPaymentsAmountColumn')) {
         return null;
     }
 }
+// --- NEW: detect payment note column ---
+$paymentNoteCol = columnExists($conn, 'payments', 'note') ? 'note' : (columnExists($conn, 'payments', 'notes') ? 'notes' : null);
 // ---------------------------------------------------------------------------
 
 // (GET STUDENT ID)
@@ -64,7 +66,7 @@ if ($stmt = $conn->prepare("SELECT grade_level FROM students WHERE id = ? LIMIT 
 }
 // ---------------------------------------------------------------------------
 
-// Build payment rows: date + amount only, prefer fees -> payments relation and exclude categories
+// Build payment rows: date + amount + note
 $paymentsList = [];
 $feesExists = tableExists($conn, 'fees');
 $paymentsExists = tableExists($conn, 'payments');
@@ -73,7 +75,8 @@ $paymentsAmtCol = detectPaymentsAmountColumn($conn) ?? 'amount';
 $excludeCategories = ["Other Fees", "Other Fee", "Scholarships", "Scholarship"];
 
 if ($paymentsExists && $feesExists && columnExists($conn, 'payments', 'fee_id')) {
-    $sql = "SELECT p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
+    $noteExpr = $paymentNoteCol ? "p.`{$paymentNoteCol}` AS note," : "";
+    $sql = "SELECT {$noteExpr} p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
             FROM payments p
             JOIN fees f ON p.fee_id = f.id
             WHERE f.student_id = ?
@@ -84,13 +87,15 @@ if ($paymentsExists && $feesExists && columnExists($conn, 'payments', 'fee_id'))
         $stmt->execute();
         $res = $stmt->get_result();
         while ($r = $res->fetch_assoc()) {
+            // ensure 'note' always exists
+            $r['note'] = isset($r['note']) ? trim((string)$r['note']) : '';
             $paymentsList[] = $r;
         }
         $stmt->close();
     }
 } elseif ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
-    // Fallback: payments by student_id (can't exclude fees categories)
-    $sql = "SELECT p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
+    $noteExpr = $paymentNoteCol ? "p.`{$paymentNoteCol}` AS note," : "";
+    $sql = "SELECT {$noteExpr} p.{$paymentsTs} AS paid_at, p.{$paymentsAmtCol} AS amount
             FROM payments p
             WHERE p.student_id = ?
             ORDER BY p.{$paymentsTs} DESC";
@@ -99,6 +104,7 @@ if ($paymentsExists && $feesExists && columnExists($conn, 'payments', 'fee_id'))
         $stmt->execute();
         $res = $stmt->get_result();
         while ($r = $res->fetch_assoc()) {
+            $r['note'] = isset($r['note']) ? trim((string)$r['note']) : '';
             $paymentsList[] = $r;
         }
         $stmt->close();
@@ -292,13 +298,13 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
                   <tr>
                     <th>Date</th>
                     <th class="text-right">Amount</th>
+                    <th>Payment for:</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if (!empty($paymentsList)): ?>
                       <?php foreach ($paymentsList as $p): 
                           $paidAt = htmlspecialchars($p['paid_at'] ?? '');
-                          // Format date if usable
                           $dateText = '-';
                           $ts = strtotime($paidAt);
                           if ($ts !== false && $ts !== -1) {
@@ -308,15 +314,17 @@ $name = htmlspecialchars($_SESSION['user_name'] ?? 'Student', ENT_QUOTES);
                           }
                           $amountVal = number_format((float)($p['amount'] ?? 0), 2);
                           $amountText = '₱' . $amountVal;
+                          $noteText = isset($p['note']) && trim((string)$p['note']) !== '' ? htmlspecialchars($p['note']) : '—';
                       ?>
                       <tr>
                           <td><?php echo $dateText; ?></td>
                           <td class="text-right"><?php echo $amountText; ?></td>
+                          <td><?php echo $noteText; ?></td>
                       </tr>
                       <?php endforeach; ?>
                   <?php else: ?>
                       <tr>
-                          <td colspan="2" class="text-center">No payment history found.</td>
+                          <td colspan="3" class="text-center">No payment history found.</td>
                       </tr>
                   <?php endif; ?>
                 </tbody>
