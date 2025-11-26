@@ -207,51 +207,6 @@ if (isset($_GET['export']) && $_GET['export']) {
     exit;
 }
 
-// Handle modal POST: add or remove teacher
-$modal_message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modal_action'])) {
-    if ($_POST['modal_action'] === 'add_teacher' && isset($_POST['teacher_name'])) {
-        $name = trim($_POST['teacher_name']);
-        $local_teachers = [];
-        if (file_exists(TEACHERS_FILE)) {
-            $json = file_get_contents(TEACHERS_FILE);
-            $local_teachers = json_decode($json, true) ?? [];
-        }
-        
-        if ($name && !in_array($name, $local_teachers)) {
-            $local_teachers[] = $name;
-            sort($local_teachers);
-            if (!is_dir(DATA_DIR)) mkdir(DATA_DIR, 0755, true);
-            file_put_contents(TEACHERS_FILE, json_encode($local_teachers, JSON_PRETTY_PRINT));
-            $modal_message = "Teacher '$name' added successfully.";
-            // Refresh teachers list
-            $teachers = get_teachers($conn);
-        } elseif (in_array($name, $local_teachers)) {
-            $modal_message = "Teacher '$name' already exists.";
-        }
-    }
-    
-    if ($_POST['modal_action'] === 'remove_teacher' && isset($_POST['teacher_name'])) {
-        $name = $_POST['teacher_name'];
-        $local_teachers = [];
-        if (file_exists(TEACHERS_FILE)) {
-            $json = file_get_contents(TEACHERS_FILE);
-            $local_teachers = json_decode($json, true) ?? [];
-        }
-        
-        $key = array_search($name, $local_teachers);
-        if ($key !== false) {
-            unset($local_teachers[$key]);
-            $local_teachers = array_values($local_teachers);
-            if (!is_dir(DATA_DIR)) mkdir(DATA_DIR, 0755, true);
-            file_put_contents(TEACHERS_FILE, json_encode($local_teachers, JSON_PRETTY_PRINT));
-            $modal_message = "Teacher '$name' removed.";
-            // Refresh teachers list
-            $teachers = get_teachers($conn);
-        }
-    }
-}
-
 // Render page
 $allSchedules = load_all_schedules($GRADES, $SECTIONS);
 $teachers = get_teachers($conn);
@@ -267,21 +222,6 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
     $schedule_for_page = isset($allSchedules[$key]) ? $allSchedules[$key] : default_schedule();
 }
 
-// Get local teachers for modal
-$local_teachers_list = [];
-if (file_exists(TEACHERS_FILE)) {
-    $json = file_get_contents(TEACHERS_FILE);
-    $local_teachers_list = json_decode($json, true) ?? [];
-}
-
-// Get db teachers for modal
-$db_teachers_list = [];
-$result = $conn->query("SELECT id, name, email, subject, phone FROM teachers ORDER BY name ASC");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $db_teachers_list[] = $row;
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -326,9 +266,6 @@ if ($result) {
                     <a class="btn" id="exportBtn" href="?export=1&grade=<?php echo htmlspecialchars($selectedGrade) ?>&section=<?php echo htmlspecialchars($selectedSection) ?>">
                         <span>📥</span> Export CSV
                     </a>
-                    <div class="manage-link">
-                        <a onclick="openManageTeachersModal()">⚙️ Manage Teachers</a>
-                    </div>
                 </div>
             </div>
         </section>
@@ -392,124 +329,6 @@ if ($result) {
 
         <footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
     </main>
-</div>
-
-<!-- Manage Teachers Modal -->
-<div id="manageTeachersModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Manage Teachers</h2>
-            <button class="modal-close" onclick="closeManageTeachersModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <?php if ($modal_message): ?>
-                <div class="modal-message success"><?php echo htmlspecialchars($modal_message) ?></div>
-            <?php endif; ?>
-
-            <div class="tabs">
-                <button class="tab-button active" onclick="switchModalTab(event, 'all')">All Teachers <span class="teacher-count"><?php echo count($db_teachers_list) + count($local_teachers_list); ?></span></button>
-                <button class="tab-button" onclick="switchModalTab(event, 'registered')">Registered <span class="teacher-count"><?php echo count($db_teachers_list); ?></span></button>
-                <button class="tab-button" onclick="switchModalTab(event, 'local')">Local List <span class="teacher-count"><?php echo count($local_teachers_list); ?></span></button>
-            </div>
-
-            <!-- All Teachers Tab -->
-            <div id="all" class="tab-content active">
-                <h3>All Teachers</h3>
-                <?php if (count($db_teachers_list) > 0 || count($local_teachers_list) > 0): ?>
-                    <ul class="teachers-list">
-                        <?php foreach ($db_teachers_list as $t): ?>
-                            <li>
-                                <div class="teacher-info">
-                                    <div class="teacher-name">
-                                        <?php echo htmlspecialchars($t['name']) ?>
-                                        <span class="teacher-source registered">REGISTERED</span>
-                                    </div>
-                                    <div class="teacher-meta">
-                                        <?php echo htmlspecialchars($t['email']) ?> 
-                                        <?php if ($t['subject']): ?> • <?php echo htmlspecialchars($t['subject']); ?><?php endif; ?>
-                                    </div>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                        <?php foreach ($local_teachers_list as $t): ?>
-                            <li>
-                                <div class="teacher-info">
-                                    <div class="teacher-name">
-                                        <?php echo htmlspecialchars($t) ?>
-                                        <span class="teacher-source local">LOCAL</span>
-                                    </div>
-                                </div>
-                                <form method="post" action="" style="margin:0;">
-                                    <input type="hidden" name="modal_action" value="remove_teacher">
-                                    <input type="hidden" name="teacher_name" value="<?php echo htmlspecialchars($t) ?>">
-                                    <button type="submit" class="btn-danger" onclick="return confirm('Remove this teacher?')">Remove</button>
-                                </form>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <p style="color:#666;">No teachers found.</p>
-                <?php endif; ?>
-            </div>
-
-            <!-- Registered Teachers Tab -->
-            <div id="registered" class="tab-content">
-                <h3>Registered Teachers (From Database)</h3>
-                <?php if (count($db_teachers_list) > 0): ?>
-                    <ul class="teachers-list">
-                        <?php foreach ($db_teachers_list as $t): ?>
-                            <li>
-                                <div class="teacher-info">
-                                    <div class="teacher-name"><?php echo htmlspecialchars($t['name']) ?></div>
-                                    <div class="teacher-meta">
-                                        <?php echo htmlspecialchars($t['email']) ?>
-                                        <?php if ($t['subject']): ?> • Subject: <?php echo htmlspecialchars($t['subject']); ?><?php endif; ?>
-                                        <?php if ($t['phone']): ?> • <?php echo htmlspecialchars($t['phone']); ?><?php endif; ?>
-                                    </div>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <p style="color:#666;">No registered teachers yet.</p>
-                <?php endif; ?>
-            </div>
-
-            <!-- Local List Tab -->
-            <div id="local" class="tab-content">
-                <h3>Local Teacher List</h3>
-                
-                <div style="margin-bottom:20px; padding:16px; background:#f9f9f9; border-radius:4px;">
-                    <h4 style="margin-bottom:12px;">Add New Teacher</h4>
-                    <form method="post" action="">
-                        <div class="form-group">
-                            <label for="modal_teacher_name">Teacher Name:</label>
-                            <input type="text" id="modal_teacher_name" name="teacher_name" placeholder="Enter teacher name" required>
-                        </div>
-                        <input type="hidden" name="modal_action" value="add_teacher">
-                        <button type="submit" class="btn-add">Add Teacher</button>
-                    </form>
-                </div>
-
-                <?php if (count($local_teachers_list) > 0): ?>
-                    <ul class="teachers-list">
-                        <?php foreach ($local_teachers_list as $t): ?>
-                            <li>
-                                <span><?php echo htmlspecialchars($t) ?></span>
-                                <form method="post" action="" style="margin:0;">
-                                    <input type="hidden" name="modal_action" value="remove_teacher">
-                                    <input type="hidden" name="teacher_name" value="<?php echo htmlspecialchars($t) ?>">
-                                    <button type="submit" class="btn-danger" onclick="return confirm('Remove this teacher?')">Remove</button>
-                                </form>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <p style="color:#666;">No teachers in local list.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -643,28 +462,6 @@ function saveSchedule() {
     document.getElementById('schedule_json').value = JSON.stringify(schedule);
     document.getElementById('scheduleForm').submit();
 }
-
-function openManageTeachersModal() {
-    document.getElementById('manageTeachersModal').classList.add('active');
-}
-
-function closeManageTeachersModal() {
-    document.getElementById('manageTeachersModal').classList.remove('active');
-}
-
-function switchModalTab(event, tabName) {
-    event.preventDefault();
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabName).classList.add('active');
-    event.target.closest('.tab-button').classList.add('active');
-}
-
-window.addRow = addRow;
-window.saveSchedule = saveSchedule;
-window.openManageTeachersModal = openManageTeachersModal;
-window.closeManageTeachersModal = closeManageTeachersModal;
-window.switchModalTab = switchModalTab;
 
 if (initialSchedule !== null) {
     loadScheduleData(initialSchedule);
