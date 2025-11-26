@@ -168,6 +168,234 @@ if ($paymentsTableExists && $paymentsHasFeeId && $feesTableExists) {
 
 $allocatedVsPaidBalance = round(($allocatedTotal - $totalPaid), 2);
 // --- END NEW ---
+
+// --- NEW: global detection for payment date/amount columns so we can build time-series queries -----
+$paymentDateCol = null;
+$paymentAmountCol = null;
+if ($paymentsTableExists) {
+    if (columnExists($conn, 'payments', 'date')) {
+        $paymentDateCol = 'date';
+    } elseif (columnExists($conn, 'payments', 'payment_date')) {
+        $paymentDateCol = 'payment_date';
+    }
+    if (columnExists($conn, 'payments', 'amount')) {
+        $paymentAmountCol = 'amount';
+    }
+}
+// -------------------------------------------------------------------------------------------------------
+
+// ----- NEW: helper to build aggregates for date-based queries and zero-fill gaps -----
+function fillDateRange($start, $end, $step, $labelFormatter) {
+    $labels = [];
+    $date = clone $start;
+    while ($date <= $end) {
+        $labels[] = $labelFormatter($date);
+        $date->add($step);
+    }
+    return $labels;
+}
+
+function runDateAggregationQuery($conn, $sql) {
+    $data = [];
+    $res = $conn->query($sql);
+    if ($res) {
+        while ($r = $res->fetch_assoc()) {
+            $k = $r['k'];
+            $data[$k] = (float)($r['total_paid'] ?? 0);
+        }
+    }
+    return $data;
+}
+// -------------------------------------------------------------------------------------------------------
+
+// ----- NEW: compute payments time-series for daily(7d), weekly(12w), monthly(12m), yearly(5y) -----
+$paymentsTimeseries = [
+    'daily'   => ['labels' => [], 'data' => [], 'total' => 0],
+    'weekly'  => ['labels' => [], 'data' => [], 'total' => 0],
+    'monthly' => ['labels' => [], 'data' => [], 'total' => 0],
+    'yearly'  => ['labels' => [], 'data' => [], 'total' => 0],
+];
+
+if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
+
+    // DAILY: last 7 days (today included)
+    $end = new DateTime('today');
+    $start = (clone $end)->modify('-6 days');
+    $dailyLabels = fillDateRange($start, $end, new DateInterval('P1D'), function($d) { return $d->format('Y-m-d'); });
+
+    // Query: group by DATE(...)
+    if ($paymentsTableExists) {
+        if ($paymentsHasFeeId && $feesTableExists) {
+            $sqlDaily = "
+                SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                JOIN fees f ON p.fee_id = f.id
+                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$start->format('Y-m-d')}' AND '{$end->format('Y-m-d')}'
+                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+                GROUP BY DATE(p.`{$paymentDateCol}`)
+                ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+            ";
+        } else {
+            // No fee_id or fees table: can't filter by category; fallback to payments only
+            $sqlDaily = "
+                SELECT DATE(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$start->format('Y-m-d')}' AND '{$end->format('Y-m-d')}'
+                GROUP BY DATE(p.`{$paymentDateCol}`)
+                ORDER BY DATE(p.`{$paymentDateCol}`) ASC
+            ";
+        }
+        $dailyResult = runDateAggregationQuery($conn, $sqlDaily);
+
+        // populate labels and data with zero-fill
+        $paymentsTimeseries['daily']['labels'] = array_map(function($d){ return (new DateTime($d))->format('M j'); }, $dailyLabels);
+        $paymentsTimeseries['daily']['data'] = array_map(function($d) use ($dailyResult) { return (float)($dailyResult[$d] ?? 0); }, $dailyLabels);
+        $paymentsTimeseries['daily']['total'] = array_sum($paymentsTimeseries['daily']['data']);
+    }
+
+    // WEEKLY: last 12 ISO weeks (group by YEAR-WEEK)
+    $weeks = 12;
+    $endWeek = new DateTime('monday this week'); // week alignment
+    $startWeek = (clone $endWeek)->modify('-' . ($weeks - 1) . ' weeks');
+
+    // Build labels for the 12 weeks (use ISO week-year combination)
+    $weekKeys = [];
+    $weekLabels = [];
+    $wk = clone $startWeek;
+    for ($i = 0; $i < $weeks; $i++, $wk->modify('+1 week')) {
+        $yr = $wk->format('o'); // ISO year
+        $n = $wk->format('W');  // Week number
+        $key = $yr . '-' . $n;
+        $weekKeys[] = $key;
+        // show week label like 'Mon 11/01' (week start)
+        $weekLabels[] = $wk->format('M j');
+    }
+
+    // SQL for weekly: group by YEARWEEK using ISO-week week mode 1 (MYSQL WEEK(date,1) or YEARWEEK(date,1))
+    if ($paymentsTableExists) {
+        if ($paymentsHasFeeId && $feesTableExists) {
+            $sqlWeekly = "
+                SELECT CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                JOIN fees f ON p.fee_id = f.id
+                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startWeek->format('Y-m-d')}' AND '{$endWeek->format('Y-m-d')}' 
+                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+                GROUP BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1))
+                ORDER BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) ASC
+            ";
+        } else {
+            $sqlWeekly = "
+                SELECT CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startWeek->format('Y-m-d')}' AND '{$endWeek->format('Y-m-d')}' 
+                GROUP BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1))
+                ORDER BY CONCAT(YEARWEEK(p.`{$paymentDateCol}`, 1)) ASC
+            ";
+        }
+        // Run and map keys to "YYYYWW" numeric: we have week keys numeric, convert them into comparable
+        $weeklyResultRaw = runDateAggregationQuery($conn, $sqlWeekly);
+
+        // Normalize keys to the same format produced by PHP labels: YEARWEEK returns integer YYYYWW, with possible leading zeros for week not included
+        // We'll map weekKeys to YEARWEEK numeric
+        $vals = [];
+        foreach ($weekKeys as $idx => $k) {
+            // convert 'YYYY-WW' to YEARWEEK numeric: must be the same as SQL's YEARWEEK function result
+            $p = DateTime::createFromFormat('Y-m-d', (new DateTime($startWeek->format('Y-m-d')))->modify('+' . ($idx) . ' weeks')->format('Y-m-d'));
+            $sqlKeyNum = (int)$p->format('o') . str_pad((int)$p->format('W'), 2, '0', STR_PAD_LEFT);
+            $vals[] = (float)($weeklyResultRaw[$sqlKeyNum] ?? 0);
+        }
+
+        $paymentsTimeseries['weekly']['labels'] = $weekLabels;
+        $paymentsTimeseries['weekly']['data'] = $vals;
+        $paymentsTimeseries['weekly']['total'] = array_sum($vals);
+    }
+
+    // MONTHLY: last 12 months
+    $months = 12;
+    $endMonth = new DateTime('first day of this month');
+    $startMonth = (clone $endMonth)->modify('-' . ($months - 1) . ' months');
+
+    // labels: generate 12 months
+    $monthLabels = [];
+    $monthKeys = [];
+    $m = clone $startMonth;
+    for ($i = 0; $i < $months; $i++, $m->modify('+1 month')) {
+        $monthKeys[] = $m->format('Y-m');
+        $monthLabels[] = $m->format('M Y');
+    }
+
+    if ($paymentsTableExists) {
+       if ($paymentsHasFeeId && $feesTableExists) {
+           $sqlMonthly = "
+              SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+              FROM payments p
+              JOIN fees f ON p.fee_id = f.id
+              WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startMonth->format('Y-m-d')}' AND LAST_DAY('{$endMonth->format('Y-m-d')}')
+                AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+              GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+              ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+           ";
+       } else {
+           $sqlMonthly = "
+              SELECT DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+              FROM payments p
+              WHERE DATE(p.`{$paymentDateCol}`) BETWEEN '{$startMonth->format('Y-m-d')}' AND LAST_DAY('{$endMonth->format('Y-m-d')}')
+              GROUP BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m')
+              ORDER BY DATE_FORMAT(p.`{$paymentDateCol}`,'%Y-%m') ASC
+           ";
+       }
+       $monthlyRaw = runDateAggregationQuery($conn, $sqlMonthly);
+       $monthlyVals = [];
+       foreach ($monthKeys as $k) {
+           $monthlyVals[] = (float)($monthlyRaw[$k] ?? 0);
+       }
+       $paymentsTimeseries['monthly']['labels'] = $monthLabels;
+       $paymentsTimeseries['monthly']['data'] = $monthlyVals;
+       $paymentsTimeseries['monthly']['total'] = array_sum($monthlyVals);
+    }
+
+    // YEARLY: last 5 years
+    $years = 5;
+    $thisYear = (int)date('Y');
+    $yearKeys = [];
+    $yearLabels = [];
+    for ($i = $years - 1; $i >= 0; $i--) {
+        $y = $thisYear - $i;
+        $yearKeys[] = (string)$y;
+        $yearLabels[] = (string)$y;
+    }
+
+    if ($paymentsTableExists) {
+        if ($paymentsHasFeeId && $feesTableExists) {
+            $sqlYearly = "
+                SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                JOIN fees f ON p.fee_id = f.id
+                WHERE p.`{$paymentDateCol}` BETWEEN '{$yearKeys[0]}-01-01' AND '{$thisYear}-12-31'
+                  AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
+                GROUP BY YEAR(p.`{$paymentDateCol}`)
+                ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+            ";
+        } else {
+            $sqlYearly = "
+                SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
+                FROM payments p
+                WHERE p.`{$paymentDateCol}` BETWEEN '{$yearKeys[0]}-01-01' AND '{$thisYear}-12-31'
+                GROUP BY YEAR(p.`{$paymentDateCol}`)
+                ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
+            ";
+        }
+        $yearlyRaw = runDateAggregationQuery($conn, $sqlYearly);
+        $yearlyVals = [];
+        foreach ($yearKeys as $k) {
+            $yearlyVals[] = (float)($yearlyRaw[$k] ?? 0);
+        }
+        $paymentsTimeseries['yearly']['labels'] = $yearLabels;
+        $paymentsTimeseries['yearly']['data'] = $yearlyVals;
+        $paymentsTimeseries['yearly']['total'] = array_sum($yearlyVals);
+    }
+}
+// -------------------------------------------------------------------------------------------------------
 ?>
 <!doctype html>
 <html lang="en">
@@ -216,6 +444,43 @@ $allocatedVsPaidBalance = round(($allocatedTotal - $totalPaid), 2);
 				<!-- chart visual: allocated vs paid -->
 				<div class="chart-box" style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:260px; flex:1 1 420px;">
 					<canvas id="feesChart" style="width:100%; height:220px;"></canvas>
+				</div>
+			</div>
+
+			<!-- NEW: Payment time-series analytics -->
+			<div style="margin-top:18px;">
+				<h3>Payment Reports</h3>
+				<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:center; margin-bottom:14px;">
+					<div class="stat" style="min-width:140px;">
+						<h4>Daily</h4>
+						<div class="val">₱<?php echo number_format((float)($paymentsTimeseries['daily']['total'] ?? 0), 2); ?></div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Weekly</h4>
+						<div class="val">₱<?php echo number_format((float)($paymentsTimeseries['weekly']['total'] ?? 0), 2); ?></div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Monthly</h4>
+						<div class="val">₱<?php echo number_format((float)($paymentsTimeseries['monthly']['total'] ?? 0), 2); ?></div>
+					</div>
+					<div class="stat" style="min-width:140px;">
+						<h4>Yearly</h4>
+						<div class="val">₱<?php echo number_format((float)($paymentsTimeseries['yearly']['total'] ?? 0), 2); ?></div>
+					</div>
+					<div style="display:flex; flex-direction:column; align-items:center;">
+						<label for="paymentsPeriodSelect" style="font-weight:700; margin-bottom:6px;">Period</label>
+						<select id="paymentsPeriodSelect" style="width:180px; padding:8px;border-radius:8px;">
+							<option value="daily">Daily</option>
+							<option value="weekly">Weekly</option>
+							<option value="monthly">Monthly</option>
+							<option value="yearly">Yearly</option>
+						</select>
+					</div>
+				</div>
+
+				<!-- main payments trend chart -->
+				<div style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+					<canvas id="paymentsTrendChart" style="width:100%; height:220px;"></canvas>
 				</div>
 			</div>
 
@@ -315,6 +580,86 @@ $allocatedVsPaidBalance = round(($allocatedTotal - $totalPaid), 2);
 			}
 		});
 	})();
+
+	// NEW: Prepare timeseries data from PHP for Chart rendering
+	const paymentsTimeseriesData = {
+		daily: {
+			labels: <?php echo json_encode($paymentsTimeseries['daily']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($paymentsTimeseries['daily']['data'] ?? []); ?>
+		},
+		weekly: {
+			labels: <?php echo json_encode($paymentsTimeseries['weekly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($paymentsTimeseries['weekly']['data'] ?? []); ?>
+		},
+		monthly: {
+			labels: <?php echo json_encode($paymentsTimeseries['monthly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($paymentsTimeseries['monthly']['data'] ?? []); ?>
+		},
+		yearly: {
+			labels: <?php echo json_encode($paymentsTimeseries['yearly']['labels'] ?? []); ?>,
+			data: <?php echo json_encode($paymentsTimeseries['yearly']['data'] ?? []); ?>
+		}
+	};
+
+	// Small reusable style for sparkline and trend
+	const trendColor = '#2563eb';
+
+	(function initPaymentsTrendChart() {
+		const ctx = document.getElementById('paymentsTrendChart').getContext('2d');
+		const cfg = {
+			type: 'line',
+			data: {
+				labels: paymentsTimeseriesData.daily.labels,
+				datasets: [{
+					label: 'Collected',
+					data: paymentsTimeseriesData.daily.data,
+					backgroundColor: 'rgba(37,99,235,0.08)',
+					borderColor: trendColor,
+					borderWidth: 2,
+					pointRadius: 2,
+					fill: true,
+					tension: 0.25
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: { display: false },
+					tooltip: {
+						callbacks: {
+							label: function(ctx) {
+								return '₱' + Number(ctx.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+							}
+						}
+					}
+				},
+				scales: {
+					x: {
+						display: true,
+						ticks: { maxRotation: 0, minRotation: 0}
+					},
+					y: {
+						display: true,
+						beginAtZero: true,
+						ticks: { callback: function(v){ return '₱' + Number(v).toLocaleString(); } }
+					}
+				}
+			}
+		};
+		const lt = new Chart(ctx, cfg);
+
+		// period selector handler: switch data/dataset
+		const sel = document.getElementById('paymentsPeriodSelect');
+		if (!sel) return;
+		sel.addEventListener('change', function(e) {
+			const val = sel.value || 'daily';
+			const payload = paymentsTimeseriesData[val] || paymentsTimeseriesData.daily;
+			lt.data.labels = payload.labels;
+			lt.data.datasets[0].data = payload.data;
+			lt.update();
+		});
+	})();
 </script>
 
 <style>
@@ -354,6 +699,15 @@ $allocatedVsPaidBalance = round(($allocatedTotal - $totalPaid), 2);
             /* ensure the chart canvas scales nicely */
             #overviewChart { max-width: 100%; height: 360px !important; }
             #feesChart { max-width: 100%; height: 220px !important; }
+
+            /* NEW: analytics mini dashboard */
+            .analytics .stat {
+                background:#fff; padding:12px; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
+            }
+            .analytics .stat h4 { margin:0; font-size: 0.85rem; color:#666; font-weight:600; }
+            .analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
+            .analytics .stat.red .val { color:#b21f2d; }
+            .analytics .stat.green .val { color:#10b981; }
         </style>
 
 <!-- ...existing scripts like ../js/admin.js if needed ... -->
