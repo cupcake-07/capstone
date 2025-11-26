@@ -618,8 +618,9 @@ $user = getAdminSession();
 				animation: {
 					animateRotate: true,
 					animateScale: true,
-					duration: 3000,
-					easing: 'easeOutBounce'
+					// Reduced duration and changed easing to remove bounce effect while keeping the circular closing animation
+					duration: 1200,
+					easing: 'easeOutQuart'
 				},
 				plugins: {
 					legend: { position: 'bottom' },
