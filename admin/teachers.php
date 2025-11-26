@@ -66,6 +66,12 @@ if ($allTeachersResult) {
         <h2>All Teachers</h2>
         <div class="table-actions">
           <p style="color: #666; font-size: 13px; margin: 0;">Total teachers: <strong><?php echo count($allTeachers); ?></strong></p>
+          <select id="sortSelect" class="sort-select">
+            <option value="">Sort by...</option>
+            <option value="name">Name</option>
+            <option value="grade">Grade</option>
+            <option value="sections">Sections</option>
+          </select>
         </div>
         <table id="teachersTable">
           <thead>
@@ -199,6 +205,31 @@ if ($allTeachersResult) {
     .manage-btn:hover { transform: translateY(-2px); }
     .manage-btn svg { color: rgba(255,255,255,0.95); }
 
+    /* Sort select (styled as button) */
+    .sort-select {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:8px;
+      background:white;
+      color:black;
+      border-color: black;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .12s ease;
+      box-shadow: 0 6px 14px rgba(37,99,235,0.12);
+      font-size:13px;
+      appearance: none; /* Remove default arrow */
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+      padding-right: 30px;
+    }
+    .sort-select:hover { transform: translateY(-2px); }
+    .sort-select:focus { outline: 2px solid #ffffffff; }
+
     /* Modal */
     .manage-modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:24px; z-index:1200; }
     .manage-modal[aria-hidden="false"] { display:flex; }
@@ -262,6 +293,51 @@ if ($allTeachersResult) {
 
 	// keep year script
 	document.getElementById('year').textContent = new Date().getFullYear();
+
+	// Sorting state for dropdown
+	let currentSortColumn = null;
+	let currentAsc = true;
+
+	// Reusable sort function (adapted from enableTableSorting)
+	function sortTableByColumn(tableId, columnIndex, asc) {
+		const table = document.getElementById(tableId);
+		if (!table || !table.tBodies[0]) return;
+		const tbody = table.tBodies[0];
+		const rows = Array.from(tbody.querySelectorAll('tr'));
+		rows.sort((a, b) => {
+			const aCell = a.cells[columnIndex];
+			const bCell = b.cells[columnIndex];
+			const aVal = aCell ? aCell.textContent.trim() : '';
+			const bVal = bCell ? bCell.textContent.trim() : '';
+
+			// Numeric compare if applicable
+			const aNum = parseFloat(aVal.replace(/[^0-9.\-]/g, ''));
+			const bNum = parseFloat(bVal.replace(/[^0-9.\-]/g, ''));
+			if (!isNaN(aNum) && !isNaN(bNum)) {
+				return asc ? aNum - bNum : bNum - aNum;
+			}
+
+			return asc ? aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' })
+					   : bVal.localeCompare(aVal, undefined, { numeric: true, sensitivity: 'base' });
+		});
+		rows.forEach(r => tbody.appendChild(r));
+	}
+
+	// Event listener for sort dropdown
+	document.getElementById('sortSelect').addEventListener('change', (e) => {
+		const value = e.target.value;
+		if (!value) return; // Ignore "Sort by..." option
+		const columnMap = { name: 1, grade: 5, sections: 6 };
+		const columnIndex = columnMap[value];
+		if (columnIndex === currentSortColumn) {
+			currentAsc = !currentAsc; // Toggle if same column
+		} else {
+			currentSortColumn = columnIndex;
+			currentAsc = true; // Reset to asc for new column
+		}
+		sortTableByColumn('teachersTable', columnIndex, currentAsc);
+		e.target.value = ''; // Reset select after sorting
+	});
 
 	// Manage modal logic (run after DOM ready, delegated)
 	document.addEventListener('DOMContentLoaded', function() {
