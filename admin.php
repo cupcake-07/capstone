@@ -39,7 +39,7 @@ $avgGpaResult = $conn->query("SELECT AVG(score) as avg_gpa FROM grades");
 $avgGpa = $avgGpaResult->fetch_assoc()['avg_gpa'] ?? 0;
 $avgGpa = number_format($avgGpa, 2);
 
-// Calculate attendance rate (last 7 days)
+// Calculate attendance rate (last 7 days) - keep for backward compatibility, but we'll expand below
 $attendanceResult = $conn->query("
     SELECT 
         DATE(created_at) as date,
@@ -61,38 +61,91 @@ if ($attendanceResult && $attendanceResult->num_rows > 0) {
     $attendanceData = [];
 }
 
-// Calculate grade distribution
-$gradeDistResult = $conn->query("
+// New: Fetch daily registrations (all time)
+$dailyResult = $conn->query("
     SELECT 
-        CASE 
-            WHEN score >= 90 THEN 'A'
-            WHEN score >= 80 THEN 'B'
-            WHEN score >= 70 THEN 'C'
-            WHEN score >= 60 THEN 'D'
-            ELSE 'F'
-        END as grade,
+        DATE(created_at) as date,
+        GROUP_CONCAT(name SEPARATOR ', ') as names,
         COUNT(*) as count
-    FROM grades
-    GROUP BY grade
-    ORDER BY grade ASC
+    FROM teachers
+    GROUP BY DATE(created_at)
+    ORDER BY date ASC
 ");
-$gradeDistribution = ['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'F' => 0];
-if ($gradeDistResult) {
-    while ($row = $gradeDistResult->fetch_assoc()) {
-        $gradeDistribution[$row['grade']] = (int)$row['count'];
+$dailyLabels = [];
+$dailyData = [];
+$dailyNames = [];
+if ($dailyResult) {
+    while ($row = $dailyResult->fetch_assoc()) {
+        $dailyLabels[] = date('m/d/Y', strtotime($row['date']));
+        $dailyData[] = (int)$row['count'];
+        $dailyNames[] = $row['names'] ?? '';
     }
 }
 
-// Calculate overall attendance rate
-$attendanceRateResult = $conn->query("
+// New: Fetch weekly registrations (all time)
+$weeklyResult = $conn->query("
     SELECT 
-        (SUM(CASE WHEN score > 0 THEN 1 ELSE 0 END) / COUNT(*)) * 100 as rate
-    FROM grades
+        YEARWEEK(created_at, 1) as week,
+        MIN(DATE(created_at)) as start_date,
+        GROUP_CONCAT(name SEPARATOR ', ') as names,
+        COUNT(*) as count
+    FROM teachers
+    GROUP BY YEARWEEK(created_at, 1)
+    ORDER BY week ASC
 ");
-$attendanceRate = 0;
-if ($attendanceRateResult) {
-    $rateRow = $attendanceRateResult->fetch_assoc();
-    $attendanceRate = $rateRow['rate'] ? number_format($rateRow['rate'], 1) : 0;
+$weeklyLabels = [];
+$weeklyData = [];
+$weeklyNames = [];
+if ($weeklyResult) {
+    while ($row = $weeklyResult->fetch_assoc()) {
+        $startDate = date('m/d/Y', strtotime($row['start_date']));
+        $weeklyLabels[] = 'Week of ' . $startDate;
+        $weeklyData[] = (int)$row['count'];
+        $weeklyNames[] = $row['names'] ?? '';
+    }
+}
+
+// New: Fetch monthly registrations (all time)
+$monthlyResult = $conn->query("
+    SELECT 
+        YEAR(created_at) as year,
+        MONTH(created_at) as month,
+        GROUP_CONCAT(name SEPARATOR ', ') as names,
+        COUNT(*) as count
+    FROM teachers
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY year ASC, month ASC
+");
+$monthlyLabels = [];
+$monthlyData = [];
+$monthlyNames = [];
+if ($monthlyResult) {
+    while ($row = $monthlyResult->fetch_assoc()) {
+        $monthlyLabels[] = date('M Y', mktime(0, 0, 0, $row['month'], 1, $row['year']));
+        $monthlyData[] = (int)$row['count'];
+        $monthlyNames[] = $row['names'] ?? '';
+    }
+}
+
+// New: Fetch yearly registrations (all time)
+$yearlyResult = $conn->query("
+    SELECT 
+        YEAR(created_at) as year,
+        GROUP_CONCAT(name SEPARATOR ', ') as names,
+        COUNT(*) as count
+    FROM teachers
+    GROUP BY YEAR(created_at)
+    ORDER BY year ASC
+");
+$yearlyLabels = [];
+$yearlyData = [];
+$yearlyNames = [];
+if ($yearlyResult) {
+    while ($row = $yearlyResult->fetch_assoc()) {
+        $yearlyLabels[] = (string)$row['year'];
+        $yearlyData[] = (int)$row['count'];
+        $yearlyNames[] = $row['names'] ?? '';
+    }
 }
 
 // Fetch all students
@@ -216,7 +269,13 @@ $user = getAdminSession();
 
 			<section class="charts-container">
 				<div class="chart-box">
-					<h2>Teachers Registered (last 7 days)</h2>
+					<h2 id="chartTitle">Teachers Registered (Daily)</h2>
+					<div class="chart-controls">
+						<button class="period-btn active" data-period="daily">Daily</button>
+						<button class="period-btn" data-period="weekly">Weekly</button>
+						<button class="period-btn" data-period="monthly">Monthly</button>
+						<button class="period-btn" data-period="yearly">Yearly</button>
+					</div>
 					<canvas id="attendanceChart"></canvas>
 				</div>
 				<div class="chart-box">
@@ -320,6 +379,23 @@ $user = getAdminSession();
 	.btn-export:hover { transform: translateY(-2px); opacity: 0.98; }
 	.btn-export:active { transform: translateY(-1px); }
 	.btn-export[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+	.chart-controls {
+		display: flex;
+		gap: 10px;
+		margin-bottom: 10px;
+	}
+	.period-btn {
+		background: #f0f0f0;
+		border: 1px solid #ccc;
+		padding: 5px 10px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+	.period-btn.active {
+		background: #4A90E2;
+		color: white;
+	}
 	</style>
 
 	<script>
@@ -409,15 +485,47 @@ $user = getAdminSession();
 		});
 	});
 
-	// Attendance Chart
+	// Attendance Chart with dynamic periods
 	const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
-	new Chart(attendanceCtx, {
+	const chartTitle = document.getElementById('chartTitle');
+	const periodButtons = document.querySelectorAll('.period-btn');
+
+	let currentPeriod = 'daily';
+
+	const chartData = {
+		daily: {
+			labels: <?php echo json_encode($dailyLabels); ?>,
+			data: <?php echo json_encode($dailyData); ?>,
+			names: <?php echo json_encode($dailyNames); ?>,
+			title: 'Teachers Registered (Daily)'
+		},
+		weekly: {
+			labels: <?php echo json_encode($weeklyLabels); ?>,
+			data: <?php echo json_encode($weeklyData); ?>,
+			names: <?php echo json_encode($weeklyNames); ?>,
+			title: 'Teachers Registered (Weekly)'
+		},
+		monthly: {
+			labels: <?php echo json_encode($monthlyLabels); ?>,
+			data: <?php echo json_encode($monthlyData); ?>,
+			names: <?php echo json_encode($monthlyNames); ?>,
+			title: 'Teachers Registered (Monthly)'
+		},
+		yearly: {
+			labels: <?php echo json_encode($yearlyLabels); ?>,
+			data: <?php echo json_encode($yearlyData); ?>,
+			names: <?php echo json_encode($yearlyNames); ?>,
+			title: 'Teachers Registered (Yearly)'
+		}
+	};
+
+	let currentChart = new Chart(attendanceCtx, {
 		type: 'line',
 		data: {
-			labels: <?php echo json_encode($attendanceLabels); ?>,
+			labels: chartData.daily.labels,
 			datasets: [{
 				label: 'Teachers Registered',
-				data: <?php echo json_encode($attendanceData); ?>,
+				data: chartData.daily.data,
 				borderColor: '#4A90E2',
 				backgroundColor: 'rgba(74, 144, 226, 0.1)',
 				borderWidth: 2,
@@ -432,9 +540,22 @@ $user = getAdminSession();
 		options: {
 			responsive: true,
 			maintainAspectRatio: true,
+			animation: {
+				duration: 2000,
+				easing: 'easeOutQuart'
+			},
 			plugins: {
 				legend: {
 					display: false
+				},
+				tooltip: {
+					callbacks: {
+						label: function(context) {
+							const count = context.parsed.y;
+							const names = chartData[currentPeriod].names[context.dataIndex] || 'No names';
+							return count + ' teacher(s): ' + names;
+						}
+					}
 				}
 			},
 			scales: {
@@ -450,6 +571,19 @@ $user = getAdminSession();
 		}
 	});
 
+	periodButtons.forEach(btn => {
+		btn.addEventListener('click', function() {
+			periodButtons.forEach(b => b.classList.remove('active'));
+			this.classList.add('active');
+			const period = this.dataset.period;
+			currentPeriod = period;
+			currentChart.data.labels = chartData[period].labels;
+			currentChart.data.datasets[0].data = chartData[period].data;
+			chartTitle.textContent = chartData[period].title;
+			currentChart.update();
+		});
+	});
+
 	// Grade Distribution Chart (includes Kinder 1 & Kinder 2)
 	(function renderGradeLevelCounts() {
 		const canvas = document.getElementById('gradeChart');
@@ -463,12 +597,16 @@ $user = getAdminSession();
 		// Use server-side computed counts
 		const serverCounts = <?php echo json_encode(array_values($gradeLevelCounts)); ?>;
 
+		// Calculate total and percentages
+		const total = serverCounts.reduce((sum, count) => sum + count, 0);
+		const percentages = serverCounts.map(count => total > 0 ? Math.round((count / total * 100) * 10) / 10 : 0);
+
 		const chart = new Chart(ctx, {
 			type: 'doughnut',
 			data: {
 				labels,
 				datasets: [{
-					data: serverCounts,
+					data: percentages,
 					backgroundColor: colors,
 					borderColor: '#fff',
 					borderWidth: 2
@@ -477,11 +615,26 @@ $user = getAdminSession();
 			options: {
 				responsive: true,
 				maintainAspectRatio: true,
-				plugins: { legend: { position: 'bottom' } }
+				animation: {
+					animateRotate: true,
+					animateScale: true,
+					duration: 3000,
+					easing: 'easeOutBounce'
+				},
+				plugins: {
+					legend: { position: 'bottom' },
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								return context.label + ': ' + context.parsed + '%';
+							}
+						}
+					}
+				}
 			}
 		});
 
-		// No client-side fetch required; serverCounts already applied
+		// No client-side fetch required; percentages already applied
 	})();
 	</script>
 </body>
