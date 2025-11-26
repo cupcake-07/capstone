@@ -1243,6 +1243,29 @@ if (!empty($balances)) {
 	const minYear = <?= intval($minYear) ?>;
 	const maxYear = <?= intval($maxYear) ?>;
 
+	// Add: helper to download a response as a file (defined before any usage)
+	async function downloadResponseAsFile(response, fallbackName = 'download.csv') {
+		// Verify response is ok
+		if (!response.ok) {
+			// Try to extract server message for better debugging
+			let msg = 'Network response was not ok (' + response.status + ')';
+			try {
+				const txt = await response.text();
+				if (txt) msg += ': ' + txt;
+			} catch (e) { /* ignore read error */ }
+			throw new Error(msg);
+		}
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = fallbackName;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	}
+
 	// Replace year select change handler with prev/next buttons (allow broader range)
 	(function() {
 		const btnPrev = document.getElementById('yearPrev');
@@ -1333,40 +1356,6 @@ if (!empty($balances)) {
 	</script>
 
 	<script>
-	// Simple export CSV helper for the page (adapt server side export endpoint)
-	async function downloadResponseAsFile(response, fallbackName) {
-		if (!response.ok) throw new Error('Network response was not ok');
-		const blob = await response.blob();
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = fallbackName;
-		document.body.appendChild(a);
-		a.click();
-		a.remove();
-		URL.revokeObjectURL(url);
-	}
-
-	(async function() {
-		const btn = document.getElementById('exportCsv');
-		if (!btn) return;
-		btn.addEventListener('click', async function() {
-			btn.disabled = true;
-			const prevText = btn.textContent;
-			btn.textContent = 'Preparing...';
-			try {
-				const res = await fetch('export_account_balance.php?year=' + selectedYear, { credentials: 'same-origin' });
-				await downloadResponseAsFile(res, 'account_balance-' + selectedYear + '.csv');
-			} catch (err) {
-				console.error(err);
-				alert('Failed to download CSV. Check console for details.');
-			} finally {
-				btn.disabled = false;
-				btn.textContent = prevText;
-			}
-		});
-	})();
-
 	// Manage payment modal logic
 	(function() {
 		const modalBackdrop = document.getElementById('manageModalBackdrop');
