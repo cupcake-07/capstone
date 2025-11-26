@@ -14,8 +14,15 @@ if (empty($_SESSION['user_id']) || ($_SESSION['user_type'] ?? '') !== 'teacher')
     exit;
 }
 
-// Fetch total enrolled students (school-wide fallback)
-$schoolTotalResult = $conn->query("SELECT COUNT(*) as count FROM students WHERE is_enrolled = 1");
+// Fetch total enrolled students (school-wide fallback), exclude archived if the column exists
+$hasIsArchived = false;
+$colCheck = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
+if ($colCheck) {
+    $hasIsArchived = ($colCheck->num_rows > 0);
+    $colCheck->close();
+}
+$schoolWhere = "is_enrolled = 1" . ($hasIsArchived ? " AND (is_archived IS NULL OR is_archived = 0)" : "");
+$schoolTotalResult = $conn->query("SELECT COUNT(*) as count FROM students WHERE {$schoolWhere}");
 $schoolTotal = $schoolTotalResult ? intval($schoolTotalResult->fetch_assoc()['count']) : 0;
 $totalStudents = $schoolTotal; // will be overridden with teacher-specific count if possible
 
@@ -29,7 +36,62 @@ function column_exists($conn, $table, $column) {
 }
 // --- END helper ---
 
+// --- NEW helper: detect grade & section column names in students table ---
+function detect_grade_section_columns($conn) {
+    $gradeCandidates = ['grade','student_grade','level','year_level','grade_level','grade_level_id'];
+    $sectionCandidates = ['section','section_name','class_section','student_section','section_id'];
+
+    $foundGradeCol = null;
+    foreach ($gradeCandidates as $c) {
+        if (column_exists($conn, 'students', $c)) { $foundGradeCol = $c; break; }
+    }
+
+    $foundSectionCol = null;
+    foreach ($sectionCandidates as $c) {
+        if (column_exists($conn, 'students', $c)) { $foundSectionCol = $c; break; }
+    }
+
+    return [$foundGradeCol, $foundSectionCol];
+}
+// --- END helper ---
+
+// --- NEW helper: detect student primary key column name in students table ---
+function detect_student_id_column($conn) {
+    $candidates = ['id','student_id','studentid','stud_id','studentID'];
+    foreach ($candidates as $c) {
+        if (column_exists($conn, 'students', $c)) return $c;
+    }
+    return 'id';
+}
+// --- END helper ---
+
+// --- NEW helper: produce grade variants to match DB representations ---
+function build_grade_variants($grade) {
+    $variants = [];
+    $g = trim((string)$grade);
+    if ($g === '') return $variants;
+    // include raw
+    $variants[] = $g;
+    // numeric-only
+    $digits = preg_replace('/[^0-9]/','', $g);
+    if ($digits !== '') {
+        $variants[] = $digits;
+        $variants[] = 'Grade ' . $digits;
+        $variants[] = 'GRADE ' . $digits;
+    }
+    // common prefix forms
+    if (stripos($g, 'grade') === false) {
+        $variants[] = 'Grade ' . $g;
+        $variants[] = 'grade ' . $g;
+    }
+    // unique-ify and return
+    $variants = array_values(array_unique(array_map('trim', $variants)));
+    return $variants;
+}
+// --- END helper ---
+
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
+$teacherLookup = trim($_SESSION['user_name'] ?? ''); // RAW teacher name for DB comparisons
 
 // --- LOAD SCHEDULES: Check both teacher and admin data directories ---
 function load_teacher_schedules() {
@@ -132,56 +194,141 @@ if ($teacherId > 0) {
 				}
 			}
 
-			// --- REPLACED: robust teacher-only student count using detected column names ---
-			$totalStudents = 0; // default if no grade/sections info
+			// Detect found grade & section columns (for filtering)
+			list($foundGradeCol, $foundSectionCol) = detect_grade_section_columns($conn);
 
-			// candidate column names for grade and section in students table
-			$gradeCandidates = ['grade','student_grade','level','year_level','grade_level','grade_level_id'];
-			$sectionCandidates = ['section','section_name','class_section','student_section','section_id'];
+            // Detect is_archived presence and build archive filter (teacher counts should exclude archived students)
+            $hasIsArchivedForTeacher = column_exists($conn, 'students', 'is_archived');
+            $archiveFilterSql = $hasIsArchivedForTeacher ? " AND (is_archived IS NULL OR is_archived = 0)" : "";
 
-			$foundGradeCol = null;
-			foreach ($gradeCandidates as $c) {
-				if (column_exists($conn, 'students', $c)) { $foundGradeCol = $c; break; }
+			// Detect student PK column for DISTINCT counting
+			$studentPk = detect_student_id_column($conn);
+
+			// --- NEW: Prefer counting advisory students using advisor columns if available ---
+			$totalStudents = 0; // default if no advisory/grade/sections info
+
+			// Advisor column candidates (numeric references first, then textual)
+			$advisorNumericCandidates = ['adviser_id','advisor_id','homeroom_teacher_id','teacher_id','adviser_teacher_id'];
+			$advisorTextCandidates = ['adviser','advisor','homeroom_teacher','teacher_fullname','teacher_name','teacher'];
+
+			$foundAdvisorNumericCol = null;
+			foreach ($advisorNumericCandidates as $c) {
+				if (column_exists($conn, 'students', $c)) { $foundAdvisorNumericCol = $c; break; }
 			}
-			$foundSectionCol = null;
-			foreach ($sectionCandidates as $c) {
-				if (column_exists($conn, 'students', $c)) { $foundSectionCol = $c; break; }
+			$foundAdvisorTextCol = null;
+			foreach ($advisorTextCandidates as $c) {
+				if (column_exists($conn, 'students', $c)) { $foundAdvisorTextCol = $c; break; }
 			}
 
+			// Build normalized grade and section filter SQL fragments (escaped inline)
+			$gradeFilterSql = '';
+			$sectionFilterSql = '';
 			if ($foundGradeCol !== null && $gradeRaw !== '') {
-				$gradeEsc = $conn->real_escape_string($gradeRaw);
-
-				// build section list array from teacher.sections (comma-separated)
-				$sArrLocal = [];
-				if ($sectionsRaw !== '') {
-					$sArrLocal = array_map('trim', explode(',', $sectionsRaw));
-					$sArrLocal = array_values(array_filter($sArrLocal, function($v){ return $v !== ''; }));
-				}
-
-				if (!empty($sArrLocal) && $foundSectionCol !== null) {
-					// escape and quote each section for safe IN list
-					$escapedSections = array_map(function($v) use ($conn) {
+				$gradeVariants = build_grade_variants($gradeRaw);
+				if (!empty($gradeVariants)) {
+					$escapedGrades = array_map(function($v) use ($conn) {
 						return "'" . $conn->real_escape_string($v) . "'";
-					}, $sArrLocal);
-					$sectionList = implode(',', $escapedSections);
-
-					$sql = "SELECT COUNT(*) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}' AND `{$foundSectionCol}` IN ({$sectionList})";
-				} else {
-					$sql = "SELECT COUNT(*) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}'";
+					}, $gradeVariants);
+					$gradeFilterSql = " AND `{$foundGradeCol}` IN (" . implode(',', $escapedGrades) . ")";
 				}
+			}
 
-				$res = $conn->query($sql);
-				if ($res) {
-					$totalStudents = intval($res->fetch_assoc()['cnt']);
+			$sArrLocal = [];
+			if ($sectionsRaw !== '') {
+				$sArrLocal = array_map('trim', explode(',', $sectionsRaw));
+				$sArrLocal = array_values(array_filter($sArrLocal, function($v){ return $v !== ''; }));
+			}
+			if (!empty($sArrLocal) && $foundSectionCol !== null) {
+				$escapedSections = array_map(function($v) use ($conn) {
+					return "'" . $conn->real_escape_string($v) . "'";
+				}, $sArrLocal);
+				$sectionFilterSql = " AND `{$foundSectionCol}` IN (" . implode(',', $escapedSections) . ")";
+			}
+
+			// Use advisor id column if present (integer match), and intersect with grade/section if available, exclude archived
+			if ($foundAdvisorNumericCol !== null) {
+				$sql = "SELECT COUNT(DISTINCT `{$studentPk}`) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundAdvisorNumericCol}` = ?" . $gradeFilterSql . $sectionFilterSql . $archiveFilterSql;
+				$stmt = $conn->prepare($sql);
+				if ($stmt) {
+					$stmt->bind_param('i', $teacherId);
+					$stmt->execute();
+					$stmt->bind_result($cntValue);
+					$stmt->fetch();
+					$totalStudents = intval($cntValue);
+					$stmt->close();
 				} else {
-					// query failed (e.g. unexpected schema) — keep 0 or fallback as desired
 					$totalStudents = 0;
 				}
-			} else {
-				// no grade column found or teacher has no grade assigned — show 0
-				$totalStudents = 0;
 			}
-			// --- END robust count ---
+			// Otherwise, use textual advisor name match if present, intersecting with grade/section if available, exclude archived
+			elseif ($foundAdvisorTextCol !== null && $teacherLookup !== '') {
+				$lowerName = mb_strtolower($teacherLookup, 'UTF-8');
+				$firstName = strtolower(explode(' ', $teacherLookup)[0] ?? $teacherLookup);
+				$likeFirst = '%' . $conn->real_escape_string($firstName) . '%';
+
+				$sql = "SELECT COUNT(DISTINCT `{$studentPk}`) AS cnt FROM `students` WHERE is_enrolled = 1 AND (LOWER(`{$foundAdvisorTextCol}`) = ? OR LOWER(`{$foundAdvisorTextCol}`) LIKE ?)" . $gradeFilterSql . $sectionFilterSql . $archiveFilterSql;
+				$stmt = $conn->prepare($sql);
+				if ($stmt) {
+					$stmt->bind_param('ss', $lowerName, $likeFirst);
+					$stmt->execute();
+					$stmt->bind_result($cntValue);
+					$stmt->fetch();
+					$totalStudents = intval($cntValue);
+					$stmt->close();
+				} else {
+					$totalStudents = 0;
+				}
+			}
+			// Fallback: grade / sections method (legacy behavior), exclude archived
+			else {
+				// candidate column names for grade and section in students table
+				$gradeCandidates = ['grade','student_grade','level','year_level','grade_level','grade_level_id'];
+				$sectionCandidates = ['section','section_name','class_section','student_section','section_id'];
+
+				$foundGradeCol = null;
+				foreach ($gradeCandidates as $c) {
+					if (column_exists($conn, 'students', $c)) { $foundGradeCol = $c; break; }
+				}
+				$foundSectionCol = null;
+				foreach ($sectionCandidates as $c) {
+					if (column_exists($conn, 'students', $c)) { $foundSectionCol = $c; break; }
+				}
+
+				if ($foundGradeCol !== null && $gradeRaw !== '') {
+					$gradeEsc = $conn->real_escape_string($gradeRaw);
+
+					// build section list array from teacher.sections (comma-separated)
+					$sArrLocal = [];
+					if ($sectionsRaw !== '') {
+						$sArrLocal = array_map('trim', explode(',', $sectionsRaw));
+						$sArrLocal = array_values(array_filter($sArrLocal, function($v){ return $v !== ''; }));
+					}
+
+					if (!empty($sArrLocal) && $foundSectionCol !== null) {
+						// escape and quote each section for safe IN list
+						$escapedSections = array_map(function($v) use ($conn) {
+							return "'" . $conn->real_escape_string($v) . "'";
+						}, $sArrLocal);
+						$sectionList = implode(',', $escapedSections);
+
+						$sql = "SELECT COUNT(DISTINCT `{$studentPk}`) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}' AND `{$foundSectionCol}` IN ({$sectionList})" . $archiveFilterSql;
+					} else {
+						$sql = "SELECT COUNT(DISTINCT `{$studentPk}`) AS cnt FROM `students` WHERE is_enrolled = 1 AND `{$foundGradeCol}` = '{$gradeEsc}'" . $archiveFilterSql;
+					}
+
+					$res = $conn->query($sql);
+					if ($res) {
+						$totalStudents = intval($res->fetch_assoc()['cnt']);
+					} else {
+						// query failed (e.g. unexpected schema) — keep 0 or fallback as desired
+						$totalStudents = 0;
+					}
+				} else {
+					// no grade column found or teacher has no grade assigned — show 0
+					$totalStudents = 0;
+				}
+			}
+			// --- END advisor-aware, grade/section-intersecting count ---
 		}
 		$tq->close();
 	}
@@ -403,6 +550,18 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
       vertical-align: top;
     }
     .schedule-peek tr:nth-child(even) td { background: #fbfbfc; }
+
+    /* NEW: make announcement list scrollable when there are more than 4 items */
+    #announcement-list.scrollable {
+      max-height: 220px; /* approximately 4 items; tune as needed */
+      overflow-y: auto;
+      padding-right: 8px; /* space for scrollbar */
+    }
+
+    /* Optional: slightly improve appearance for scrollable lists */
+    #announcement-list.scrollable::-webkit-scrollbar { width: 10px; }
+    #announcement-list.scrollable::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 6px; }
+    #announcement-list.scrollable::-webkit-scrollbar-track { background: transparent; }
   </style>
 </head>
 <body>
@@ -456,9 +615,10 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
       <section class="cards" id="dashboard">
         <div class="card">
-          <div class="card-title">Total Students</div>
-          <div class="card-value" id="totalstudents"><?php echo $totalStudents; ?></div>
+          <div class="card-title">Advisory Students</div>
+          <div class="card-value" id="advisorystudents"><?php echo $totalStudents; ?></div>
         </div>
+
         <div class="card">
           <div class="card-title">Grade level and Advisory</div>
           <div class="card-value" id="gradesection">
@@ -490,37 +650,67 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
     <!-- FIXED: Clean footer and scripts -->
     <script>
-      // Load announcements from API
+      // Load announcements from API (show teacher-authored or teacher-visible for sneak peek)
       function loadAnnouncements() {
-          fetch('../api/announcements.php?action=list&audience=teacher')
-              .then(res => res.json())
-              .then(data => {
+          // fetch full list, filter in JS for teacher-relevant items
+          fetch('../api/announcements.php?action=list', { credentials: 'same-origin' })
+              .then(res => {
+                  if (!res.ok) throw new Error('Network error');
+                  return res.json();
+              })
+              .then(data => {  // FIXED: Added parentheses around 'data' parameter
                   const list = document.getElementById('announcement-list');
                   list.innerHTML = '';
-                  
-                  if (!data.success || !data.announcements || data.announcements.length === 0) {
+
+                  if (!data.success || !Array.isArray(data.announcements) || data.announcements.length === 0) {
                       list.innerHTML = '<li style="color:#999;font-size:13px;">No announcements at this time.</li>';
                       return;
                   }
-                  
-                  // Show only latest 5 announcements on dashboard
-                  data.announcements.slice(0, 5).forEach(ann => {
-                      if (!ann.title || ann.title.trim() === '') return;
-                      
+
+                  // Filter for teacher-authored or teacher-visible announcements (for dashboard sneak peek)
+                  const filtered = data.announcements.filter(ann => {
+                      if (!ann) return false;
+                      const authorType = (ann.author_type || ann.posted_by_type || '').toString().toLowerCase();
+                      const visibility = (ann.visibility || ann.target || '').toString().toLowerCase();
+                      return authorType === 'teacher' || visibility === 'teachers' || visibility === 'both';
+                  })
+                  .sort((a, b) => {
+                      const ta = a && a.pub_date ? Date.parse(a.pub_date) : 0;
+                      const tb = b && b.pub_date ? Date.parse(b.pub_date) : 0;
+                      return tb - ta;
+                  });
+
+                  if (!filtered.length) {
+                      list.innerHTML = '<li style="color:#999;font-size:13px;">No announcements at this time.</li>';
+                      return;
+                  }
+
+                  // Show only latest 5 announcements
+                  filtered.slice(0, 5).forEach(ann => {
+                      // verify title and format
+                      if (!ann || !ann.title || ann.title.trim() === '') return;
+
                       const li = document.createElement('li');
                       li.style.cssText = 'padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;';
-                      
+
                       const icon = ann.type === 'event' ? '📅' : '📢';
                       const date = ann.pub_date && ann.pub_date.trim() ? ann.pub_date : 'Today';
                       const title = ann.title ? escapeHtml(ann.title) : 'Untitled';
-                      
-                      li.innerHTML = `<strong>${date}</strong><br>${icon} ${title}`;
+                      const byline = ann.author_name ? ' — ' + escapeHtml(ann.author_name) : '';
+
+                      li.innerHTML = `<strong>${date}</strong><br>${icon} ${title}${byline}`;
                       list.appendChild(li);
                   });
-                  
-                  if (list.children.length === 0) {
-                      list.innerHTML = '<li style="color:#999;font-size:13px;">No announcements at this time.</li>';
+
+                  // NEW: Toggle 'scrollable' class when there are more than 4 real announcement items
+                  // Consider only real announcement list items (exclude loading/no-results messages)
+                  const nonMsgItems = Array.from(list.querySelectorAll('li')).filter(li => !li.classList.contains('loading-message') && !li.classList.contains('empty-filter-msg'));
+                  if (nonMsgItems.length > 4) {
+                      list.classList.add('scrollable');
+                  } else {
+                      list.classList.remove('scrollable');
                   }
+
               })
               .catch(err => {
                   console.error('Error loading announcements:', err);
@@ -543,37 +733,74 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
       // Add teacher name accessible in JS (for matching)
       const TEACHER_LOOKUP = <?php echo json_encode(trim($_SESSION['user_name'] ?? '')); ?>;
+      const TEACHER_GRADE = <?php echo $teacherGradeJs ?? 'null'; ?>;
+      const TEACHER_SECTIONS = <?php echo $teacherSectionsJs ?? '[]'; ?>;
 
       // Build HTML schedule from raw schedules JSON (similar to PHP logic)
       function buildScheduleHtmlFromJson(jsSchedules) {
           if (!jsSchedules) return '<div>No schedule file.</div>';
           const teacherName = (TEACHER_LOOKUP || '').trim();
-          if (!teacherName) return '<div>No schedule available.</div>';
+          const teacherId = <?php echo json_encode($teacherId); ?>;
+          const teacherGrade = TEACHER_GRADE;
+          const teacherSections = Array.isArray(TEACHER_SECTIONS) ? TEACHER_SECTIONS : (TEACHER_SECTIONS ? [TEACHER_SECTIONS] : []);
+
+          if (!teacherName && (!teacherGrade || teacherGrade === '')) return '<div>No schedule available.</div>';
 
           const matches = {};
-
           Object.keys(jsSchedules).forEach(key => {
               const sched = jsSchedules[key];
               if (!Array.isArray(sched)) return;
 
+              // If key matches teacher's grade _ section (e.g. '1_A') and teacher manages section, include entire block
+              let keyMatchesManaged = false;
+              if (teacherGrade) {
+                  if (teacherSections && teacherSections.length > 0) {
+                      for (let s of teacherSections) {
+                          if ((teacherGrade + '_' + s) === key) { keyMatchesManaged = true; break; }
+                      }
+                  } else if (String(teacherGrade) === key) {
+                      keyMatchesManaged = true;
+                  }
+              }
+
               sched.forEach(row => {
+                  const rowTeacher = (row.teacher || '').toString().trim();
+                  const rowTeacherId = row.teacher_id ? parseInt(row.teacher_id) : null;
                   const room = (row.room || '').toString().trim();
                   const time = (row.time || '').toString().trim();
 
                   ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
                       const cell = row[day];
-                      if (!cell || typeof cell !== 'object') return;
-                      const cellTeacher = ((cell.teacher || '').toString()).trim();
-                      if (!cellTeacher) return;
-                      if (cellTeacher.localeCompare(teacherName, undefined, {sensitivity: 'accent'}) !== 0) return;
+                      if (!cell || typeof cell !== 'object') { return; }
+                      const cellTeacher = ((cell.teacher || '')).toString().trim();
+                      const cellTeacherId = cell.teacher_id ? parseInt(cell.teacher_id) : null;
 
-                      const subject = (cell.subject || '').toString().trim();
+                      // match conditions:
+                      // 1) teacher id matches (row or cell)
+                      // 2) exact name match (case-insensitive)
+                      // 3) partial name match (first name)
+                      // 4) schedule key matches teacher-managed grade/section
+                      let matched = false;
+                      if ((rowTeacherId && rowTeacherId === teacherId) || (cellTeacherId && cellTeacherId === teacherId)) {
+                          matched = true;
+                      }
+                      if (!matched && cellTeacher && teacherName && cellTeacher.localeCompare(teacherName, undefined, {sensitivity: 'accent'}) === 0) {
+                          matched = true;
+                      }
+                      if (!matched && cellTeacher && teacherName) {
+                          const tFirst = (teacherName.split(' ')[0] || '').toLowerCase();
+                          if (tFirst !== '' && cellTeacher.toLowerCase().indexOf(tFirst) !== -1) matched = true;
+                      }
+                      if (!matched && keyMatchesManaged) matched = true;
+
+                      if (!matched) return;
+
                       if (!matches[key]) matches[key] = [];
                       matches[key].push({
                           day: day.charAt(0).toUpperCase() + day.slice(1),
                           room: room,
                           time: time,
-                          subject: subject
+                          subject: (cell.subject || '').toString().trim()
                       });
                   });
               });
