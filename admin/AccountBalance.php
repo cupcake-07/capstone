@@ -1080,7 +1080,7 @@ if (!empty($balances)) {
 
 													<!-- Details toggle -->
 													<?php $payCount = isset($paymentBreakdowns[$studentId]) ? count($paymentBreakdowns[$studentId]) : 0; ?>
-													<button type="button" class="btn-sort details-toggle" data-student-id="<?= $studentId ?>" title="Show payment breakdown">Details<?= $payCount ? " ({$payCount})" : '' ?></button>
+													<button type="button" class="btn-sort details-toggle" data-student-id="<?= $studentId ?>" data-pay-count="<?= $payCount ?>" title="Show payment breakdown">Details<?= $payCount ? " ({$payCount})" : '' ?></button>
 												</td>
 											</tr>
 
@@ -1693,6 +1693,73 @@ if (!empty($balances)) {
 				modalSubmit.disabled = false;
 			}
 		});
+	})();
+
+	// Add sorting functionality for the grade sort select
+	(function() {
+		const sortSelect = document.getElementById('gradeSortSelect');
+		const tbody = document.querySelector('.table tbody');
+
+		function sortTable(criteria) {
+			if (!tbody) return;
+
+			// Explicitly select only the main student rows (avoid details rows)
+			const studentRows = Array.from(tbody.querySelectorAll('tr[id^="student-row-"]'));
+
+			// Sort based on criteria
+			studentRows.sort((a, b) => {
+				let valA, valB;
+				if (criteria === 'grade_asc' || criteria === 'grade_desc') {
+					valA = (a.dataset.grade || '').toLowerCase();
+					valB = (b.dataset.grade || '').toLowerCase();
+				} else {
+					// Default: sort by student name
+					valA = a.cells[1].textContent.trim().toLowerCase();
+					valB = b.cells[1].textContent.trim().toLowerCase();
+				}
+
+				if (criteria === 'grade_desc') {
+					return valB.localeCompare(valA);
+				} else {
+					return valA.localeCompare(valB);
+				}
+			});
+
+			// Create a document fragment and append the sorted student rows, followed by their details rows
+			const frag = document.createDocumentFragment();
+			studentRows.forEach((row, index) => {
+				// Update row number
+				if (row.cells && row.cells[0]) row.cells[0].textContent = index + 1;
+
+				// Append student row
+				frag.appendChild(row);
+
+				// Append corresponding details row directly after the student row, and hide it
+				const studentId = row.id.replace('student-row-', '');
+				const detailsRow = document.getElementById('details-row-' + studentId);
+				if (detailsRow) {
+					detailsRow.style.display = 'none'; // ensure it's hidden
+					frag.appendChild(detailsRow);
+				}
+			});
+
+			// Replace tbody contents with sorted rows (student + hidden details)
+			tbody.innerHTML = '';
+			tbody.appendChild(frag);
+
+			// Reset all details-toggle buttons to the default "Details" text with count (use stored data-pay-count)
+			document.querySelectorAll('.details-toggle').forEach(btn => {
+				const payCount = btn.getAttribute('data-pay-count') || '0';
+				btn.textContent = 'Details' + (payCount && payCount !== '0' ? ' (' + payCount + ')' : '');
+				btn.setAttribute('aria-expanded', 'false');
+			});
+		}
+
+		if (sortSelect) {
+			sortSelect.addEventListener('change', function() {
+				sortTable(this.value);
+			});
+		}
 	})();
 	</script>
 </body>
