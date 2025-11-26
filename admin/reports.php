@@ -354,15 +354,15 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
        $paymentsTimeseries['monthly']['total'] = array_sum($monthlyVals);
     }
 
-    // YEARLY: last 5 years
+    // YEARLY: last 5 years - START at 2025 for this report (fixed window 2025..2029)
     $years = 5;
-    $thisYear = (int)date('Y');
+    $startYear = 2025;
+    $endYear = $startYear + $years - 1; // 2029
     $yearKeys = [];
     $yearLabels = [];
-    for ($i = $years - 1; $i >= 0; $i--) {
-        $y = $thisYear - $i;
-        $yearKeys[] = (string)$y;
-        $yearLabels[] = (string)$y;
+    for ($iy = $startYear; $iy <= $endYear; $iy++) {
+        $yearKeys[] = (string)$iy;
+        $yearLabels[] = (string)$iy;
     }
 
     if ($paymentsTableExists) {
@@ -371,7 +371,7 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
                 SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
                 FROM payments p
                 JOIN fees f ON p.fee_id = f.id
-                WHERE p.`{$paymentDateCol}` BETWEEN '{$yearKeys[0]}-01-01' AND '{$thisYear}-12-31'
+                WHERE p.`{$paymentDateCol}` BETWEEN '{$startYear}-01-01' AND '{$endYear}-12-31'
                   AND (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
                 GROUP BY YEAR(p.`{$paymentDateCol}`)
                 ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
@@ -380,7 +380,7 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
             $sqlYearly = "
                 SELECT YEAR(p.`{$paymentDateCol}`) AS k, IFNULL(SUM(p.`{$paymentAmountCol}`),0) AS total_paid
                 FROM payments p
-                WHERE p.`{$paymentDateCol}` BETWEEN '{$yearKeys[0]}-01-01' AND '{$thisYear}-12-31'
+                WHERE p.`{$paymentDateCol}` BETWEEN '{$startYear}-01-01' AND '{$endYear}-12-31'
                 GROUP BY YEAR(p.`{$paymentDateCol}`)
                 ORDER BY YEAR(p.`{$paymentDateCol}`) ASC
             ";
@@ -486,12 +486,9 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 
 			<!-- CSV download buttons (improved) -->
 			<div style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-				<a href="export_students.php" download="students.csv" class="btn-download btn-download-students">
-					<span style="margin-right:8px;">📥</span> Download Students CSV
-				</a>
-				<a href="export_teachers.php" download="teachers.csv" class="btn-download btn-download-teachers">
-					<span style="margin-right:8px;">📥</span> Download Teachers CSV
-				</a>
+				<button id="exportReportsCsv" class="btn-download btn-download-reports" type="button" title="Export all reports as CSV">
+					<span style="margin-right:8px;">📥</span> Export Reports CSV
+				</button>
 			</div>
 		</section>
 		<!-- end replacement -->
@@ -660,6 +657,42 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 			lt.update();
 		});
 	})();
+
+	// Simple client helper for downloading blob responses
+	async function downloadResponseAsFile(response, fallbackName) {
+		if (!response.ok) throw new Error('Network response was not ok');
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = fallbackName;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+	}
+
+	// Attach export reports button (calls new export_reports.php)
+	(function() {
+		const exportBtn = document.getElementById('exportReportsCsv');
+		if (!exportBtn) return;
+		exportBtn.addEventListener('click', async function() {
+			exportBtn.disabled = true;
+			const prevText = exportBtn.textContent;
+			exportBtn.textContent = 'Preparing...';
+			try {
+				const res = await fetch('export_reports.php', { credentials: 'same-origin' });
+				const fileNameBase = 'reports-' + (new Date()).toISOString().slice(0,10) + '.csv';
+				await downloadResponseAsFile(res, fileNameBase);
+			} catch (err) {
+				console.error(err);
+				alert('Failed to export reports CSV. Check console for details.');
+			} finally {
+				exportBtn.disabled = false;
+				exportBtn.textContent = prevText;
+			}
+		});
+	})();
 </script>
 
 <style>
@@ -708,6 +741,17 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
             .analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
             .analytics .stat.red .val { color:#b21f2d; }
             .analytics .stat.green .val { color:#10b981; }
+
+            .btn-download-reports {
+	background: #000000;
+	color: #ffffff;
+	border: 1px solid rgba(255,255,255,0.06);
+	padding: 12px 18px;
+	border-radius: 8px;
+	font-weight:700;
+	cursor: pointer;
+}
+.btn-download-reports:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.28); transform: translateY(-3px); }
         </style>
 
 <!-- ...existing scripts like ../js/admin.js if needed ... -->

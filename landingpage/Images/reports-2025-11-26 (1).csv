@@ -1,0 +1,78 @@
+"Reports export",2025-11-26T09:54:26+01:00
+
+"Section: Students"
+id,name,grade
+1,"wewew ferd",1
+2,"wewew ferd",1
+3,reween,1
+4,"Reween Rambonanza",1
+5,"Reween Wewe",1
+6,Rambo,3
+7,iwen11,K1
+8,Dodogama,5
+9,"Sierra Madre","Not Set"
+10,ghghg,1
+11,rweq,K1
+12,"sierra V. uwan",K1
+
+"Section: Teachers"
+id,name
+1,"Machine Leg Extension"
+2,"Maria DB"
+3,"Cardio Training"
+4,teacher1
+5,teacher2
+
+"Section: Totals"
+"Allocated Total","180,000.00"
+"Total Paid","14,845.00"
+"Not Paid","165,155.00"
+
+"Section: Payments Daily (last 7 days)"
+Date,TotalPaid
+2025-11-20,0.00
+2025-11-21,0.00
+2025-11-22,0.00
+2025-11-23,0.00
+2025-11-24,0.00
+2025-11-25,0.00
+2025-11-26,"8,071.00"
+
+"Section: Payments Weekly (last 12 weeks)"
+WeekStart,YearWeekKey,TotalPaid
+2025-09-08,202537,0.00
+2025-09-15,202538,0.00
+2025-09-22,202539,0.00
+2025-09-29,202540,0.00
+2025-10-06,202541,0.00
+2025-10-13,202542,0.00
+2025-10-20,202543,0.00
+2025-10-27,202544,0.00
+2025-11-03,202545,0.00
+2025-11-10,202546,0.00
+2025-11-17,202547,0.00
+2025-11-24,202548,0.00
+
+"Section: Payments Monthly (last 12 months)"
+Month,TotalPaid
+2024-12,0.00
+2025-01,0.00
+2025-02,0.00
+2025-03,0.00
+2025-04,0.00
+2025-05,0.00
+2025-06,0.00
+2025-07,0.00
+2025-08,0.00
+2025-09,0.00
+2025-10,0.00
+2025-11,"8,071.00"
+
+"Section: Payments Yearly (2025 - 2029)"
+Year,TotalPaid
+2025,"8,071.00"
+2026,0.00
+2027,0.00
+2028,0.00
+2029,0.00
+

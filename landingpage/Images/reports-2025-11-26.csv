@@ -1,0 +1,10 @@
+"Reports export",2025-11-26T09:52:03+01:00
+
+"Section: Students"
+id,name,grade
+<br />
+<b>Fatal error</b>:  Uncaught mysqli_sql_exception: Unknown column 'first_name' in 'field list' in C:\xampp\htdocs\capstone\admin\export_reports.php:53
+Stack trace:
+#0 C:\xampp\htdocs\capstone\admin\export_reports.php(53): mysqli-&gt;query('SELECT id,\r\n   ...')
+#1 {main}
+  thrown in <b>C:\xampp\htdocs\capstone\admin\export_reports.php</b> on line <b>53</b><br />

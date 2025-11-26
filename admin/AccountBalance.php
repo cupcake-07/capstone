@@ -17,6 +17,22 @@ if (!isAdminLoggedIn()) {
 
 $user = getAdminSession();
 
+// Add year selection logic
+$currentYear = (int)date('Y');
+// changed: set broader year range as requested
+$minYear = 2025;  // reasonable lower bound (changed)
+$maxYear = 9000;  // reasonable upper bound (changed)
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentYear;
+// Validate to allow a broad range of years (previous implementation restricted to only +/- 1)
+if ($selectedYear < $minYear || $selectedYear > $maxYear) {
+    $selectedYear = $currentYear;
+}
+// UI prev/next based on selected year
+$uiPrevYear = $selectedYear - 1;
+$uiNextYear = $selectedYear + 1;
+$uiPrevDisabled = ($selectedYear <= $minYear);
+$uiNextDisabled = ($selectedYear >= $maxYear);
+
 // Utility: Check table/column existence
 function tableExists($conn, $table) {
     $table = $conn->real_escape_string($table);
@@ -101,6 +117,22 @@ $paymentsExists = tableExists($conn, 'payments');
 $paymentsHasStudentId = $paymentsExists && columnExists($conn, 'payments', 'student_id');
 $paymentsHasFeeId = $paymentsExists && columnExists($conn, 'payments', 'fee_id');
 // -------------------------------------------
+// Detect payment date column for year filtering
+// Replace previous one-liner with explicit detection and safe sql filter pieces:
+$paymentDateCol = null;
+if ($paymentsExists) {
+    if (columnExists($conn, 'payments', 'date')) {
+        $paymentDateCol = 'date';
+    } else if (columnExists($conn, 'payments', 'payment_date')) {
+        $paymentDateCol = 'payment_date';
+    }
+}
+$escapedPaymentDateCol = $paymentDateCol ? $conn->real_escape_string($paymentDateCol) : null;
+// Use equality filter (YEAR(...) = selectedYear)
+$yearFilterOnJoin = $escapedPaymentDateCol ? " AND YEAR(p.`{$escapedPaymentDateCol}`) = " . intval($selectedYear) : "";
+$yearFilterAppend = $escapedPaymentDateCol ? " AND YEAR(p.`{$escapedPaymentDateCol}`) = " . intval($selectedYear) : "";
+$yearFilterWhereStandalone = $escapedPaymentDateCol ? " WHERE YEAR(p.`{$escapedPaymentDateCol}`) = " . intval($selectedYear) : "";
+// -------------------------------------------
 
 $errorMsg = '';
 $balances = [];
@@ -110,6 +142,7 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
     $feeGradeExpr = $feeGradeColumn ? "IFNULL(f.`{$feeGradeColumn}`, '')" : "''";
 
     // Build SQL to sum fees per (student, fee-grade) and payments linked to those fees
+    // Use $yearFilterOnJoin (safe) rather than appending to FROM
     $sql = "
         SELECT s.id AS student_id,
                {$studentNameExpr} AS student_name,
@@ -120,7 +153,7 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
                SUM(f.amount) - IFNULL(SUM(p.amount), 0) AS balance
         FROM students s
         JOIN fees f ON f.student_id = s.id
-        LEFT JOIN payments p ON p.fee_id = f.id
+        LEFT JOIN payments p ON p.fee_id = f.id{$yearFilterOnJoin}
         WHERE (f.category IS NULL OR f.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship'))
         GROUP BY s.id, fee_grade
         ORDER BY student_name ASC, fee_grade ASC
@@ -167,14 +200,13 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
                 $sid = (int)$r['student_id'];
                 $paymentsForStudent = 0.0;
                 if ($paymentsExists) {
-                    // If payments linked to fees only, sum any payments by student_id directly if the column exists.
                     if (columnExists($conn, 'payments', 'student_id')) {
-                        $res2 = $conn->query("SELECT IFNULL(SUM(amount),0) AS totp FROM payments WHERE student_id = {$sid}");
+                        // Use equality filter when summing payments for student
+                        $sqlTotP = "SELECT IFNULL(SUM(amount),0) AS totp FROM payments WHERE student_id = {$sid}" . $yearFilterAppend;
+                        $res2 = $conn->query($sqlTotP);
                         if ($res2 && $rp = $res2->fetch_assoc()) {
                             $paymentsForStudent = (float)$rp['totp'];
                         }
-                    } else {
-                        $paymentsForStudent = 0.0;
                     }
                 }
                 $r['total_fees'] = null;
@@ -204,19 +236,19 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
                {$studentNameExpr} AS student_name,
                {$gradeExpr} AS grade,
                0 AS total_fees,
-               IFNULL((
+               IFNULL(( 
                    SELECT SUM(p.amount)
                    FROM payments p
                    JOIN fees f2 ON p.fee_id = f2.id
                    WHERE f2.student_id = s.id
-                     AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')
+                     AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')" . $yearFilterAppend . "
                ), 0) AS total_payments,
                0 - IFNULL(( 
                    SELECT SUM(p.amount)
                    FROM payments p
                    JOIN fees f2 ON p.fee_id = f2.id
                    WHERE f2.student_id = s.id
-                     AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')
+                     AND f2.category NOT IN ('Other Fees', 'Other Fee', 'Scholarships', 'Scholarship')" . $yearFilterAppend . "
                ), 0) AS balance
         FROM students s
         GROUP BY s.id
@@ -233,13 +265,15 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
 
 } else if ($feesExists && $paymentsExists && $paymentsHasStudentId) {
     // payments by student fallback; total_fees by grade mapping if available
+    // Use WHERE clause for payments table (standalone or appended as needed)
+    $wherePayments = $escapedPaymentDateCol ? " WHERE YEAR(p.`{$escapedPaymentDateCol}`) = " . intval($selectedYear) : "";
     $sql = "
     SELECT s.id AS student_id,
            {$studentNameExpr} AS student_name,
            {$gradeExpr} AS grade,
            0 AS total_fees,
-           IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id ), 0) AS total_payments,
-           0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
+           IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id" . $yearFilterAppend . " ), 0) AS total_payments,
+           0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id" . $yearFilterAppend . "), 0) AS balance
     FROM students s
     GROUP BY s.id
     ORDER BY student_name ASC
@@ -254,15 +288,15 @@ if ($feesExists && $feesHasAmount && $feesHasStudentId) {
         $errorMsg = 'Failed to fetch balances (DB query error); payments table exists but lacks fee_id.';
     }
 } else {
-    // No fees table — fallback using payments by student; compute per student using grade mapping or null if no grade
+    // No fees table — fallback using payments by student; filter by selected year
     if ($paymentsExists && columnExists($conn, 'payments', 'student_id')) {
         $sql = "
             SELECT s.id AS student_id,
                    {$studentNameExpr} AS student_name,
                    {$gradeExpr} AS grade,
                    0 AS total_fees,
-                   IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id ), 0) AS total_payments,
-                   0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id), 0) AS balance
+                   IFNULL(( SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id" . $yearFilterAppend . " ), 0) AS total_payments,
+                   0 - IFNULL((SELECT SUM(p.amount) FROM payments p WHERE p.student_id = s.id" . $yearFilterAppend . "), 0) AS balance
             FROM students s
             GROUP BY s.id
             ORDER BY student_name ASC
@@ -426,20 +460,21 @@ if ($paymentsExists) {
 
         // Build query based on available columns
         if ($paymentFeeIdCol && $feesExists && $feesHasStudentId) {
-            // Payments linked to fees
+            // Payments linked to fees (we can filter in ON)
             $sqlPayments = "
                 SELECT f.student_id, p.id, {$dateExpr} AS date, p.`{$paymentAmountCol}` AS amount, 
                        {$feeIdExpr} AS fee_id, {$noteExpr} AS note
                 FROM payments p
-                JOIN fees f ON p.fee_id = f.id
+                JOIN fees f ON p.fee_id = f.id{$yearFilterOnJoin}
                 ORDER BY f.student_id, {$dateExpr} DESC
             ";
         } else if ($paymentStudentIdCol) {
-            // Payments with direct student_id
+            // Payments with direct student_id: add standalone WHERE (no previous WHERE part)
+            $whereClause = $escapedPaymentDateCol ? " WHERE YEAR(p.`{$escapedPaymentDateCol}`) = " . intval($selectedYear) : "";
             $sqlPayments = "
                 SELECT p.student_id, p.id, {$dateExpr} AS date, p.`{$paymentAmountCol}` AS amount,
                        {$feeIdExpr} AS fee_id, {$noteExpr} AS note
-                FROM payments p
+                FROM payments p{$whereClause}
                 ORDER BY p.student_id, {$dateExpr} DESC
             ";
         } else {
@@ -956,6 +991,13 @@ if (!empty($balances)) {
 							<option value="grade_desc">Grade Descending</option>
 						<?php endif; ?>
 					</select>
+
+					<!-- Year navigation with prev / next buttons -->
+					<div style="display:inline-flex; align-items:center; gap:8px; margin-left: 12px; align-self:center;">
+						<button id="yearPrev" class="grade-sort-select" title="Previous year" <?= $uiPrevDisabled ? 'disabled' : '' ?>>‹</button>
+						<span id="yearLabel" style="display:inline-block; min-width:120px; text-align:center; font-weight:600;">Year: <?= intval($selectedYear) ?></span>
+						<button id="yearNext" class="grade-sort-select" title="Next year" <?= $uiNextDisabled ? 'disabled' : '' ?>>›</button>
+					</div>
 				</div>
 			</header>
 
@@ -1195,6 +1237,64 @@ if (!empty($balances)) {
 	<script>
 	document.getElementById('year').textContent = new Date().getFullYear();
 
+	// Attach selectedYear for client usage
+	const selectedYear = <?= intval($selectedYear) ?>;
+	const currentYear = <?= intval($currentYear) ?>;
+	const minYear = <?= intval($minYear) ?>;
+	const maxYear = <?= intval($maxYear) ?>;
+
+	// Replace year select change handler with prev/next buttons (allow broader range)
+	(function() {
+		const btnPrev = document.getElementById('yearPrev');
+		const btnNext = document.getElementById('yearNext');
+		const label = document.getElementById('yearLabel');
+
+		function setDisabledStates(year) {
+			if (btnPrev) btnPrev.disabled = (year <= minYear);
+			if (btnNext) btnNext.disabled = (year >= maxYear);
+			if (label) label.textContent = 'Year: ' + year;
+		}
+		setDisabledStates(selectedYear);
+
+		if (btnPrev) {
+			btnPrev.addEventListener('click', function() {
+				const newYear = Math.max(minYear, selectedYear - 1);
+				if (newYear !== selectedYear) {
+					window.location.href = '?year=' + newYear;
+				}
+			});
+		}
+
+		if (btnNext) {
+			btnNext.addEventListener('click', function() {
+				const newYear = Math.min(maxYear, selectedYear + 1);
+				if (newYear !== selectedYear) {
+					window.location.href = '?year=' + newYear;
+				}
+			});
+		}
+
+		// Make export pass year param
+		const exportBtn = document.getElementById('exportCsv');
+		if (exportBtn) {
+			exportBtn.addEventListener('click', async function() {
+				exportBtn.disabled = true;
+				const prevText = exportBtn.textContent;
+				exportBtn.textContent = 'Preparing...';
+				try {
+					const res = await fetch('export_account_balance.php?year=' + selectedYear, { credentials: 'same-origin' });
+					await downloadResponseAsFile(res, 'account_balance-' + selectedYear + '.csv');
+				} catch (err) {
+					console.error(err);
+					alert('Failed to download CSV. Check console for details.');
+				} finally {
+					exportBtn.disabled = false;
+					exportBtn.textContent = prevText;
+				}
+			});
+		}
+	})();
+
 	// Render the mini doughnut chart: paid vs outstanding
 	(function() {
 		const totalPaid = <?php echo json_encode((float)$totalPaidAll, JSON_NUMERIC_CHECK); ?>;
@@ -1255,8 +1355,8 @@ if (!empty($balances)) {
 			const prevText = btn.textContent;
 			btn.textContent = 'Preparing...';
 			try {
-				const res = await fetch('export_account_balance.php', { credentials: 'same-origin' });
-				await downloadResponseAsFile(res, 'account_balance.csv');
+				const res = await fetch('export_account_balance.php?year=' + selectedYear, { credentials: 'same-origin' });
+				await downloadResponseAsFile(res, 'account_balance-' + selectedYear + '.csv');
 			} catch (err) {
 				console.error(err);
 				alert('Failed to download CSV. Check console for details.');
