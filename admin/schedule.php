@@ -49,11 +49,11 @@ for ($h = 6; $h <= 17; $h++) {
 
 function default_schedule() {
     return [
-        ['period'=>'1','time'=>'8:00 - 8:45','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
-        ['period'=>'2','time'=>'8:50 - 9:35','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
-        ['period'=>'3','time'=>'9:40 - 10:25','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
-        ['period'=>'4','time'=>'10:30 - 11:15','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
-        ['period'=>'5','time'=>'11:20 - 12:05','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
+        ['room'=>'1','time'=>'8:00 - 8:45','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
+        ['room'=>'2','time'=>'8:50 - 9:35','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
+        ['room'=>'3','time'=>'9:40 - 10:25','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
+        ['room'=>'4','time'=>'10:30 - 11:15','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
+        ['room'=>'5','time'=>'11:20 - 12:05','monday'=>['teacher'=>'','subject'=>''],'tuesday'=>['teacher'=>'','subject'=>''],'wednesday'=>['teacher'=>'','subject'=>''],'thursday'=>['teacher'=>'','subject'=>''],'friday'=>['teacher'=>'','subject'=>'']],
     ];
 }
 
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['grade']) && isset($_P
                 if (!isset($r[$d]['teacher'])) $r[$d]['teacher']='';
                 if (!isset($r[$d]['subject'])) $r[$d]['subject']='';
             }
-            if (!isset($r['period'])) $r['period']='';
+            if (!isset($r['room'])) $r['room']='';
             if (!isset($r['time'])) $r['time']='';
         }
         // Store schedule with grade_section key
@@ -169,7 +169,7 @@ if (isset($_GET['export']) && $_GET['export']) {
     if ($grade === 'all' && $section === 'all') {
         foreach ($all as $key => $sched) {
             foreach ($sched as $r) {
-                $rows[] = array_merge([$key, $r['period'], $r['time']],
+                $rows[] = array_merge([$key, $r['room'], $r['time']],
                     [$r['monday']['teacher'], $r['monday']['subject'],
                      $r['tuesday']['teacher'], $r['tuesday']['subject'],
                      $r['wednesday']['teacher'], $r['wednesday']['subject'],
@@ -177,21 +177,21 @@ if (isset($_GET['export']) && $_GET['export']) {
                      $r['friday']['teacher'], $r['friday']['subject']]);
             }
         }
-        $headers = ['Grade-Section','Period','Time',
+        $headers = ['Grade-Section','Room No.','Time',
             'Mon Teacher','Mon Subject','Tue Teacher','Tue Subject','Wed Teacher','Wed Subject','Thu Teacher','Thu Subject','Fri Teacher','Fri Subject'];
         $filename = 'school_schedule_all.csv';
     } else {
         $key = ($grade === 'all') ? null : ($section === 'all' ? null : $grade . '_' . $section);
         if ($key && isset($all[$key])) {
             foreach ($all[$key] as $r) {
-                $rows[] = array_merge([$r['period'], $r['time']],
+                $rows[] = array_merge([$r['room'], $r['time']],
                     [$r['monday']['teacher'], $r['monday']['subject'],
                      $r['tuesday']['teacher'], $r['tuesday']['subject'],
                      $r['wednesday']['teacher'], $r['wednesday']['subject'],
                      $r['thursday']['teacher'], $r['thursday']['subject'],
                      $r['friday']['teacher'], $r['friday']['subject']]);
             }
-            $headers = ['Period','Time','Mon Teacher','Mon Subject','Tue Teacher','Tue Subject','Wed Teacher','Wed Subject','Thu Teacher','Thu Subject','Fri Teacher','Fri Subject'];
+            $headers = ['Room No.','Time','Mon Teacher','Mon Subject','Tue Teacher','Tue Subject','Wed Teacher','Wed Subject','Thu Teacher','Thu Subject','Fri Teacher','Fri Subject'];
             $filename = 'school_schedule_grade_' . $grade . '_section_' . $section . '.csv';
         }
     }
@@ -231,6 +231,79 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
 <title>Class Schedule - GGF Christian School Admin</title>
 <link rel="stylesheet" href="../css/admin.css">
 <link rel="stylesheet" href="../css/schedule.css">
+<style>
+/* Responsive styles for flexibility across screen sizes */
+@media (max-width: 768px) {
+    .main {
+        padding: 10px;
+    }
+    .topbar h1 {
+        font-size: 1.5rem;
+    }
+    .controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .controls div:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .controls label {
+        margin-left: 0;
+        margin-bottom: 5px;
+    }
+    .button-group {
+        align-self: flex-start;
+    }
+    .btn {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+        min-height: 40px; /* Touch-friendly */
+    }
+    .schedule-table {
+        font-size: 0.8rem;
+        overflow-x: auto; /* Horizontal scroll for table on small screens */
+        display: block;
+        white-space: nowrap;
+    }
+    .schedule-table th, .schedule-table td {
+        padding: 5px;
+        min-width: 100px; /* Prevent columns from being too narrow */
+    }
+    .day-cell {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .small {
+        font-size: 0.8rem;
+        min-height: 35px; /* Touch-friendly selects/inputs */
+    }
+    .row-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .data-table {
+        padding: 10px;
+    }
+    .footer {
+        font-size: 0.8rem;
+        text-align: center;
+    }
+}
+@media (max-width: 480px) {
+    .topbar h1 {
+        font-size: 1.2rem;
+    }
+    .schedule-table th, .schedule-table td {
+        min-width: 80px;
+        padding: 3px;
+    }
+    .btn {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+</style>
 </head>
 <body>
 <div class="app">
@@ -290,12 +363,12 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
                     <h3 style="margin-top:24px; margin-bottom:12px; color:#1a1a1a;"><?php echo htmlspecialchars($friendly) ?></h3>
                     <table class="schedule-table">
                         <thead>
-                            <tr><th>Period</th><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr>
+                            <tr><th>Room No.</th><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr>
                         </thead>
                         <tbody>
                         <?php foreach ($sched as $r): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($r['period']) ?></td>
+                                <td><?php echo htmlspecialchars($r['room']) ?></td>
                                 <td><?php echo htmlspecialchars($r['time']) ?></td>
                                 <?php foreach (['monday','tuesday','wednesday','thursday','friday'] as $d): ?>
                                     <td>
@@ -353,7 +426,7 @@ function createTable() {
     table.className = 'schedule-table';
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    ['Period','Time','Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(t => {
+    ['Room No.','Time','Monday','Tuesday','Wednesday','Thursday','Friday','Actions'].forEach(t => {
         const th = document.createElement('th'); th.textContent = t; headerRow.appendChild(th);
     });
     thead.appendChild(headerRow); table.appendChild(thead);
@@ -361,14 +434,15 @@ function createTable() {
 
     schedule.forEach((row, rIdx) => {
         const tr = document.createElement('tr');
-        // period
-        const tdPeriod = document.createElement('td');
-        const inpPeriod = document.createElement('input');
-        inpPeriod.className = 'small';
-        inpPeriod.value = row.period || '';
-        inpPeriod.onchange = () => schedule[rIdx].period = inpPeriod.value;
-        tdPeriod.appendChild(inpPeriod);
-        tr.appendChild(tdPeriod);
+        // room
+        const tdRoom = document.createElement('td');
+        const inpRoom = document.createElement('input');
+        inpRoom.className = 'small';
+        inpRoom.placeholder = 'Room No.';
+        inpRoom.value = row.room || '';
+        inpRoom.onchange = () => schedule[rIdx].room = inpRoom.value;
+        tdRoom.appendChild(inpRoom);
+        tr.appendChild(tdRoom);
         // time (select)
         const tdTime = document.createElement('td');
         const selectTime = document.createElement('select');
@@ -441,6 +515,15 @@ function createTable() {
             td.appendChild(div);
             tr.appendChild(td);
         });
+        // Actions column
+        const tdActions = document.createElement('td');
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn';
+        removeBtn.textContent = '🗑️ Remove';
+        removeBtn.onclick = () => removeRow(rIdx);
+        tdActions.appendChild(removeBtn);
+        tr.appendChild(tdActions);
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -453,9 +536,18 @@ function loadScheduleData(data) {
 }
 
 function addRow(){
-    const newPeriod = String(schedule.length + 1);
-    schedule.push({period:newPeriod,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
+    const newRoom = String(schedule.length + 1);
+    schedule.push({room:newRoom,time:'',monday:{teacher:'',subject:''},tuesday:{teacher:'',subject:''},wednesday:{teacher:'',subject:''},thursday:{teacher:'',subject:''},friday:{teacher:'',subject:''}});
     createTable();
+}
+
+function removeRow(index) {
+    if (schedule.length > 1) { // Prevent removing the last row to avoid empty schedule
+        schedule.splice(index, 1);
+        createTable();
+    } else {
+        alert('Cannot remove the last period.');
+    }
 }
 
 function saveSchedule() {
