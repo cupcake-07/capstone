@@ -4495,5 +4495,30 @@
             "room": ""
         }
     ],
-    "K1_A": []
+    "K1_A": [
+        {
+            "room": "129",
+            "time": "6:00 AM - 7:00 AM",
+            "monday": {
+                "teacher": "Maria DB",
+                "subject": "Mathematics"
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "Maria DB",
+                "subject": "English"
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ]
 }
