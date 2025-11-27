@@ -51,9 +51,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Student');
   <!-- Top NAV -->
   <nav class="navbar">
     <div class="navbar-brand">
-     
-        <img src="g2flogo.png" alt="Glorious God's Family Logo" style="height: 40px; margin-left:-20px"  />
-     
+      <!-- Mobile menu toggle (hidden on wide screens via CSS) -->
+      
+      <img src="g2flogo.png" alt="Glorious God's Family Logo" style="height: 40px; margin-left:-20px"  />
       <div class="navbar-text">
         <div class="navbar-title">Glorious God's Family</div>
         <div class="navbar-subtitle">Christian School</div>
@@ -62,7 +62,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Student');
     <div class="navbar-actions">
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
-       <button class="btn-icon">⋮</button>
+        <button class="btn-icon" aria-label="User menu">⋮</button>
          
         </a>
       </div>
@@ -107,6 +107,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Student');
       </section>
     </main>
   </div>
+
+  <!-- Mobile overlay used to capture taps and close the sidebar -->
+  <div id="mobile-overlay" class="mobile-overlay" hidden aria-hidden="true"></div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -259,6 +262,29 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Student');
       currentDate.setMonth(currentDate.getMonth() + 1);
       renderCalendar();
     });
+
+    // Sidebar toggle logic for small screens
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const bodyEl = document.body;
+
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        bodyEl.classList.toggle('sidebar-open');
+        if (mobileOverlay) {
+          const isHidden = mobileOverlay.hasAttribute('hidden');
+          if (isHidden) mobileOverlay.removeAttribute('hidden');
+          else mobileOverlay.setAttribute('hidden', '');
+        }
+      });
+    }
+
+    if (mobileOverlay) {
+      mobileOverlay.addEventListener('click', () => {
+        bodyEl.classList.remove('sidebar-open');
+        mobileOverlay.setAttribute('hidden', '');
+      });
+    }
 
     renderCalendar();
   });
