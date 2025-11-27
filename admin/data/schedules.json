@@ -1,5 +1,30 @@
 {
-    "1_A": [],
+    "1_A": [
+        {
+            "room": "101",
+            "time": "7:00 AM - 8:00 AM",
+            "monday": {
+                "teacher": "Maria DB",
+                "subject": "Mathematics"
+            },
+            "tuesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "wednesday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "thursday": {
+                "teacher": "",
+                "subject": ""
+            },
+            "friday": {
+                "teacher": "",
+                "subject": ""
+            }
+        }
+    ],
     "1_B": [
         {
             "period": "2",

@@ -24,6 +24,32 @@ if ($colCheck) {
 $notArchivedClauseJoin = $hasIsArchived ? " JOIN students s ON g.student_id = s.id AND (s.is_archived IS NULL OR s.is_archived = 0)" : " JOIN students s ON g.student_id = s.id";
 $notArchivedClauseWhere = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
 
+// Determine whether the grades table uses a `school_year` column
+$hasGradesSchoolYear = false;
+$colCheckGrades = $conn->query("SHOW COLUMNS FROM grades LIKE 'school_year'");
+if ($colCheckGrades) {
+    $hasGradesSchoolYear = ($colCheckGrades->num_rows > 0);
+    $colCheckGrades->close();
+}
+
+// Helper: compute a default academic start year (e.g. 2025 for 2025-2026)
+// Use June as a boundary where months >= 6 use the current year as the start of the academic year
+$today = new DateTime();
+$month = (int)$today->format('n');
+$defaultAcademicStart = ($month >= 6) ? (int)$today->format('Y') : ((int)$today->format('Y') - 1);
+
+// Selected school year can be provided by GET or stored in the session; persist selection
+$selectedYearStart = intval($_GET['year'] ?? $_SESSION['selected_school_year'] ?? $defaultAcademicStart);
+if ($selectedYearStart <= 0) {
+    $selectedYearStart = $defaultAcademicStart;
+}
+$_SESSION['selected_school_year'] = $selectedYearStart;
+$selectedYearLabel = htmlspecialchars($selectedYearStart); // e.g. '2025'
+
+// NEW: Only allow grades for the current academic start year (safeguard so nothing shows/saves for other years)
+$ALLOWED_YEAR_START = $defaultAcademicStart;
+$isAllowedSchoolYear = ($selectedYearStart === $ALLOWED_YEAR_START);
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -32,26 +58,49 @@ function validateStudentGradeInput($student_id, $subjects) {
     return $student_id > 0 && !empty($subjects);
 }
 
-function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter) {
+// saveStudentGrades: support optional school_year parameter and conditional SQL
+function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $school_year = null) {
+    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart;
+
+    // Determine which year to check for save restrictions
+    $targetYear = $school_year ?? $selectedYearStart;
+    // Only allow saving for the allowed year
+    if ($targetYear !== $ALLOWED_YEAR_START) {
+        error_log("Attempted to save grades for non-allowed year: " . intval($targetYear));
+        return false;
+    }
+
     $savedAny = false;
-    
-    // First, delete all existing grades for this student and quarter
-    $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ?");
+
+    // First, delete all existing grades for this student and quarter (and year if column exists)
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?");
+    } else {
+        $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ?");
+    }
     if ($deleteStmt) {
-        $pattern = "Q" . $quarter . "%";
-        $deleteStmt->bind_param('is', $student_id, $pattern);
+        $pattern = "Q" . intval($quarter) . "%";
+        if ($hasGradesSchoolYear && $school_year !== null) {
+            $deleteStmt->bind_param('isi', $student_id, $pattern, $school_year);
+        } else {
+            $deleteStmt->bind_param('is', $student_id, $pattern);
+        }
         $deleteStmt->execute();
         $deleteStmt->close();
     }
-    
-    // Now insert the new grades
-    $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
-    
+
+    // Now insert the new grades (include school_year column if the DB supports it)
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score, school_year) VALUES (?, ?, ?, 100, ?)");
+    } else {
+        $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+    }
+
     if (!$stmt) {
         error_log("Prepare failed: " . $conn->error);
         return false;
     }
-    
+
     foreach ($subjects as $index => $subject) {
         // Skip empty subjects
         if (empty($subject) || $subject === null) continue;
@@ -62,12 +111,19 @@ function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter) {
         if ($scoreValue === '' || !is_numeric($scoreValue)) continue;
         
         $score = floatval($scoreValue);
-        $assignment = "Q" . $quarter . " - " . $subject;
+        $assignment = "Q" . intval($quarter) . " - " . $subject;
         
         // Properly bind parameters for each iteration
-        if (!$stmt->bind_param('isd', $student_id, $assignment, $score)) {
-            error_log("Bind failed: " . $stmt->error);
-            continue;
+        if ($hasGradesSchoolYear && $school_year !== null) {
+            if (!$stmt->bind_param('isdi', $student_id, $assignment, $score, $school_year)) {
+                error_log("Bind failed: " . $stmt->error);
+                continue;
+            }
+        } else {
+            if (!$stmt->bind_param('isd', $student_id, $assignment, $score)) {
+                error_log("Bind failed: " . $stmt->error);
+                continue;
+            }
         }
         
         if (!$stmt->execute()) {
@@ -82,33 +138,70 @@ function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter) {
     return $savedAny;
 }
 
-function updateStudentAverage($conn, $student_id) {
-    // Calculate average from ALL grades for this student (across all quarters)
-    $avgRes = $conn->query("SELECT AVG(score) as avg_score FROM grades WHERE student_id = " . intval($student_id));
-    $avgRow = $avgRes ? $avgRes->fetch_assoc() : null;
-    $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : 0;
-    
-    // Always update the students table with the calculated average
+// updateStudentAverage: optionally compute avg only for the selected school year
+function updateStudentAverage($conn, $student_id, $school_year = null) {
+    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart;
+    $studentIdInt = intval($student_id);
+
+    // Protect updates when the year is not allowed
+    $targetYear = $school_year ?? $selectedYearStart;
+    if ($targetYear !== $ALLOWED_YEAR_START) {
+        // Do not update DB if not allowed; return zero as the average
+        return 0;
+    }
+
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        // Exclude placeholder zeros when computing averages
+        $stmt = $conn->prepare("SELECT AVG(NULLIF(score, 0)) as avg_score FROM grades WHERE student_id = ? AND school_year = ?");
+        $avgValue = 0;
+        if ($stmt) {
+            $stmt->bind_param('ii', $studentIdInt, $school_year);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $avgRow = $res ? $res->fetch_assoc() : null;
+            $stmt->close();
+            $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : 0;
+        }
+    } else {
+        $avgRes = $conn->query("SELECT AVG(NULLIF(score, 0)) as avg_score FROM grades WHERE student_id = " . intval($student_id));
+        $avgRow = $avgRes ? $avgRes->fetch_assoc() : null;
+        $avgValue = $avgRow['avg_score'] !== null ? round(floatval($avgRow['avg_score']), 2) : 0;
+    }
+
     $up = $conn->prepare("UPDATE students SET avg_score = ? WHERE id = ?");
     if ($up) {
-        $up->bind_param('di', $avgValue, $student_id);
+        $avgValueFloat = floatval($avgValue);
+        $up->bind_param('di', $avgValueFloat, $studentIdInt);
         $up->execute();
         $up->close();
     }
-    
+
     return $avgValue;
 }
 
-// ============================================================================
-// NEW: helper to fetch saved grades for a student + quarter (subject => score)
-// ============================================================================
+// Fetch saved grades for a student + quarter (subject => score), filtered by school_year when present
+function fetchStudentQuarterGrades($conn, $student_id, $quarter, $school_year = null) {
+    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart;
 
-function fetchStudentQuarterGrades($conn, $student_id, $quarter) {
+    $targetYear = $school_year ?? $selectedYearStart;
+    if ($targetYear !== $ALLOWED_YEAR_START) {
+        // If not allowed year, return empty, no grades
+        return [];
+    }
+    
     $data = [];
     $pattern = "Q" . intval($quarter) . " - %";
-    $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?");
+    } else {
+        $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
+    }
     if (!$stmt) return $data;
-    $stmt->bind_param('is', $student_id, $pattern);
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        $stmt->bind_param('isi', $student_id, $pattern, $school_year);
+    } else {
+        $stmt->bind_param('is', $student_id, $pattern);
+    }
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
@@ -125,6 +218,7 @@ function fetchStudentQuarterGrades($conn, $student_id, $quarter) {
 }
 
 function handleGradeSubmission($conn) {
+    global $selectedYearStart, $ALLOWED_YEAR_START;
     $message = '';
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['student_id'])) {
@@ -132,23 +226,42 @@ function handleGradeSubmission($conn) {
         $subjects = $_POST['subjects'] ?? [];
         $scores = $_POST['scores'] ?? [];
         $quarter = intval($_POST['quarter'] ?? 1);
+        // Prefer form-supplied year if present; fall back to session/common selectedYearStart
+        $school_year = isset($_POST['school_year']) ? intval($_POST['school_year']) : $selectedYearStart;
+
+        // If year not allowed, block the request (support AJAX response)
+        if ($school_year !== $ALLOWED_YEAR_START) {
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Grades are only allowed for the academic year starting ' . $ALLOWED_YEAR_START]);
+                exit;
+            } else {
+                $message = '<div class="message-box message-error">✗ Grades are only available for the academic year ' . $ALLOWED_YEAR_START . ' - ' . ($ALLOWED_YEAR_START + 1) . '</div>';
+                return $message;
+            }
+        }
 
         if (validateStudentGradeInput($student_id, $subjects)) {
-            $savedAny = saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter);
+            $savedAny = saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $school_year);
             
             if ($savedAny) {
-                // Always update average after saving grades
-                $avgValue = updateStudentAverage($conn, $student_id);
+                // Always update average after saving grades (filter by year if available)
+                $avgValue = updateStudentAverage($conn, $student_id, $school_year);
                 
                 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
                 if ($isAjax) {
                     // return success + avg + the saved quarter grades so client can update UI without reload
-                    $savedData = fetchStudentQuarterGrades($conn, $student_id, $quarter);
+                    $savedData = fetchStudentQuarterGrades($conn, $student_id, $quarter, $school_year);
                     header('Content-Type: application/json');
-                    echo json_encode(['success' => true, 'avg' => $avgValue, 'data' => $savedData]);
+                    echo json_encode(['success' => true, 'avg' => $avgValue, 'data' => $savedData, 'year' => $school_year]);
                     exit;
                 } else {
-                    header('Location: ' . $_SERVER['PHP_SELF'] . '?student=' . $student_id);
+                    // Redirect to keep the selected year in the URL
+                    $qs = $_GET;
+                    $qs['student'] = $student_id;
+                    $qs['year'] = $school_year;
+                    header('Location: ' . $_SERVER['PHP_SELF'] . '?' . http_build_query($qs));
                     exit;
                 }
             } else {
@@ -162,7 +275,7 @@ function handleGradeSubmission($conn) {
 
 function getStudentsByGradeLevel($conn) {
     // Filter out archived students if the column exists
-    global $hasIsArchived;
+    global $hasIsArchived, $isAllowedSchoolYear;
     $whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
 
     $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students{$whereClause} ORDER BY grade_level ASC, section ASC, name ASC");
@@ -176,6 +289,11 @@ function getStudentsByGradeLevel($conn) {
             
             $row['grade_level'] = $gradeLevel;
             $row['section'] = $section;
+
+            // NEW: Hide per-student average when not viewing the allowed/current academic start year
+            if (empty($isAllowedSchoolYear)) {
+                $row['avg_score'] = null;
+            }
             
             if (!isset($studentsByGradeLevel[$gradeLevel])) {
                 $studentsByGradeLevel[$gradeLevel] = [];
@@ -187,76 +305,89 @@ function getStudentsByGradeLevel($conn) {
     return $studentsByGradeLevel;
 }
 
+// getGradeLevelStats: filter by school_year when grains table has column. Return zeros if selected year not allowed.
 function getGradeLevelStats($conn, $grade_level) {
-    global $hasIsArchived;
-    // include not-archived filter when the column exists
+    global $hasIsArchived, $hasGradesSchoolYear, $selectedYearStart, $ALLOWED_YEAR_START;
+    
+    if ($selectedYearStart !== $ALLOWED_YEAR_START) {
+        return ['count' => 0, 'avg' => null];
+    }
+
     $archiveFilter = $hasIsArchived ? " AND (s.is_archived IS NULL OR s.is_archived = 0)" : "";
 
-    $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
-        JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = ?{$archiveFilter}");
-    if (!$stmt) return ['count' => 0, 'avg' => 0];
-    
-    $stmt->bind_param('s', $grade_level);
+    if ($hasGradesSchoolYear) {
+        // count/avg should ignore zero placeholder scores
+        $stmt = $conn->prepare("SELECT COUNT(NULLIF(g.score, 0)) as count, AVG(NULLIF(g.score, 0)) as avg FROM grades g 
+            JOIN students s ON g.student_id = s.id 
+            WHERE s.grade_level = ? AND g.school_year = ?{$archiveFilter}");
+        if (!$stmt) return ['count' => 0, 'avg' => null];
+        $stmt->bind_param('si', $grade_level, $selectedYearStart);
+    } else {
+        $stmt = $conn->prepare("SELECT COUNT(NULLIF(g.score, 0)) as count, AVG(NULLIF(g.score, 0)) as avg FROM grades g 
+            JOIN students s ON g.student_id = s.id 
+            WHERE s.grade_level = ?{$archiveFilter}");
+        if (!$stmt) return ['count' => 0, 'avg' => null];
+        $stmt->bind_param('s', $grade_level);
+    }
+
     $stmt->execute();
     $result = $stmt->get_result();
-    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => null];
     $stmt->close();
     return $data;
 }
 
-function getStudentsBySection($conn) {
-    global $hasIsArchived;
-    $whereClause = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
-
-    $studentsResult = $conn->query("SELECT id, name, email, grade_level, section, avg_score FROM students{$whereClause} ORDER BY grade_level ASC, section ASC, name ASC");
-    $studentsBySection = [];
-    
-    if ($studentsResult) {
-        while ($row = $studentsResult->fetch_assoc()) {
-            $key = ($row['grade_level'] ?? 'N/A') . ' - ' . ($row['section'] ?? 'N/A');
-            if (!isset($studentsBySection[$key])) {
-                $studentsBySection[$key] = [];
-            }
-            $studentsBySection[$key][] = $row;
-        }
-    }
-    
-    return $studentsBySection;
-}
-
-function getGradeStatistics($conn) {
-    global $hasIsArchived, $notArchivedClauseJoin;
-    // If is_archived exists, join to students and exclude archived via the join; otherwise join to students to compute the same stats
-    $join = $notArchivedClauseJoin;
-    $statsResult = $conn->query("SELECT 
-        AVG(g.score) as avg_score,
-        MAX(g.score) as max_score,
-        MIN(g.score) as min_score
-    FROM grades g{$join}");
-    return $statsResult ? $statsResult->fetch_assoc() : ['avg_score' => 0, 'max_score' => 0, 'min_score' => 0];
-}
-
+// getSectionStats: also filter by school_year when column present but return zeros if not allowed
 function getSectionStats($conn, $grade_level, $section) {
-    global $hasIsArchived;
+    global $hasIsArchived, $hasGradesSchoolYear, $selectedYearStart, $ALLOWED_YEAR_START;
+    
+    if ($selectedYearStart !== $ALLOWED_YEAR_START) {
+        return ['count' => 0, 'avg' => null];
+    }
+
     $archiveFilter = $hasIsArchived ? " AND (s.is_archived IS NULL OR s.is_archived = 0)" : "";
 
-    $stmt = $conn->prepare("SELECT COUNT(*) as count, AVG(score) as avg FROM grades g 
-        JOIN students s ON g.student_id = s.id 
-        WHERE s.grade_level = ? AND s.section = ?{$archiveFilter}");
-    if (!$stmt) return ['count' => 0, 'avg' => 0];
-    
-    $stmt->bind_param('ss', $grade_level, $section);
+    if ($hasGradesSchoolYear) {
+        // Count & average exclude zero placeholder scores to avoid skewing results
+        $stmt = $conn->prepare("SELECT COUNT(NULLIF(g.score, 0)) as count, AVG(NULLIF(g.score, 0)) as avg FROM grades g 
+            JOIN students s ON g.student_id = s.id 
+            WHERE s.grade_level = ? AND s.section = ? AND g.school_year = ?{$archiveFilter}");
+        if (!$stmt) return ['count' => 0, 'avg' => null];
+        $stmt->bind_param('ssi', $grade_level, $section, $selectedYearStart);
+    } else {
+        $stmt = $conn->prepare("SELECT COUNT(NULLIF(g.score, 0)) as count, AVG(NULLIF(g.score, 0)) as avg FROM grades g 
+            JOIN students s ON g.student_id = s.id 
+            WHERE s.grade_level = ? AND s.section = ?{$archiveFilter}");
+        if (!$stmt) return ['count' => 0, 'avg' => null];
+        $stmt->bind_param('ss', $grade_level, $section);
+    }
+
     $stmt->execute();
     $result = $stmt->get_result();
-    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => 0];
+    $data = $result ? $result->fetch_assoc() : ['count' => 0, 'avg' => null];
     $stmt->close();
     return $data;
 }
 
 function getStudentGradeCount($conn, $student_id) {
-    $result = $conn->query("SELECT COUNT(*) as count FROM grades WHERE student_id = " . intval($student_id));
-    return $result ? $result->fetch_assoc()['count'] : 0;
+    global $hasGradesSchoolYear, $selectedYearStart, $ALLOWED_YEAR_START;
+    if ($selectedYearStart !== $ALLOWED_YEAR_START) {
+        return 0;
+    }
+
+    if ($hasGradesSchoolYear) {
+        $stmt = $conn->prepare("SELECT COUNT(*) as count FROM grades WHERE student_id = ? AND school_year = ?");
+        if (!$stmt) return 0;
+        $stmt->bind_param('ii', $student_id, $selectedYearStart);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $data = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        return $data ? intval($data['count']) : 0;
+    } else {
+        $result = $conn->query("SELECT COUNT(*) as count FROM grades WHERE student_id = " . intval($student_id));
+        return $result ? $result->fetch_assoc()['count'] : 0;
+    }
 }
 
 function getSectionsForGrade($conn, $grade_level) {
@@ -284,6 +415,44 @@ function getSectionsForGrade($conn, $grade_level) {
     return $sections;
 }
 
+// Add the missing getGradeStatistics function (respects archive + school_year filters)
+// Return zeros if selected year not allowed (only stats for allowed year 2025)
+function getGradeStatistics($conn) {
+    global $hasIsArchived, $notArchivedClauseJoin, $hasGradesSchoolYear, $selectedYearStart, $ALLOWED_YEAR_START;
+
+    if ($selectedYearStart !== $ALLOWED_YEAR_START) {
+        return ['avg_score' => null, 'max_score' => null, 'min_score' => null];
+    }
+
+    $join = $notArchivedClauseJoin; // uses the students join and archive filter if present
+
+    if ($hasGradesSchoolYear) {
+        // exclude placeholder zeros from averages/min; count only meaningful scores
+        $stmt = $conn->prepare("SELECT 
+            AVG(NULLIF(g.score, 0)) as avg_score,
+            MAX(NULLIF(g.score, 0)) as max_score,
+            MIN(NULLIF(g.score, 0)) as min_score
+        FROM grades g{$join} WHERE g.school_year = ?");
+        if (!$stmt) {
+            return ['avg_score' => null, 'max_score' => null, 'min_score' => null];
+        }
+        $stmt->bind_param('i', $selectedYearStart);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $data = $res ? $res->fetch_assoc() : ['avg_score' => null, 'max_score' => null, 'min_score' => null];
+        $stmt->close();
+        return $data;
+    } else {
+        // No school_year column: aggregate across all years (but still optionally exclude archived via join)
+        $statsResult = $conn->query("SELECT 
+            AVG(NULLIF(g.score, 0)) as avg_score,
+            MAX(NULLIF(g.score, 0)) as max_score,
+            MIN(NULLIF(g.score, 0)) as min_score
+        FROM grades g{$join}");
+        return $statsResult ? $statsResult->fetch_assoc() : ['avg_score' => null, 'max_score' => null, 'min_score' => null];
+    }
+}
+
 // ============================================================================
 // MAIN LOGIC
 // ============================================================================
@@ -295,6 +464,13 @@ $stats = getGradeStatistics($conn);
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 $subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Physical Education', 'Arts', 'Music', 'Computer'];
 $quarters = [1, 2, 3, 4];
+
+// Build prev/next URLs once; preserve other GET params
+$baseQs = $_GET;
+$baseQsPrev = array_merge($baseQs, ['year' => ($selectedYearStart - 1)]);
+$baseQsNext = array_merge($baseQs, ['year' => ($selectedYearStart + 1)]);
+$prevUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsPrev);
+$nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
 ?>
 <!doctype html>
 <html lang="en">
@@ -327,6 +503,8 @@ $quarters = [1, 2, 3, 4];
         </a>
       </div>
     </div>
+
+    <!-- removed year selector from navbar; it will be placed into the header to the right-most -->
   </nav>
 
   <div class="page-wrapper">
@@ -350,13 +528,37 @@ $quarters = [1, 2, 3, 4];
     <!-- MAIN CONTENT -->
     <main class="main">
       <!-- PAGE HEADER -->
-      <header class="header">
+      <!-- header: Title -> Year selector row -> Subtitle row -->
+      <header class="header" style="display:flex; flex-direction:column; gap:8px;">
         <h1>Grades Management</h1>
-        <p style="color: #666; margin-top: 4px; font-size: 14px;">Add and manage student grades by grade and section</p>
+
+        <!-- Year selector directly below the title, left-aligned -->
+        <div style="display:flex; width:100%; justify-content:flex-start; margin-top:4px;">
+          <div class="year-selector" style="display:flex; align-items:center; gap:8px;">
+            <a href="<?php echo $prevUrl; ?>" class="year-btn" title="Previous year" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:6px; background:#f0f2f6; color:#000; text-decoration:none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">‹</a>
+            <div style="font-weight:700; color: #111827; padding: 8px 12px; border-radius: 6px; background: #f8fafc;">
+              Year: <?php echo $selectedYearLabel; ?>
+            </div>
+            <a href="<?php echo $nextUrl; ?>" class="year-btn" title="Next year" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:6px; background:#111828; color:#fff; text-decoration:none; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">›</a>
+          </div>
+        </div>
+
+        <!-- Subtitle & Academic Year (unchanged) -->
+        <div style="min-width:0;">
+          <p style="color: #666; margin-top: 4px; font-size: 14px; margin: 0;">Add and manage student grades by grade and section</p>
+          <div style="margin-top: 8px;"><small>Academic Year: <?php echo $selectedYearStart . ' - ' . ($selectedYearStart + 1); ?></small></div>
+        </div>
       </header>
 
       <!-- MESSAGES -->
-      <?php if (!empty($message)) echo $message; ?>
+      <?php
+        // Show message when a non-allowed year is selected (no grades shown)
+        if (!$isAllowedSchoolYear) {
+          echo '<div class="message-box message-info">Grades are available only for the current academic year (' . $ALLOWED_YEAR_START . ' - ' . ($ALLOWED_YEAR_START + 1) . '). Selecting other years will show no grade data.</div>';
+        }
+
+        if (!empty($message)) echo $message;
+      ?>
 
       <!-- STATISTICS SECTION -->
       <section class="stats-section" data-section="statistics">
@@ -364,15 +566,15 @@ $quarters = [1, 2, 3, 4];
         <div class="stats-cards">
           <div class="stat-card">
             <div class="stat-label">Average Score</div>
-            <div class="stat-value"><?php echo htmlspecialchars(number_format($stats['avg_score'] ?? 0, 1)); ?>%</div>
+            <div class="stat-value"><?php echo ($isAllowedSchoolYear && $stats['avg_score'] !== null) ? htmlspecialchars(number_format($stats['avg_score'], 1)) . '%' : '-'; ?></div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Highest Score</div>
-            <div class="stat-value"><?php echo htmlspecialchars($stats['max_score'] ?? 0); ?>%</div>
+            <div class="stat-value"><?php echo ($isAllowedSchoolYear && $stats['max_score'] !== null) ? htmlspecialchars(number_format($stats['max_score'], 1)) . '%' : '-'; ?></div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Lowest Score</div>
-            <div class="stat-value"><?php echo htmlspecialchars($stats['min_score'] ?? 0); ?>%</div>
+            <div class="stat-value"><?php echo ($isAllowedSchoolYear && $stats['min_score'] !== null) ? htmlspecialchars(number_format($stats['min_score'], 1)) . '%' : '-'; ?></div>
           </div>
         </div>
       </section>
@@ -431,7 +633,7 @@ $quarters = [1, 2, 3, 4];
                    <div class="grade-level-stats">
                      <span class="stat-badge">Students: <?php echo count($allStudents); ?></span>
                      <span class="stat-badge">Grades: <?php echo $gradeLevelStats['count']; ?></span>
-                     <span class="stat-badge">Avg: <?php echo number_format($gradeLevelStats['avg'] ?? 0, 1); ?>%</span>
+                     <span class="stat-badge">Avg: <?php echo ($isAllowedSchoolYear && $gradeLevelStats['avg'] !== null) ? number_format($gradeLevelStats['avg'], 1) . '%' : '-'; ?></span>
                    </div>
                  </div>
                  <span class="toggle-icon">▼</span>
@@ -451,7 +653,7 @@ $quarters = [1, 2, 3, 4];
                           <div class="section-stats">
                             <span class="stat-badge">Students: <?php echo $studentsCount; ?></span>
                             <span class="stat-badge">Grades: <?php echo $sectionStats['count']; ?></span>
-                            <span class="stat-badge">Avg: <?php echo number_format($sectionStats['avg'] ?? 0, 1); ?>%</span>
+                            <span class="stat-badge">Avg: <?php echo ($isAllowedSchoolYear && $sectionStats['avg'] !== null) ? number_format($sectionStats['avg'], 1) . '%' : '-'; ?></span>
                           </div>
                         </div>
                         <span class="toggle-icon">▼</span>
@@ -460,7 +662,7 @@ $quarters = [1, 2, 3, 4];
                       <!-- removed inline styles; JS/CSS control collapse -->
                       <div class="students-cards-grid">
                         <?php foreach ($sectionStudents as $student): 
-                          $studentAvg = isset($student['avg_score']) && $student['avg_score'] !== null 
+                          $studentAvg = ($isAllowedSchoolYear && isset($student['avg_score']) && $student['avg_score'] !== null) 
                             ? number_format(floatval($student['avg_score']), 1) 
                             : '-';
                           $displaySection = htmlspecialchars($student['section'] ?? 'N/A');
@@ -507,7 +709,9 @@ $quarters = [1, 2, 3, 4];
           </div>
           <form id="gradeForm" method="POST" class="grade-modal-form">
             <input type="hidden" name="student_id" id="modalStudentId">
-            
+            <!-- Add a hidden input for a selected school year -->
+            <input type="hidden" name="school_year" id="selectedSchoolYear" value="<?php echo intval($selectedYearStart); ?>">
+
             <!-- QUARTER SELECTOR -->
             <fieldset class="quarter-selector">
               <legend>Select Quarter:</legend>
@@ -553,7 +757,7 @@ $quarters = [1, 2, 3, 4];
 
             <!-- FORM ACTIONS -->
             <div class="form-actions">
-              <button type="submit" name="add_grade" class="submit-btn">Save Grades</button>
+              <button type="submit" name="add_grade" class="submit-btn" id="saveGradeButton">Save Grades</button>
               <button type="button" class="cancel-btn" id="cancelGradeModal">Cancel</button>
             </div>
           </form>
@@ -564,6 +768,11 @@ $quarters = [1, 2, 3, 4];
 
   <!-- SCRIPTS -->
   <script>
+    // expose selected year to JS
+    const SELECTED_SCHOOL_YEAR = <?php echo intval($selectedYearStart); ?>;
+    // Add the allowed const
+    const ALLOWED_SCHOOL_YEAR = <?php echo intval($ALLOWED_YEAR_START); ?>;
+
     // ========================================================================
     // STATE & CONSTANTS
     // ========================================================================
@@ -575,10 +784,13 @@ $quarters = [1, 2, 3, 4];
       cancelGradeModal: document.getElementById('cancelGradeModal'),
       quarterTabs: document.querySelectorAll('.quarter-tab'),
       selectedQuarterInput: document.getElementById('selectedQuarter'),
+      // add a reference to the hidden school year input
+      selectedSchoolYear: document.getElementById('selectedSchoolYear'),
       scoreInputs: document.querySelectorAll('.subject-score-input'),
       averageScore: document.getElementById('averageScore'),
       modalStudentId: document.getElementById('modalStudentId'),
       modalStudentName: document.getElementById('modalStudentName'),
+      // remove the static studentCards reference here, we'll re-query on DOMContentLoaded
       studentCards: document.querySelectorAll('.student-grade-card')
     };
 
@@ -589,6 +801,10 @@ $quarters = [1, 2, 3, 4];
     function openGradeModal(studentId, studentName) {
       DOM.modalStudentId.value = studentId;
       DOM.modalStudentName.textContent = studentName;
+      // guard in case the element is missing
+      if (DOM.selectedSchoolYear) {
+        DOM.selectedSchoolYear.value = SELECTED_SCHOOL_YEAR;
+      }
       DOM.gradeModal.style.display = 'flex';
       
       resetFormInputs();
@@ -629,7 +845,7 @@ $quarters = [1, 2, 3, 4];
     function loadStudentQuarterGrades(studentId, quarter) {
       DOM.scoreInputs.forEach(input => input.value = '');
       
-      fetch('get-student-grades.php?student_id=' + encodeURIComponent(studentId) + '&quarter=' + encodeURIComponent(quarter))
+      fetch('get-student-grades.php?student_id=' + encodeURIComponent(studentId) + '&quarter=' + encodeURIComponent(quarter) + '&year=' + encodeURIComponent(SELECTED_SCHOOL_YEAR))
         .then(res => res.text())
         .then(text => {
           try {
@@ -798,6 +1014,9 @@ $quarters = [1, 2, 3, 4];
       // restore states first so initial layout is correct
       restoreCollapsedStates();
 
+      // If not allowed year, show an inline info (we already echo a PHP message) and prevent editing/saving
+      const disallowedYear = (SELECTED_SCHOOL_YEAR !== ALLOWED_SCHOOL_YEAR);
+
       // Section toggle event delegation
       document.querySelectorAll('[data-toggle="section"]').forEach(header => {
         header.addEventListener('click', function(e) {
@@ -819,22 +1038,37 @@ $quarters = [1, 2, 3, 4];
         });
       });
 
-      // Student card click handlers
-      DOM.studentCards.forEach(card => {
-        card.addEventListener('click', function() {
-          const studentId = this.dataset.studentId;
-          const studentName = this.dataset.studentName;
-          openGradeModal(studentId, studentName);
-        });
+      // Re-query student cards at runtime and attach event handlers (ensures listeners are bound to actual elements)
+      const studentCardNodes = document.querySelectorAll('.student-grade-card');
+      studentCardNodes.forEach(card => {
+        if (disallowedYear) {
+          // If the selected year is not allowed, prevent edit and show a brief message on click
+          card.addEventListener('click', function() {
+            alert('Grades are only available for the current academic year (' + ALLOWED_SCHOOL_YEAR + ' - ' + (ALLOWED_SCHOOL_YEAR + 1) + ').');
+          });
 
-        card.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
+          card.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              alert('Grades are only available for the current academic year (' + ALLOWED_SCHOOL_YEAR + ' - ' + (ALLOWED_SCHOOL_YEAR + 1) + ').');
+            }
+          });
+        } else {
+          card.addEventListener('click', function() {
             const studentId = this.dataset.studentId;
             const studentName = this.dataset.studentName;
             openGradeModal(studentId, studentName);
-          }
-        });
+          });
+
+          card.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              const studentId = this.dataset.studentId;
+              const studentName = this.dataset.studentName;
+              openGradeModal(studentId, studentName);
+            }
+          });
+        }
       });
 
       // Quarter tab click handlers
@@ -852,10 +1086,12 @@ $quarters = [1, 2, 3, 4];
         });
       });
 
-      // Score input change listeners
-      DOM.scoreInputs.forEach(input => {
-        input.addEventListener('input', calculateAverage);
-      });
+      // Score input change listeners (only active if year allowed)
+      if (!disallowedYear) {
+        DOM.scoreInputs.forEach(input => {
+          input.addEventListener('input', calculateAverage);
+        });
+      }
 
       // Modal control listeners
       DOM.closeGradeModal.addEventListener('click', closeModal);
@@ -865,9 +1101,79 @@ $quarters = [1, 2, 3, 4];
         if (e.target === DOM.gradeModal) closeModal();
       });
 
+      // Disable save button if the selected year isn't allowed
+      const saveBtn = document.getElementById('saveGradeButton');
+       if (saveBtn && disallowedYear) {
+         saveBtn.disabled = true;
+         saveBtn.textContent = 'Saving disabled for this year';
+       }
+
       // Form submission
-      DOM.gradeForm.addEventListener('submit', submitGradeForm);
+      DOM.gradeForm.addEventListener('submit', function(e) {
+        if (disallowedYear) {
+          e.preventDefault();
+          alert('Cannot save grades for Academic Year ' + ALLOWED_SCHOOL_YEAR + '.');
+          return;
+        }
+        submitGradeForm(e);
+      });
     });
+
+    // submitGradeForm: handle form submission via AJAX
+    function submitGradeForm(evt) {
+      evt.preventDefault();
+      const form = DOM.gradeForm;
+      const formData = new FormData(form);
+      // ensure the selected school_year is present
+      if (!formData.has('school_year')) {
+        formData.append('school_year', SELECTED_SCHOOL_YEAR);
+      }
+      // simple UI feedback - disable submit button while saving
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Saving...';
+      }
+
+      fetch(form.action || location.pathname, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.text())
+      .then(text => {
+        try {
+          const json = JSON.parse(text);
+          if (json.success) {
+            // update modal and student's average on the page if present
+            if (json.avg !== undefined && !isNaN(json.avg)) {
+              DOM.averageScore.textContent = parseFloat(json.avg).toFixed(1) + '%';
+            }
+            // Close the modal after a brief delay to show the user the result
+            setTimeout(() => closeModal(), 350);
+            // Optionally reload the page if you want server-side changes reflected immediately:
+            // window.location.reload();
+          } else {
+            alert('Failed to save grades. Please try again.');
+          }
+        } catch (e) {
+          // If the response isn't JSON (e.g., a redirect), reload to show server change
+          window.location.reload();
+        }
+      })
+      .catch(err => {
+        console.error('Error saving grades', err);
+        alert('Error saving grades. Please check your connection and try again.');
+      })
+      .finally(() => {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Save Grades';
+        }
+      });
+    }
   </script>
 </body>
 </html>
