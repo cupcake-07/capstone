@@ -32,6 +32,14 @@ if ($colCheckGrades) {
     $colCheckGrades->close();
 }
 
+// Detect whether the grades table uses a `grade_level` column
+$hasGradeLevel = false;
+$colCheckGradeLevel = $conn->query("SHOW COLUMNS FROM grades LIKE 'grade_level'");
+if ($colCheckGradeLevel) {
+    $hasGradeLevel = ($colCheckGradeLevel->num_rows > 0);
+    $colCheckGradeLevel->close();
+}
+
 // Helper: compute a default academic start year (e.g. 2025 for 2025-2026)
 // Use June as a boundary where months >= 6 use the current year as the start of the academic year
 $today = new DateTime();
@@ -60,7 +68,7 @@ function validateStudentGradeInput($student_id, $subjects) {
 
 // saveStudentGrades: support optional school_year parameter and conditional SQL
 function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $school_year = null) {
-    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart;
+    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart, $hasGradeLevel;
 
     // Determine which year to check for save restrictions
     $targetYear = $school_year ?? $selectedYearStart;
@@ -70,30 +78,60 @@ function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $sc
         return false;
     }
 
+    // Get student's current grade level
+    $studentGrade = getStudentCurrentGrade($conn, $student_id);
+    $useGradeLevel = $hasGradeLevel && $studentGrade !== null && trim((string)$studentGrade) !== '';
+
+    // Best-effort: add column if we need it and it doesn't exist
+    if ($useGradeLevel && !$hasGradeLevel) {
+        $conn->query("ALTER TABLE `grades` ADD COLUMN `grade_level` VARCHAR(64) DEFAULT NULL");
+        $hasGradeLevel = true;
+    }
+
     $savedAny = false;
 
-    // First, delete all existing grades for this student and quarter (and year if column exists)
+    // Build scoped delete. Delete only grades for this student's current grade level (or untagged) for this quarter.
+    $pattern = "Q" . intval($quarter) . "%";
     if ($hasGradesSchoolYear && $school_year !== null) {
-        $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?");
-    } else {
-        $deleteStmt = $conn->prepare("DELETE FROM grades WHERE student_id = ? AND assignment LIKE ?");
-    }
-    if ($deleteStmt) {
-        $pattern = "Q" . intval($quarter) . "%";
-        if ($hasGradesSchoolYear && $school_year !== null) {
-            $deleteStmt->bind_param('isi', $student_id, $pattern, $school_year);
+        if ($useGradeLevel) {
+            $deleteSql = "DELETE FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ? AND (grade_level IS NULL OR grade_level = ?)";
+            $deleteStmt = $conn->prepare($deleteSql);
+            if ($deleteStmt) $deleteStmt->bind_param('isis', $student_id, $pattern, $school_year, $studentGrade);
         } else {
-            $deleteStmt->bind_param('is', $student_id, $pattern);
+            $deleteSql = "DELETE FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?";
+            $deleteStmt = $conn->prepare($deleteSql);
+            if ($deleteStmt) $deleteStmt->bind_param('isi', $student_id, $pattern, $school_year);
         }
+    } else {
+        if ($useGradeLevel) {
+            $deleteSql = "DELETE FROM grades WHERE student_id = ? AND assignment LIKE ? AND (grade_level IS NULL OR grade_level = ?)";
+            $deleteStmt = $conn->prepare($deleteSql);
+            if ($deleteStmt) $deleteStmt->bind_param('iss', $student_id, $pattern, $studentGrade);
+        } else {
+            $deleteSql = "DELETE FROM grades WHERE student_id = ? AND assignment LIKE ?";
+            $deleteStmt = $conn->prepare($deleteSql);
+            if ($deleteStmt) $deleteStmt->bind_param('is', $student_id, $pattern);
+        }
+    }
+
+    if (isset($deleteStmt) && $deleteStmt) {
         $deleteStmt->execute();
         $deleteStmt->close();
     }
 
-    // Now insert the new grades (include school_year column if the DB supports it)
+    // Build insert that includes grade_level where available
     if ($hasGradesSchoolYear && $school_year !== null) {
-        $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score, school_year) VALUES (?, ?, ?, 100, ?)");
+        if ($hasGradeLevel && $useGradeLevel) {
+            $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score, grade_level, school_year) VALUES (?, ?, ?, 100, ?, ?)");
+        } else {
+            $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score, school_year) VALUES (?, ?, ?, 100, ?)");
+        }
     } else {
-        $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+        if ($hasGradeLevel && $useGradeLevel) {
+            $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score, grade_level) VALUES (?, ?, ?, 100, ?)");
+        } else {
+            $stmt = $conn->prepare("INSERT INTO grades (student_id, assignment, score, max_score) VALUES (?, ?, ?, 100)");
+        }
     }
 
     if (!$stmt) {
@@ -115,14 +153,16 @@ function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $sc
         
         // Properly bind parameters for each iteration
         if ($hasGradesSchoolYear && $school_year !== null) {
-            if (!$stmt->bind_param('isdi', $student_id, $assignment, $score, $school_year)) {
-                error_log("Bind failed: " . $stmt->error);
-                continue;
+            if ($hasGradeLevel && $useGradeLevel) {
+                $stmt->bind_param('isds i', $student_id, $assignment, $score, $studentGrade, $school_year); // i s d s i
+            } else {
+                $stmt->bind_param('isdi', $student_id, $assignment, $score, $school_year); // i s d i
             }
         } else {
-            if (!$stmt->bind_param('isd', $student_id, $assignment, $score)) {
-                error_log("Bind failed: " . $stmt->error);
-                continue;
+            if ($hasGradeLevel && $useGradeLevel) {
+                $stmt->bind_param('isds', $student_id, $assignment, $score, $studentGrade); // i s d s
+            } else {
+                $stmt->bind_param('isd', $student_id, $assignment, $score); // i s d
             }
         }
         
@@ -136,6 +176,21 @@ function saveStudentGrades($conn, $student_id, $subjects, $scores, $quarter, $sc
     
     $stmt->close();
     return $savedAny;
+}
+
+// Helper: get student's current grade_level value (raw)
+if (!function_exists('getStudentCurrentGrade')) {
+    function getStudentCurrentGrade($conn, $student_id) {
+        $grade = null;
+        if ($stmt = $conn->prepare("SELECT grade_level FROM students WHERE id = ? LIMIT 1")) {
+            $stmt->bind_param('i', $student_id);
+            $stmt->execute();
+            $stmt->bind_result($grade);
+            $stmt->fetch();
+            $stmt->close();
+        }
+        return $grade;
+    }
 }
 
 // updateStudentAverage: optionally compute avg only for the selected school year
@@ -181,7 +236,7 @@ function updateStudentAverage($conn, $student_id, $school_year = null) {
 
 // Fetch saved grades for a student + quarter (subject => score), filtered by school_year when present
 function fetchStudentQuarterGrades($conn, $student_id, $quarter, $school_year = null) {
-    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart;
+    global $hasGradesSchoolYear, $ALLOWED_YEAR_START, $selectedYearStart, $hasGradeLevel;
 
     $targetYear = $school_year ?? $selectedYearStart;
     if ($targetYear !== $ALLOWED_YEAR_START) {
@@ -191,17 +246,36 @@ function fetchStudentQuarterGrades($conn, $student_id, $quarter, $school_year = 
     
     $data = [];
     $pattern = "Q" . intval($quarter) . " - %";
-    if ($hasGradesSchoolYear && $school_year !== null) {
-        $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?");
-    } else {
-        $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
+
+    // Fetch student's current grade_level (if any)
+    $currentGrade = null;
+    if ($stmt = $conn->prepare("SELECT grade_level FROM students WHERE id = ? LIMIT 1")) {
+        $stmt->bind_param('i', $student_id);
+        $stmt->execute();
+        $stmt->bind_result($currentGrade);
+        $stmt->fetch();
+        $stmt->close();
     }
+
+    if ($hasGradesSchoolYear && $school_year !== null) {
+        if ($hasGradeLevel && $currentGrade !== null && trim((string)$currentGrade) !== '') {
+            $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ? AND grade_level = ? AND school_year = ?");
+            if ($stmt) $stmt->bind_param('issi', $student_id, $pattern, $currentGrade, $school_year);
+        } else {
+            $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ? AND school_year = ?");
+            if ($stmt) $stmt->bind_param('isi', $student_id, $pattern, $school_year);
+        }
+    } else {
+        if ($hasGradeLevel && $currentGrade !== null && trim((string)$currentGrade) !== '') {
+            $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ? AND grade_level = ?");
+            if ($stmt) $stmt->bind_param('iss', $student_id, $pattern, $currentGrade);
+        } else {
+            $stmt = $conn->prepare("SELECT assignment, score FROM grades WHERE student_id = ? AND assignment LIKE ?");
+            if ($stmt) $stmt->bind_param('is', $student_id, $pattern);
+        }
+    }
+
     if (!$stmt) return $data;
-    if ($hasGradesSchoolYear && $school_year !== null) {
-        $stmt->bind_param('isi', $student_id, $pattern, $school_year);
-    } else {
-        $stmt->bind_param('is', $student_id, $pattern);
-    }
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
@@ -816,11 +890,18 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
     }
 
     function resetFormInputs() {
-      DOM.scoreInputs.forEach(input => input.value = '');
+      // Re-query inputs each time to ensure we have the latest DOM nodes
+      const scoreInputs = document.querySelectorAll('.subject-score-input');
+      scoreInputs.forEach(input => {
+        // Clear value and defaultValue so browsers do not autofill persistent value
+        input.value = '';
+        try { input.defaultValue = ''; } catch (e) { /* ignore if unsupported */ }
+        input.removeAttribute('value');
+      });
       DOM.quarterTabs.forEach(t => t.classList.remove('active'));
-      DOM.quarterTabs[0].classList.add('active');
+      if (DOM.quarterTabs[0]) DOM.quarterTabs[0].classList.add('active');
       DOM.selectedQuarterInput.value = 1;
-      DOM.averageScore.textContent = '-';
+      if (DOM.averageScore) DOM.averageScore.textContent = '-';
     }
 
     // ========================================================================
@@ -843,40 +924,60 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
     }
 
     function loadStudentQuarterGrades(studentId, quarter) {
-      DOM.scoreInputs.forEach(input => input.value = '');
-      
+      // Fresh reference to inputs to avoid stale NodeList problems
+      const scoreInputs = document.querySelectorAll('.subject-score-input');
+      // Ensure we start clean
+      scoreInputs.forEach(input => input.value = '');
+
+      // helpful debug - remove in production
+      console.debug('Loading grades for student', studentId, 'quarter', quarter, 'year', SELECTED_SCHOOL_YEAR);
+
       fetch('get-student-grades.php?student_id=' + encodeURIComponent(studentId) + '&quarter=' + encodeURIComponent(quarter) + '&year=' + encodeURIComponent(SELECTED_SCHOOL_YEAR))
-        .then(res => res.text())
-        .then(text => {
-          try {
-            const json = JSON.parse(text);
-            if (!json.success) {
-              calculateAverage();
-              return;
-            }
-            const data = json.data || {};
-            
-            for (let i = 0; i < subjects.length; i++) {
-              const subj = subjects[i];
-              const input = DOM.scoreInputs[i];
-              
-              // Try exact match first
-              if (data.hasOwnProperty(subj) && data[subj] !== null && data[subj] !== '') {
-                input.value = data[subj];
-              } else {
-                // Try case-insensitive match
-                const key = Object.keys(data).find(k => k.toLowerCase() === subj.toLowerCase());
-                if (key && data[key] !== null && data[key] !== '') {
-                  input.value = data[key];
-                }
-              }
-            }
+        .then(res => res.json())
+        .then(json => {
+          if (!json || !json.success) {
+            console.debug('No grade data returned or error: ', json);
             calculateAverage();
-          } catch (e) {
-            console.error('Failed to parse JSON response:', e);
-            console.log('Response text:', text);
-            calculateAverage();
+            return;
           }
+          const data = json.data || {};
+          console.debug('Fetched data:', data);
+
+          // Build a lowercase-keyed map for case-insensitive matching
+          const map = {};
+          Object.keys(data).forEach(k => {
+            if (k == null) return;
+            map[k.trim().toLowerCase()] = data[k];
+          });
+
+          // Fill inputs only if there's a numeric score for the subject
+          for (let i = 0; i < subjects.length; i++) {
+            const subj = subjects[i];
+            const input = scoreInputs[i];
+            if (!input) continue;
+
+            // Exact match (case sensitive)
+            if (data.hasOwnProperty(subj) && data[subj] !== null && data[subj] !== '') {
+              const val = data[subj].toString().trim();
+              if (val !== '' && !isNaN(val)) input.value = val;
+              else input.value = ''; // don't assign non-numeric
+              continue;
+            }
+
+            // Case-insensitive match via map
+            const key = subj.trim().toLowerCase();
+            if (map.hasOwnProperty(key) && map[key] !== null && map[key] !== '') {
+              const val = map[key].toString().trim();
+              if (val !== '' && !isNaN(val)) input.value = val;
+              else input.value = '';
+              continue;
+            }
+
+            // No match: leave empty
+            input.value = '';
+          }
+
+          calculateAverage();
         })
         .catch(err => {
           console.error('Failed to load student grades:', err);

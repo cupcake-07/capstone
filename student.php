@@ -8,6 +8,36 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once 'config/database.php';
 
+// --- ADD: canonical grade label helpers (must be defined before any usage) ----
+if (!function_exists('getCanonicalGradeLabel')) {
+    function getCanonicalGradeLabel($raw) {
+        $s = strtolower(trim((string)$raw));
+        if ($s === '') return null;
+        $s = preg_replace('/[^a-z0-9 ]+/', ' ', $s);
+        if (preg_match('/\b(?:k|kg|kinder|kindergarten)\s*([12])\b/', $s, $m)) {
+            return 'Kinder ' . intval($m[1]);
+        }
+        if (preg_match('/\bk1\b/', $s)) return 'Kinder 1';
+        if (preg_match('/\bk2\b/', $s)) return 'Kinder 2';
+        if (preg_match('/\b(?:g|gr|grade)\s*([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        if (preg_match('/\bg([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        if (preg_match('/\b([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        return null;
+    }
+}
+if (!function_exists('detectGradeLabelFromString')) {
+    function detectGradeLabelFromString($s) {
+        return getCanonicalGradeLabel($s);
+    }
+}
+// -----------------------------------------------------------------------------
+
 // --- NEW: helper functions (defined once, guarded) -------------------------
 if (!function_exists('columnExists')) {
     function columnExists($conn, $table, $column) {
@@ -268,6 +298,9 @@ $email = htmlspecialchars($user['email'] ?? '');
 $gradeKey = trim((string)($user['grade_level'] ?? ''));
 $sectionRaw = trim((string)($user['section'] ?? ''));
 
+// NEW: compute canonical current grade label early so it's available to mapping
+$currentGradeLabel = function_exists('getCanonicalGradeLabel') ? getCanonicalGradeLabel($gradeKey) : null;
+
 // normalize section for lookup and fallback rules
 $normalizedSection = strtoupper($sectionRaw);
 if ($normalizedSection === '' || in_array(strtolower($normalizedSection), ['n/a','na','-','none','tbd'], true)) {
@@ -311,7 +344,13 @@ function load_schedule_for($grade, $section) {
 $userId = intval($_SESSION['user_id']);
 
 // Fetch saved grades for this student and prepare structured data for display
-$gradesStmt = $conn->prepare("SELECT assignment, score, created_at FROM grades WHERE student_id = ? ORDER BY assignment ASC, created_at ASC");
+// Add detection whether grades table has grade_level
+$hasGradeLevel = columnExists($conn, 'grades', 'grade_level');
+
+// Update SELECT to fetch grade_level if column exists
+$gradesSelectFields = 'assignment, score, created_at' . ($hasGradeLevel ? ', grade_level' : '');
+
+$gradesStmt = $conn->prepare("SELECT {$gradesSelectFields} FROM grades WHERE student_id = ? ORDER BY assignment ASC, created_at ASC");
 $gradesBySubject = []; // [subject][quarter] => [scores...]
 $gradesEntries = [];   // subject => [ ['quarter'=>n,'score'=>x,'date'=>d,'assignment'=>s], ... ]
 $subjectsOrder = []; // keep subjects order
@@ -323,7 +362,13 @@ if ($gradesStmt) {
         $assignment = trim($row['assignment']);
         $score = floatval($row['score']);
         $date = $row['created_at'];
-        
+
+        // If grade_level was stored in the grade row, use it first (preserves historical grade)
+        $detected_grade_from_row = null;
+        if ($hasGradeLevel && isset($row['grade_level']) && trim((string)$row['grade_level']) !== '') {
+            $detected_grade_from_row = getCanonicalGradeLabel($row['grade_level']);
+        }
+
         // parse "Q{n} - Subject" pattern
         if (preg_match('/^Q\s*([1-4])\s*-\s*(.+)$/i', $assignment, $m)) {
             $quarter = intval($m[1]);
@@ -333,33 +378,106 @@ if ($gradesStmt) {
             $quarter = 0;
             $subject = trim($assignment);
         }
-        
+
         if ($subject === '') $subject = 'General';
-        
+
+        // Determine which grade bucket to assign the entry to:
+        // 1) explicit grade_level in the grades row (preferred)
+        // 2) detect by parsing the assignment or subject text
+        // 3) fallback to the student's current canonical grade
+        $detectedGradeLabel = null;
+        if ($detected_grade_from_row) {
+            $detectedGradeLabel = $detected_grade_from_row;
+        } else {
+            // Try to detect from assignment text (existing behavior)
+            $detectedGradeLabel = detectGradeLabelFromString($assignment);
+            if (!$detectedGradeLabel) {
+                // Also check the subject (fallback)
+                $detectedGradeLabel = detectGradeLabelFromString($subject);
+            }
+            // If still not detected, fallback to the student's current grade
+            if (!$detectedGradeLabel && !empty($currentGradeLabel)) {
+                $detectedGradeLabel = $currentGradeLabel;
+            }
+        }
+
         // Track subject order (only on first occurrence)
         if (!isset($gradesBySubject[$subject])) {
             $gradesBySubject[$subject] = [];
             $subjectsOrder[] = $subject;
         }
-        
+
         if (!isset($gradesBySubject[$subject][$quarter])) {
             $gradesBySubject[$subject][$quarter] = [];
         }
-        
+
         // Add score to this quarter for this subject
         $gradesBySubject[$subject][$quarter][] = $score;
 
         // collect detailed entries (preserve date and assignment)
         if (!isset($gradesEntries[$subject])) $gradesEntries[$subject] = [];
+        // include detected grade label for each entry (so yearly view can use it if needed)
         $gradesEntries[$subject][] = [
             'quarter' => $quarter,
             'score' => $score,
             'date' => $date,
-            'assignment' => $assignment
+            'assignment' => $assignment,
+            'grade_label' => $detectedGradeLabel
         ];
     }
     $gradesStmt->close();
 }
+
+// --- NEW: build current-grade-only structures for the Quarter View -----
+// Filter gradesEntries to include only entries that belong to the student's current canonical grade
+$gradesEntriesCurrent = [];
+$gradesBySubjectCurrent = [];
+$subjectsOrderCurrent = [];
+foreach ($gradesEntries as $subject => $entries) {
+    foreach ($entries as $entry) {
+        // Only include entries that are for the current grade label
+        if ($currentGradeLabel && isset($entry['grade_label']) && $entry['grade_label'] === $currentGradeLabel) {
+            if (!isset($gradesEntriesCurrent[$subject])) $gradesEntriesCurrent[$subject] = [];
+            $gradesEntriesCurrent[$subject][] = $entry;
+
+            if (!isset($gradesBySubjectCurrent[$subject])) {
+                $gradesBySubjectCurrent[$subject] = [];
+                $subjectsOrderCurrent[] = $subject;
+            }
+            $q = isset($entry['quarter']) ? intval($entry['quarter']) : 0;
+            if (!isset($gradesBySubjectCurrent[$subject][$q])) $gradesBySubjectCurrent[$subject][$q] = [];
+            $gradesBySubjectCurrent[$subject][$q][] = $entry['score'];
+        }
+    }
+}
+
+// Compute per-subject quarter averages and final averages for the current grade
+$displayGradesCurrent = [];
+$allScoresCurrent = [];
+foreach ($subjectsOrderCurrent as $subj) {
+    $subjectData = $gradesBySubjectCurrent[$subj] ?? [];
+    $row = [];
+    $quarterTotals = [];
+    for ($q = 1; $q <= 4; $q++) {
+        if (isset($subjectData[$q]) && count($subjectData[$q]) > 0) {
+            $qavg = avgArray($subjectData[$q]);
+            $row['q'.$q] = round($qavg, 1);
+            $quarterTotals[] = $qavg;
+            foreach ($subjectData[$q] as $sval) {
+                $allScoresCurrent[] = $sval;
+            }
+        } else {
+            $row['q'.$q] = null;
+        }
+    }
+    $final = null;
+    if (count($quarterTotals) > 0) {
+        $final = round(array_sum($quarterTotals) / count($quarterTotals), 1);
+    }
+    $row['final'] = $final;
+    $displayGradesCurrent[$subj] = $row;
+}
+// -------------------------------------------------------------------------
 
 // helper average
 function avgArray($arr) {
@@ -569,6 +687,118 @@ if ($isEnrolled && $enrolledColumn) {
 // load schedule for this student so client-side script gets persisted data
 $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
 
+// --- ADD: compute "Yearly Grade View" data mapping -------------------------
+$gradeLevels = [
+    'Kinder 1', 'Kinder 2',
+    'Grade 1', 'Grade 2', 'Grade 3',
+    'Grade 4', 'Grade 5', 'Grade 6'
+];
+
+// --- ADD: early canonical grade-label helpers (avoid undefined function issues) ----
+if (!function_exists('getCanonicalGradeLabel')) {
+    function getCanonicalGradeLabel($raw) {
+        $s = strtolower(trim((string)$raw));
+        if ($s === '') return null;
+        $s = preg_replace('/[^a-z0-9 ]+/', ' ', $s);
+        // kinder patterns
+        if (preg_match('/\b(?:k|kg|kinder|kindergarten)\s*([12])\b/', $s, $m)) {
+            return 'Kinder ' . intval($m[1]);
+        }
+        if (preg_match('/\bk1\b/', $s)) return 'Kinder 1';
+        if (preg_match('/\bk2\b/', $s)) return 'Kinder 2';
+        // grade patterns 1-6
+        if (preg_match('/\b(?:g|gr|grade)\s*([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        if (preg_match('/\bg([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        if (preg_match('/\b([1-6])\b/', $s, $m)) {
+            return 'Grade ' . intval($m[1]);
+        }
+        return null;
+    }
+}
+if (!function_exists('detectGradeLabelFromString')) {
+    function detectGradeLabelFromString($s) {
+        return getCanonicalGradeLabel($s);
+    }
+}
+// ------------------------------------------------------------------------------------
+
+// Initialize structure (add 'current' flag)
+$yearlyGrades = [];
+foreach ($gradeLevels as $lvl) {
+    $yearlyGrades[$lvl] = [
+        'items' => [],
+        'avg' => null,
+        'current' => false
+    ];
+}
+
+// Mark current grade if present
+if ($currentGradeLabel && isset($yearlyGrades[$currentGradeLabel])) {
+    $yearlyGrades[$currentGradeLabel]['current'] = true;
+}
+
+// Try to map existing grade entries into each grade level
+foreach ($gradesEntries as $subject => $entries) {
+    foreach ($entries as $entry) {
+        // PRIORITY: use the grade_level stored with the entry first (this is the historical grade)
+        $detected = null;
+        
+        if (!empty($entry['grade_label'])) {
+            // If grade_label was set from the DB grade_level column, use it
+            $detected = $entry['grade_label'];
+        } else {
+            // Fallback: try to detect from assignment text
+            $detected = detectGradeLabelFromString($entry['assignment'] ?? '');
+            if (!$detected) {
+                // Also check the subject
+                $detected = detectGradeLabelFromString($subject ?? '');
+            }
+            // Last resort: use current student grade
+            if (!$detected && !empty($currentGradeLabel)) {
+                $detected = $currentGradeLabel;
+            }
+        }
+
+        if (!$detected) {
+            continue;
+        }
+        if (!isset($yearlyGrades[$detected])) {
+            continue;
+        }
+        $yearlyGrades[$detected]['items'][] = $entry;
+    }
+}
+
+// Compute per-grade average AND per-quarter averages (Q1..Q4)
+foreach ($yearlyGrades as $lvl => &$info) {
+    $scores = array_map(function($it) { return floatval($it['score']); }, $info['items']);
+    $scores = array_filter($scores, function($v){ return is_numeric($v); });
+    if (count($scores) > 0) {
+        $info['avg'] = round(array_sum($scores) / count($scores), 1);
+    } else {
+        $info['avg'] = null;
+    }
+
+    // NEW: build per-quarter averages
+    $quarters = [1=>[], 2=>[], 3=>[], 4=>[]];
+    foreach ($info['items'] as $it) {
+        $q = isset($it['quarter']) ? intval($it['quarter']) : 0;
+        if ($q >= 1 && $q <= 4) {
+            $quarters[$q][] = floatval($it['score']);
+        }
+    }
+    for ($q=1; $q<=4; $q++) {
+        $filtered = array_filter($quarters[$q], function($v){ return is_numeric($v);});
+        $info['q'.$q] = (count($filtered) > 0) ? round(array_sum($filtered) / count($filtered), 1) : null;
+    }
+}
+unset($info);
+// -------------------------------------------------------------------------
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -579,6 +809,25 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
   <link rel="stylesheet" href="css/student_v2.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <!-- ADD: minimal styles for Yearly Grade View container -->
+  <style>
+    /* existing yearly styles */
+    .yearly-list { max-height: 360px; overflow-y: auto; padding-right: 8px; margin-top: 6px; }
+    .yearly-grade-card { padding: 12px; border-bottom: 1px solid #f1f1f1; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+    .yearly-grade-card .meta { color:#666; font-size:13px; }
+    .yearly-grade-card .avg { font-weight:700; }
+    .yearly-grade-details { padding: 8px 12px; background:#fafafa; color:#333; font-size:13px; display:none; }
+    .yearly-grade-details table { width:100%; border-collapse: collapse; font-size:13px; }
+    .yearly-grade-details td { padding:6px 8px; border-bottom:1px solid #eee; }
+    .detail-toggle { cursor:pointer; background:none; border: none; color:#0369a1; text-decoration:underline; padding:2px 6px; }
+    /* NEW: highlight the student's current grade */
+    .yearly-grade-card.current-grade { background: #f0fdf4; border-left: 4px solid #10b981; }
+    .current-badge { display:inline-block; background: #10b981; color:#fff; font-size:11px; padding: 2px 8px; border-radius: 999px; margin-left:10px; }
+
+    /* NEW: compact quarterly summary for Yearly view */
+    .quarter-summary { display:flex; gap:8px; align-items:center; font-size:13px; color:#333; }
+    .quarter-summary .qval { min-width:54px; text-align:center; background: #fff; border:1px solid #eee; padding:4px 6px; border-radius:6px; }
+  </style>
 </head>
 <body>
   <!-- TOP NAVBAR -->
@@ -690,33 +939,63 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
                 <h3>Grades</h3>
                 <div class="card-actions">
                   <button class="tab-btn active" data-tab="grades">Quarter View</button>
+                  <!-- ADD: Yearly Grade View button -->
+                  <button class="tab-btn" data-tab="yearly">Yearly Grade View</button>
                   
+
                 </div>
               </div>
 
               <div class="card-body">
                 <div class="tab-pane" id="grades">
+                  <?php
+                    // Determine which quarters have data ONLY for the current grade level
+                    $quartersWithData = [1 => false, 2 => false, 3 => false, 4 => false];
+
+                    // Build quartersWithData from displayGradesCurrent (if empty, there will be none)
+                    foreach ($displayGradesCurrent as $subject => $vals) {
+                        for ($q = 1; $q <= 4; $q++) {
+                            if (isset($vals['q'.$q]) && $vals['q'.$q] !== null) {
+                                $quartersWithData[$q] = true;
+                            }
+                        }
+                    }
+                  ?>
                   <table class="grades-table">
                     <thead>
-                      <tr><th>Subject</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Final</th></tr>
+                      <tr>
+                        <th>Subject</th>
+                        <?php 
+                          for ($q = 1; $q <= 4; $q++) {
+                            if ($quartersWithData[$q]) {
+                              echo '<th>Q' . $q . '</th>';
+                            }
+                          }
+                        ?>
+                        <th>Final</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      <?php if (!empty($displayGrades)): ?>
-                        <?php foreach ($displayGrades as $subject => $vals): ?>
+                      <?php if (!empty($displayGradesCurrent)): ?>
+                        <?php foreach ($displayGradesCurrent as $subject => $vals): ?>
                           <tr class="subject-row" data-subject="<?php echo htmlspecialchars($subject); ?>">
                             <td style="cursor:pointer;"><?php echo htmlspecialchars($subject); ?></td>
-                            <td><?php echo isset($vals['q1']) ? htmlspecialchars($vals['q1']) . '%' : '-'; ?></td>
-                            <td><?php echo isset($vals['q2']) ? htmlspecialchars($vals['q2']) . '%' : '-'; ?></td>
-                            <td><?php echo isset($vals['q3']) ? htmlspecialchars($vals['q3']) . '%' : '-'; ?></td>
-                            <td><?php echo isset($vals['q4']) ? htmlspecialchars($vals['q4']) . '%' : '-'; ?></td>
-                            <td><?php echo isset($vals['final']) ? htmlspecialchars($vals['final']) . '%' : '-'; ?></td>
+                            <?php 
+                              for ($q = 1; $q <= 4; $q++) {
+                                if ($quartersWithData[$q]) {
+                                  $qval = isset($vals['q' . $q]) ? $vals['q' . $q] : null;
+                                  echo '<td>' . ($qval !== null ? htmlspecialchars($qval) . '%' : '-') . '</td>';
+                                }
+                              }
+                            ?>
+                            <td><?php echo isset($vals['final']) && $vals['final'] !== null ? htmlspecialchars($vals['final']) . '%' : '-'; ?></td>
                           </tr>
 
-                          <!-- details row: all inputted grades for this subject -->
+                          <!-- details row: only show grades recorded for the current grade level -->
                           <tr class="subject-details hidden" data-subject="<?php echo htmlspecialchars($subject); ?>">
-                            <td colspan="6" style="padding:6px 24px;">
-                              <?php if (!empty($gradesEntries[$subject])): ?>
-                                <div style="font-size:13px;color:#666;margin-bottom:6px;">All recorded grades for <strong><?php echo htmlspecialchars($subject); ?></strong>:</div>
+                            <td colspan="<?php echo array_sum($quartersWithData) + 2; ?>" style="padding:6px 24px;">
+                              <?php if (!empty($gradesEntriesCurrent[$subject])): ?>
+                                <div style="font-size:13px;color:#666;margin-bottom:6px;">All recorded grades (current level) for <strong><?php echo htmlspecialchars($subject); ?></strong>:</div>
                                 <table style="width:100%;border-collapse:collapse;font-size:13px;">
                                   <thead>
                                     <tr style="color:#666;">
@@ -727,7 +1006,7 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    <?php foreach ($gradesEntries[$subject] as $entry): ?>
+                                    <?php foreach ($gradesEntriesCurrent[$subject] as $entry): ?>
                                       <tr>
                                         <td style="padding:6px 8px;"><?php echo $entry['quarter'] > 0 ? 'Q'.$entry['quarter'] : '-'; ?></td>
                                         <td style="padding:6px 8px;"><?php echo htmlspecialchars($entry['assignment']); ?></td>
@@ -738,13 +1017,13 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
                                   </tbody>
                                 </table>
                               <?php else: ?>
-                                <div style="color:#999;">No individual grades recorded for this subject.</div>
+                                <div style="color:#999;">No individual grades recorded for this subject (current grade level).</div>
                               <?php endif; ?>
                             </td>
                           </tr>
                         <?php endforeach; ?>
                       <?php else: ?>
-                        <tr><td colspan="6">No grades available</td></tr>
+                        <tr><td colspan="<?php echo array_sum($quartersWithData) + 2; ?>">No grades available for current grade level</td></tr>
                       <?php endif; ?>
                     </tbody>
                   </table>
@@ -754,8 +1033,83 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
                   <div class="big-metric">Overall Average: <strong><?php echo htmlspecialchars($overallAvgDisplay); ?></strong></div>
                    <p class="muted">Great work — keep it up!</p>
                  </div>
-               </div>
-             </div>
+
+                <!-- ADD: Yearly Grade View pane -->
+                <div class="tab-pane hidden" id="yearly">
+                  <div class="muted" style="margin-bottom:12px;">History: Grade performance by level. Shows subject breakdown with quarterly and final averages.</div>
+                  <div class="yearly-list" id="yearlyList">
+                    <?php foreach ($gradeLevels as $lvl): 
+                      $info = $yearlyGrades[$lvl] ?? ['items'=>[],'avg'=>null,'current'=>false];
+                      $isCurrent = !empty($info['current']);
+                    ?>
+                      <div class="yearly-grade-card <?php echo $isCurrent ? 'current-grade' : ''; ?>" data-grade="<?php echo htmlspecialchars($lvl); ?>">
+                        <div style="width: 100%;">
+                          <div style="font-weight:600; margin-bottom:8px;">
+                            <?php echo htmlspecialchars($lvl); ?>
+                            <?php if ($isCurrent): ?>
+                              <span class="current-badge" aria-hidden="true">Current</span>
+                            <?php endif; ?>
+                          </div>
+
+                          <!-- Per-subject breakdown -->
+                          <?php if (!empty($info['items'])): ?>
+                            <table style="width:100%; font-size:12px; border-collapse:collapse; margin-top:8px;">
+                              <thead style="background:#f5f5f5;">
+                                <tr style="border-bottom:1px solid #ddd;">
+                                  <th style="text-align:left; padding:6px; font-weight:600;">Subject</th>
+                                  <th style="text-align:center; padding:6px; font-weight:600;">Q1</th>
+                                  <th style="text-align:center; padding:6px; font-weight:600;">Q2</th>
+                                  <th style="text-align:center; padding:6px; font-weight:600;">Q3</th>
+                                  <th style="text-align:center; padding:6px; font-weight:600;">Q4</th>
+                                  <th style="text-align:center; padding:6px; font-weight:600;">Avg</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <?php 
+                                  // Group entries by subject for this grade level
+                                  $subjectBreakdown = [];
+                                  foreach ($info['items'] as $entry) {
+                                    $subj = $entry['assignment'] ?? 'General';
+                                    if (preg_match('/^Q\s*([1-4])\s*-\s*(.+)$/i', $subj, $m)) {
+                                      $subj = trim($m[2]);
+                                    }
+                                    if (!isset($subjectBreakdown[$subj])) {
+                                      $subjectBreakdown[$subj] = [1=>[], 2=>[], 3=>[], 4=>[]];
+                                    }
+                                    $q = $entry['quarter'] ?? 0;
+                                    if ($q >= 1 && $q <= 4) {
+                                      $subjectBreakdown[$subj][$q][] = $entry['score'];
+                                    }
+                                  }
+                                  
+                                  foreach ($subjectBreakdown as $subject => $quarters):
+                                    $q1avg = count($quarters[1]) > 0 ? round(array_sum($quarters[1]) / count($quarters[1]), 1) : null;
+                                    $q2avg = count($quarters[2]) > 0 ? round(array_sum($quarters[2]) / count($quarters[2]), 1) : null;
+                                    $q3avg = count($quarters[3]) > 0 ? round(array_sum($quarters[3]) / count($quarters[3]), 1) : null;
+                                    $q4avg = count($quarters[4]) > 0 ? round(array_sum($quarters[4]) / count($quarters[4]), 1) : null;
+                                    $allQs = array_filter([$q1avg, $q2avg, $q3avg, $q4avg], function($v){ return $v !== null; });
+                                    $subAvg = count($allQs) > 0 ? round(array_sum($allQs) / count($allQs), 1) : null;
+                                ?>
+                                  <tr style="border-bottom:1px solid #f0f0f0;">
+                                    <td style="padding:6px; text-align:left;"><?php echo htmlspecialchars($subject); ?></td>
+                                    <td style="padding:6px; text-align:center;"><?php echo $q1avg !== null ? $q1avg . '%' : '-'; ?></td>
+                                    <td style="padding:6px; text-align:center;"><?php echo $q2avg !== null ? $q2avg . '%' : '-'; ?></td>
+                                    <td style="padding:6px; text-align:center;"><?php echo $q3avg !== null ? $q3avg . '%' : '-'; ?></td>
+                                    <td style="padding:6px; text-align:center;"><?php echo $q4avg !== null ? $q4avg . '%' : '-'; ?></td>
+                                    <td style="padding:6px; text-align:center; font-weight:600; background:#fafafa;"><?php echo $subAvg !== null ? $subAvg . '%' : '-'; ?></td>
+                                  </tr>
+                                <?php endforeach; ?>
+                              </tbody>
+                            </table>
+                          <?php else: ?>
+                            <div style="color:#999; font-size:12px; padding:8px 0;">No grades recorded</div>
+                          <?php endif; ?>
+                        </div>
+                      </div>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              </div>
 
             <div class="card small-grid">
               <div class="mini-card">
@@ -808,7 +1162,7 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
     (function(){
       const year = document.getElementById('year');
       if(year) year.textContent = new Date().getFullYear();
-      document.querySelectorAll('.tab-btn').forEach(btn=>{
+      document.querySelectorAll('.tab-btn').forEach(btn=>{ 
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
@@ -1009,6 +1363,59 @@ $studentSchedule = load_schedule_for($gradeKey, $normalizedSection);
     }
   })();
   </script>
+
+  <!-- ADD: Yearly view detail toggle handler -->
+  <script>
+    (function(){
+      // Toggle yearly grade details
+      document.querySelectorAll('.detail-toggle').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const grade = btn.dataset.grade;
+          if (!grade) return;
+          const id = 'details-' + grade.toLowerCase().replace(/\s+/g, '_');
+          const el = document.getElementById(id);
+          if (!el) return;
+          const visible = el.style.display === 'block';
+          el.style.display = visible ? 'none' : 'block';
+          btn.textContent = visible ? 'View details' : 'Hide details';
+        });
+      });
+
+      // Ensure Yearly pane scroll/focus shows current grade on open
+      const yearlyBtn = document.querySelector('[data-tab="yearly"]');
+      if (yearlyBtn) {
+        yearlyBtn.addEventListener('click', function() {
+          const currentEl = document.querySelector('.yearly-grade-card.current-grade');
+          const container = document.getElementById('yearlyList');
+          if (currentEl && container) {
+            // Scroll current card into view but keep it visible inside the scrollable container
+            const offset = currentEl.offsetTop - container.offsetTop;
+            container.scrollTop = Math.max(0, offset - 12); // small top padding
+          }
+        });
+      }
+    })();
+  </script>
+
+  <!-- ADD: simplified Yearly pane helper (no per-grade detail toggles) -->
+  <script>
+    (function(){
+      // Keep Yearly pane focus behavior (scroll to current grade) but no detail toggles needed anymore.
+      const yearlyBtn = document.querySelector('[data-tab="yearly"]');
+      if (yearlyBtn) {
+        yearlyBtn.addEventListener('click', function() {
+          const currentEl = document.querySelector('.yearly-grade-card.current-grade');
+          const container = document.getElementById('yearlyList');
+          if (currentEl && container) {
+            const offset = currentEl.offsetTop - container.offsetTop;
+            container.scrollTop = Math.max(0, offset - 12);
+          }
+        });
+      }
+    })();
+  </script>
+
+  <!-- ...remaining existing scripts ... -->
 
 </body>
 </html>

@@ -481,9 +481,21 @@ $user = getAdminSession();
 
             editForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+                
+                // Get selected values
+                const gradeValue = document.getElementById('editGradeLevel').value;
+                const sectionValue = document.getElementById('editSection').value;
+                const studentIdValue = document.getElementById('editStudentId').value;
+                
+                // Create FormData
+                const formData = new FormData();
+                formData.append('student_id', studentIdValue);
+                formData.append('grade_level', gradeValue); // Send raw code (K1, K2, 1, 2, etc.)
+                formData.append('section', sectionValue);
+                
                 fetch('../api/update-student-grade-section.php', {
                     method: 'POST',
-                    body: new FormData(this)
+                    body: formData
                 })
                 .then(r => r.json())
                 .then(data => {
