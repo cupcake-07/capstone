@@ -34,10 +34,65 @@ $totalTeachers = $totalTeachersResult->fetch_assoc()['count'];
 
 $totalSubjects = 8;
 
-// Calculate average GPA
-$avgGpaResult = $conn->query("SELECT AVG(score) as avg_gpa FROM grades");
-$avgGpa = $avgGpaResult->fetch_assoc()['avg_gpa'] ?? 0;
-$avgGpa = number_format($avgGpa, 2);
+// Detect whether students.is_archived exists and create a NOT_ARCHIVED clause usable by functions
+$hasIsArchived = false;
+$colCheck = $conn->query("SHOW COLUMNS FROM students LIKE 'is_archived'");
+if ($colCheck) {
+    $hasIsArchived = ($colCheck->num_rows > 0);
+    $colCheck->close();
+}
+$notArchivedClauseJoin = $hasIsArchived ? " JOIN students s ON g.student_id = s.id AND (s.is_archived IS NULL OR s.is_archived = 0)" : " JOIN students s ON g.student_id = s.id";
+$notArchivedClauseWhere = $hasIsArchived ? " WHERE (is_archived IS NULL OR is_archived = 0)" : "";
+
+// Determine whether the grades table uses a `school_year` column
+$hasGradesSchoolYear = false;
+$colCheckGrades = $conn->query("SHOW COLUMNS FROM grades LIKE 'school_year'");
+if ($colCheckGrades) {
+    $hasGradesSchoolYear = ($colCheckGrades->num_rows > 0);
+    $colCheckGrades->close();
+}
+
+// Helper: compute a default academic start year (e.g. 2025 for 2025-2026)
+// Use June as a boundary where months >= 6 use the current year as the start of the academic year
+$today = new DateTime();
+$month = (int)$today->format('n');
+$defaultAcademicStart = ($month >= 6) ? (int)$today->format('Y') : ((int)$today->format('Y') - 1);
+
+// Selected school year can be provided by GET; default to current academic start
+$selectedYearStart = intval($_GET['year'] ?? $defaultAcademicStart);
+if ($selectedYearStart <= 0) {
+    $selectedYearStart = $defaultAcademicStart;
+}
+
+// Calculate average GPA: match the teacher page logic:
+// - exclude placeholder zeros (NULLIF(score,0))
+// - filter by school_year when the column exists
+$avgGpa = null;
+if ($hasGradesSchoolYear) {
+    $stmt = $conn->prepare("SELECT AVG(NULLIF(g.score, 0)) as avg_gpa FROM grades g{$notArchivedClauseJoin} WHERE g.school_year = ?");
+    if ($stmt) {
+        $stmt->bind_param('i', $selectedYearStart);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $stmt->close();
+        $avgGpa = $row['avg_gpa'] ?? null;
+    } else {
+        // fallback: run a simple query without join
+        $res = $conn->query("SELECT AVG(NULLIF(score, 0)) as avg_gpa FROM grades WHERE school_year = " . intval($selectedYearStart));
+        $row = $res ? $res->fetch_assoc() : null;
+        $avgGpa = $row['avg_gpa'] ?? null;
+    }
+} else {
+    // No school_year column: average across all years but still exclude placeholder zeros and optionally join to students to filter archived
+    $query = "SELECT AVG(NULLIF(g.score, 0)) as avg_gpa FROM grades g" . $notArchivedClauseJoin;
+    $res = $conn->query($query);
+    $row = $res ? $res->fetch_assoc() : null;
+    $avgGpa = $row['avg_gpa'] ?? null;
+}
+
+// Match teacher display: show one decimal; if no data, show '-' (like teacher page behavior)
+$avgGpaDisplay = $avgGpa !== null ? number_format(floatval($avgGpa), 1) : '-';
 
 // Calculate attendance rate (last 7 days) - keep for backward compatibility, but we'll expand below
 $attendanceResult = $conn->query("
@@ -259,7 +314,7 @@ $user = getAdminSession();
 				</div>
 				<div class="card">
 					<div class="card-title">Average GPA</div>
-					<div class="card-value" id="avgGpa"><?php echo $avgGpa; ?></div>
+					<div class="card-value" id="avgGpa"><?php echo $avgGpaDisplay; ?></div>
 				</div>
 				<div class="card">
 					<div class="card-title">Total Subjects</div>
