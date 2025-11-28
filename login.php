@@ -1,25 +1,53 @@
 <?php
-// Student Session - UNIQUE NAME
+// Ensure session cookie usable across /capstone and its subfolders
+// Using an array works on PHP 7.3+; fallback to older signature if required
+$cookieParams = [
+    'lifetime' => 0,
+    'path' => '/capstone',
+    'domain' => $_SERVER['HTTP_HOST'],
+    'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+    'httponly' => true,
+    'samesite' => 'Lax'
+];
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params($cookieParams);
+} else {
+    session_set_cookie_params($cookieParams['lifetime'], $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure'], $cookieParams['httponly']);
+}
+
+// Keep using existing session name if your other pages rely on it
 $_SESSION_NAME = 'STUDENT_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
     session_name($_SESSION_NAME);
     session_start();
 }
 
-// Handle Logout - only for STUDENT session
-if (isset($_GET['logout']) && $_GET['logout'] === 'student') {
+// Handle Logout - for any session type
+if (isset($_GET['logout'])) {
     unset($_SESSION['user_id']);
     unset($_SESSION['user_type']);
     unset($_SESSION['user_name']);
     unset($_SESSION['user_email']);
-    header('Location: login.php');
+    header('Location: /capstone/login.php');
     exit;
 }
 
-// If already logged in, redirect to student.php
-if (isset($_SESSION['user_id'])) {
-    header('Location: student.php');
-    exit;
+// Previously we auto-redirected logged-in users to their dashboards here.
+// Remove that auto-redirect so login.php remains the starting point for all users.
+// Instead, just detect logged-in state and compute dashboard link.
+
+$already_logged_in = false;
+$dashboard_link = '';
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
+    $already_logged_in = true;
+    $role = $_SESSION['user_type'];
+    if ($role === 'admin') {
+        $dashboard_link = '/capstone/admin.php';
+    } elseif ($role === 'teacher') {
+        $dashboard_link = '/capstone/teachers/teacher.php';
+    } else {
+        $dashboard_link = '/capstone/student.php';
+    }
 }
 
 require_once 'config/database.php';
@@ -29,6 +57,7 @@ $error_message = '';
 $flash_success = $_SESSION['flash_success'] ?? '';
 $reset_link = $_SESSION['reset_link'] ?? '';
 $reset_email_session = $_SESSION['reset_email'] ?? '';
+$current_role = $_POST['role'] ?? 'student'; // Track current role for form
 
 // Don't unset yet - we need them in the HTML
 // unset($_SESSION['flash_success']);
@@ -44,13 +73,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup']) && empty($e
     $name = trim($_POST['signup_name'] ?? '');
     $email = strtolower(trim($_POST['signup_email'] ?? ''));
     $password = $_POST['signup_password'] ?? '';
+    $role = $_POST['role'] ?? 'student';
     
     if (empty($name) || empty($email) || empty($password)) {
         $error_message = 'All fields required.';
     } elseif (strlen($password) < 6) {
         $error_message = 'Password min 6 chars.';
+    } elseif (!in_array($role, ['student', 'teacher', 'admin'])) {
+        $error_message = 'Invalid role selected.';
     } else {
-        $stmt = $conn->prepare("SELECT id FROM students WHERE email = ? LIMIT 1");
+        // Determine table based on role
+        $table = ($role === 'admin') ? 'admins' : (($role === 'teacher') ? 'teachers' : 'students');
+        
+        $stmt = $conn->prepare("SELECT id FROM $table WHERE email = ? LIMIT 1");
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $stmt->store_result();
@@ -59,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup']) && empty($e
             $error_message = 'Email already registered.';
         } else {
             $hash = password_hash($password, PASSWORD_BCRYPT);
-            $ins = $conn->prepare("INSERT INTO students (name, email, password) VALUES (?, ?, ?)");
+            $ins = $conn->prepare("INSERT INTO $table (name, email, password) VALUES (?, ?, ?)");
             $ins->bind_param('sss', $name, $email, $hash);
             
             if ($ins->execute()) {
@@ -83,20 +118,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login']) && empty($er
     if (empty($email) || empty($password)) {
         $error_message = 'Email and password required.';
     } else {
-        $stmt = $conn->prepare("SELECT id, name, email, password FROM students WHERE email = ? LIMIT 1");
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $user = $res->fetch_assoc();
-        $stmt->close();
+        $user = null;
+        $user_role = null;
+        
+        // Try to find user in each table (auto-detect role)
+        $tables = ['students' => 'student', 'teachers' => 'teacher', 'admins' => 'admin'];
+        
+        foreach ($tables as $table => $role_name) {
+            $stmt = $conn->prepare("SELECT id, name, email, password FROM $table WHERE email = ? LIMIT 1");
+            $stmt->bind_param('s', $email);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $found_user = $res->fetch_assoc();
+            $stmt->close();
+            
+            if ($found_user) {
+                $user = $found_user;
+                $user_role = $role_name;
+                break;
+            }
+        }
         
         if ($user && password_verify($password, $user['password'])) {
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_type'] = 'student';
+            $_SESSION['user_type'] = $user_role;
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_email'] = $user['email'];
-            header('Location: student.php');
+            
+            // Ensure session data saved before sending redirect
+            session_write_close();
+
+            if ($user_role === 'admin') {
+                header('Location: /capstone/admin.php');
+            } elseif ($user_role === 'teacher') {
+                header('Location: /capstone/teachers/teacher.php');
+            } else {
+                header('Location: /capstone/student.php');
+            }
             exit;
         } else {
             $error_message = 'Invalid email or password.';
@@ -111,25 +170,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
     if (empty($reset_email)) {
         $error_message = 'Email is required.';
     } else {
-        $stmt = $conn->prepare("SELECT id FROM students WHERE email = ? LIMIT 1");
-        $stmt->bind_param('s', $reset_email);
-        $stmt->execute();
-        $stmt->store_result();
+        $user_role = null;
+        $table = null;
         
-        if ($stmt->num_rows > 0) {
+        // Auto-detect role by checking tables
+        $tables = ['students' => 'student', 'teachers' => 'teacher', 'admins' => 'admin'];
+        
+        foreach ($tables as $tbl => $role_name) {
+            $stmt = $conn->prepare("SELECT id FROM $tbl WHERE email = ? LIMIT 1");
+            $stmt->bind_param('s', $reset_email);
+            $stmt->execute();
+            $stmt->store_result();
+            
+            if ($stmt->num_rows > 0) {
+                $table = $tbl;
+                $user_role = $role_name;
+                $stmt->close();
+                break;
+            }
+            $stmt->close();
+        }
+        
+        if ($table && $user_role) {
             $reset_token = bin2hex(random_bytes(32));
             $token_hash = hash('sha256', $reset_token);
             $expiry = date('Y-m-d H:i:s', time() + (24 * 60 * 60));
             
-            $upd = $conn->prepare("UPDATE students SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
+            $upd = $conn->prepare("UPDATE $table SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
             $upd->bind_param('sss', $token_hash, $expiry, $reset_email);
             
             if ($upd->execute()) {
                 sendPasswordResetEmail($reset_email, $reset_token);
                 $_SESSION['flash_success'] = 'Password reset link generated!';
-                // include email in link for modal and server-side verification
-                $_SESSION['reset_link'] = 'http://localhost/capstone/reset_password.php?token=' . $reset_token . '&email=' . urlencode($reset_email);
+                $_SESSION['reset_link'] = 'http://localhost/capstone/reset_password.php?token=' . $reset_token . '&email=' . urlencode($reset_email) . '&role=' . urlencode($user_role);
                 $_SESSION['reset_email'] = $reset_email;
+                $_SESSION['reset_role'] = $user_role;
                 header('Location: login.php');
                 exit;
             } else {
@@ -139,12 +214,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
             }
             $upd->close();
         } else {
-            // keep response generic to prevent enumeration, do NOT set reset_link/reset_email
             $_SESSION['flash_success'] = 'If the email is registered, a reset link was sent.';
             header('Location: login.php');
             exit;
         }
-        $stmt->close();
     }
 }
 
@@ -154,6 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     $password_confirm = $_POST['confirm_password'] ?? '';
     $token = $_POST['reset_token'] ?? '';
     $reset_email_post = strtolower(trim($_POST['reset_email'] ?? ''));
+    $role = $_POST['reset_role'] ?? 'student';
     
     if (empty($password) || empty($password_confirm)) {
         $error_message = 'All fields required.';
@@ -165,16 +239,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         $error_message = 'Invalid reset request.';
     } else {
         $token_hash = hash('sha256', $token);
+        $table = ($role === 'admin') ? 'admins' : (($role === 'teacher') ? 'teachers' : 'students');
         
-        // Verify token + email + expiry
-        $stmt = $conn->prepare("SELECT id FROM students WHERE reset_token = ? AND email = ? AND reset_token_expiry > NOW() LIMIT 1");
+        $stmt = $conn->prepare("SELECT id FROM $table WHERE reset_token = ? AND email = ? AND reset_token_expiry > NOW() LIMIT 1");
         $stmt->bind_param('ss', $token_hash, $reset_email_post);
         $stmt->execute();
         $stmt->store_result();
         
         if ($stmt->num_rows > 0) {
             $new_password_hash = password_hash($password, PASSWORD_BCRYPT);
-            $upd = $conn->prepare("UPDATE students SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ? AND email = ?");
+            $upd = $conn->prepare("UPDATE $table SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ? AND email = ?");
             $upd->bind_param('sss', $new_password_hash, $token_hash, $reset_email_post);
             
             if ($upd->execute()) {
@@ -198,7 +272,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <!-- Change stylesheet path to the login folder where SignLog.css exists -->
     <link rel="stylesheet" href="login/SignLog.css">
     <style>
         .message-box { padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; text-align: center; font-weight: 500; }
@@ -245,14 +318,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         .reset-modal-form input:focus { outline: none; border-color: #000; }
         .reset-modal-form button { width: 100%; padding: 12px; background-color: #000; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
         .reset-modal-form button:hover { background-color: #333; }
+
+        .role-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .role-tab { padding: 10px 20px; background-color: #f0f0f0; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
+        .role-tab.active { background-color: #667eea; color: white; border-color: #667eea; }
+        .role-tab:hover { background-color: #e8e8e8; }
+        .role-tab.active:hover { background-color: #5568d3; }
+        .hidden-role { display: none; }
     </style>
 </head>
 <body>
 <div class="container" id="container">
     <div class="form-container sign-up-container">
         <form method="POST">
-            <!-- Added class to align with SignLog.css styling -->
             <h1 class="signin">Sign Up</h1>
+            
+            <div class="role-tabs">
+                <button type="button" class="role-tab active" data-role="student" onclick="selectSignupRole('student')">Student</button>
+                <button type="button" class="role-tab" data-role="teacher" onclick="selectSignupRole('teacher')">Teacher</button>
+                <button type="button" class="role-tab" data-role="admin" onclick="selectSignupRole('admin')">Admin</button>
+            </div>
+            <input type="hidden" name="role" id="signupRole" value="student"/>
 
             <?php if ($error_message && isset($_POST['signup'])): ?>
                 <div class="message-box error-message"><?php echo htmlspecialchars($error_message); ?></div>
@@ -276,17 +362,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     
     <div class="form-container log-in-container">
         <form method="POST">
-            <!-- Added class to align with SignLog.css styling -->
-            <h1 class="login">Log in</h1>
+            <h1 class="login">Log In</h1>
+            
+            <?php if ($already_logged_in): ?>
+                <div class="message-box success-message">
+                    You are already logged in as <?php echo htmlspecialchars(ucfirst($_SESSION['user_type'])); ?>.<br>
+                    <a href="<?php echo htmlspecialchars($dashboard_link); ?>" style="color: #155724; text-decoration: underline;">Go to Dashboard</a>
+                </div>
+            <?php else: ?>
+            
+            <input type="hidden" name="role" id="loginRole" value="student"/>
+
             <?php if ($flash_success): ?>
                 <div class="message-box success-message"><?php echo htmlspecialchars($flash_success); ?></div>
                 <?php if ($reset_link): 
-                    $token = substr($reset_link, strpos($reset_link, 'token=') + 6);
+                    $token = substr($reset_link, strpos($reset_link, 'token=') + 6, 64);
                     $reset_email_display = $reset_email_session;
+                    $reset_role = $_SESSION['reset_role'] ?? 'student';
                 ?>
                     <div class="message-box success-message" style="padding: 15px;">
                         <strong>✓ Reset Link Generated:</strong><br><br>
-                        <button type="button" onclick="openResetPasswordModal('<?php echo htmlspecialchars($token); ?>','<?php echo htmlspecialchars($reset_email_display); ?>')" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: auto;">
+                        <button type="button" onclick="openResetPasswordModal('<?php echo htmlspecialchars($token); ?>','<?php echo htmlspecialchars($reset_email_display); ?>','<?php echo htmlspecialchars($reset_role); ?>')" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: auto;">
                             Click Here to Reset Password
                         </button>
                     </div>
@@ -295,11 +391,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                 unset($_SESSION['flash_success']);
                 unset($_SESSION['reset_link']);
                 unset($_SESSION['reset_email']);
+                unset($_SESSION['reset_role']);
                 ?>
             <?php endif; ?>
             <?php if ($error_message && isset($_POST['login'])): ?>
                 <div class="message-box error-message"><?php echo htmlspecialchars($error_message); ?></div>
             <?php endif; ?>
+            
             <div class="infield">
                 <input type="email" placeholder="Email" name="login_email" required/>
                 <label></label>
@@ -312,6 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             <div class="forgot-pwd-link">
                 <a onclick="openForgotPasswordModal()">Forgot Password?</a>
             </div>
+            <?php endif; ?>
         </form>
     </div>
     
@@ -371,6 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         <form method="POST" class="reset-modal-form">
             <input type="hidden" name="reset_token" id="resetTokenInput" value=""/>
             <input type="hidden" name="reset_email" id="resetEmailInput" value=""/>
+            <input type="hidden" name="reset_role" id="resetRoleInput" value=""/>
             <div class="infield">
                 <input type="password" placeholder="New Password (min 6 chars)" name="new_password" required/>
             </div>
@@ -386,11 +486,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     const container = document.getElementById('container');
     const toggleSwitch = document.getElementById('toggleForms');
 
-    // Set default panel state explicitly (Log In on load)
     container.classList.remove('right-panel-active');
     toggleSwitch.checked = false;
 
-    // Keep the toggle behavior intact for switching panels (UI only)
     toggleSwitch.addEventListener('change', () => {
         if (toggleSwitch.checked) {
             container.classList.add('right-panel-active');
@@ -398,6 +496,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             container.classList.remove('right-panel-active');
         }
     });
+
+    function selectSignupRole(role) {
+        document.getElementById('signupRole').value = role;
+        updateRoleTabs('signup', role);
+    }
+
+    function updateRoleTabs(form, role) {
+        const tabs = document.querySelectorAll(`.${form}-container .role-tab`);
+        tabs.forEach(tab => {
+            if (tab.getAttribute('data-role') === role) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+    }
 
     function openForgotPasswordModal() {
         document.getElementById('forgotPasswordModal').classList.add('active');
@@ -407,9 +521,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         document.getElementById('forgotPasswordModal').classList.remove('active');
     }
 
-    function openResetPasswordModal(token, email) {
+    function openResetPasswordModal(token, email, role) {
         document.getElementById('resetTokenInput').value = token;
         document.getElementById('resetEmailInput').value = email || '';
+        document.getElementById('resetRoleInput').value = role || 'student';
         document.getElementById('resetPasswordModal').classList.add('active');
     }
 
@@ -417,6 +532,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         document.getElementById('resetPasswordModal').classList.remove('active');
         document.getElementById('resetTokenInput').value = '';
         document.getElementById('resetEmailInput').value = '';
+        document.getElementById('resetRoleInput').value = '';
     }
 
     window.onclick = function(event) {
