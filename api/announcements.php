@@ -8,9 +8,33 @@ require_once $rootPath . '/config/database.php';
 
 session_start();
 
-header('Content-Type: application/json');
+// Add CORS headers and handle preflight/options
+header('Content-Type: application/json; charset=utf-8');
+// Prefer echoing the incoming Origin to allow credentials; fallback to '*' if not present
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+header('Access-Control-Allow-Origin: ' . ($origin ?: '*'));
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override');
+header('Access-Control-Allow-Credentials: true');
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // Preflight request - return early
+    http_response_code(200);
+    echo json_encode(['success' => true, 'message' => 'OK']);
+    exit;
+}
+
+// Support POST override to DELETE for restrictive hosting environments
 $method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'POST') {
+    // server header override or form override field
+    $override = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? $_POST['_method'] ?? null;
+    if ($override && strtoupper($override) === 'DELETE') {
+        $method = 'DELETE';
+    }
+}
+
+// Add back the action variable - was missing and caused requests to always return 400
 $action = $_GET['action'] ?? '';
 
 // POST: Create new announcement
@@ -46,6 +70,27 @@ if ($method === 'POST' && $action === 'create') {
             }
         }
         
+        // Determine if visibility exists
+        $hasVisibility = in_array('visibility', $cols);
+        
+        // Try to add visibility column only if not present (host may not allow ALTER)
+        if (!$hasVisibility) {
+            $alterRes = $conn->query("ALTER TABLE announcements ADD COLUMN visibility VARCHAR(20) DEFAULT 'both'");
+            if ($alterRes) {
+                // Re-query columns after ALTER
+                $colRes2 = $conn->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'announcements'");
+                $cols = [];
+                if ($colRes2) {
+                    while ($c = $colRes2->fetch_assoc()) {
+                        $cols[] = $c['COLUMN_NAME'];
+                    }
+                }
+                $hasVisibility = in_array('visibility', $cols);
+            } else {
+                // Alter may fail due to permissions; don't throw - just keep hasVisibility false
+            }
+        }
+        
         // Determine which content column to use
         $contentCol = in_array('body', $cols) ? 'body' : 
                       (in_array('content', $cols) ? 'content' : 
@@ -56,14 +101,6 @@ if ($method === 'POST' && $action === 'create') {
                    (in_array('date', $cols) ? 'date' : null));
         
         $tagCol = in_array('tag', $cols) ? 'tag' : null;
-        
-        // Ensure announcements table has visibility column
-        $checkCol = $conn->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'announcements' AND COLUMN_NAME = 'visibility'");
-        $hasVisibility = $checkCol && $checkCol->num_rows > 0;
-        
-        if (!$hasVisibility) {
-            $conn->query("ALTER TABLE announcements ADD COLUMN visibility VARCHAR(20) DEFAULT 'both'");
-        }
         
         if (!$contentCol || !$dateCol) {
             throw new Exception("Required columns not found. Content col: $contentCol, Date col: $dateCol");
@@ -92,11 +129,13 @@ if ($method === 'POST' && $action === 'create') {
             $types .= 's';
         }
         
-        // Add visibility column
-        $columns[] = 'visibility';
-        $placeholders[] = '?';
-        $values[] = $visibility;
-        $types .= 's';
+        // Add visibility column only when it actually exists on the table
+        if ($hasVisibility) {
+            $columns[] = 'visibility';
+            $placeholders[] = '?';
+            $values[] = $visibility;
+            $types .= 's';
+        }
         
         $sql = "INSERT INTO announcements (" . implode(',', $columns) . ") VALUES (" . implode(',', $placeholders) . ")";
         
@@ -151,7 +190,12 @@ if ($method === 'GET' && $action === 'list') {
             $dateCol = in_array('published_at', $cols) ? 'published_at' : (in_array('created_at', $cols) ? 'created_at' : (in_array('date', $cols) ? 'date' : null));
             
             if ($bodyCol && $dateCol) {
-                $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e, %Y') AS pub_date, visibility FROM announcements";
+                if ($hasVisibility) {
+                    $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e, %Y') AS pub_date, visibility FROM announcements";
+                } else {
+                    // If no visibility column, return default 'both' so client logic still works
+                    $sql = "SELECT id, title, `$bodyCol` AS body, DATE_FORMAT(`$dateCol`, '%b %e, %Y') AS pub_date, 'both' AS visibility FROM announcements";
+                }
                 
                 // Filter by visibility based on audience
                 if ($audience === 'student') {
@@ -193,17 +237,25 @@ if ($method === 'GET' && $action === 'list') {
 
 // DELETE: Remove announcement
 if ($method === 'DELETE' && $action === 'delete') {
-    $input = file_get_contents('php://input');
-    $data = json_decode($input, true);
-    
+    // Read json body (for fetch with body) or fallback to $_POST
+    $raw = file_get_contents('php://input');
+    $data = null;
+    if (!empty($raw)) {
+        $data = json_decode($raw, true);
+    }
+    if (!$data && !empty($_POST)) {
+        $data = $_POST;
+    }
+    $data = $data ?? [];
+
     $id = intval($data['id'] ?? 0);
-    
+
     if ($id <= 0) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Invalid announcement ID']);
         exit;
     }
-    
+
     try {
         $check = $conn->query("SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'announcements'");
         $hasTable = $check && ($row = $check->fetch_assoc()) && $row['cnt'] > 0;

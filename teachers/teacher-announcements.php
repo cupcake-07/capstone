@@ -190,11 +190,34 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             }
         }
 
-        // Load announcements from API
+        function isHtmlLoginResponse(text) {
+            if (!text) return false;
+            const low = text.toLowerCase();
+            // crude detection: either an HTML document or mentions of 'login' or a form
+            return low.trim().startsWith('<') || low.includes('<!doctype') || low.includes('<html') || low.includes('login') || low.includes('<form');
+        }
+
+        // Load announcements from API - robust detection of non-JSON responses
         function loadAnnouncements() {
-            fetch('../api/announcements.php?action=list')
-                .then(res => res.json())
-                .then(data => {
+            fetch('../api/announcements.php?action=list', { credentials: 'same-origin' })
+                .then(res => res.text())
+                .then(text => {
+                    if (isHtmlLoginResponse(text)) {
+                        // If it looks like a redirect to login or HTML, navigate to teacher login
+                        alert('Session expired or server returned a login page. Redirecting to login.');
+                        window.location.href = 'teacher-login.php';
+                        return;
+                    }
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Unexpected server response (not JSON):', text);
+                        document.getElementById('announcement-list').innerHTML =
+                            '<li class="loading-message">Unable to load announcements. Server returned an unexpected response.</li>';
+                        return;
+                    }
+                    
                     const list = document.getElementById('announcement-list');
                     list.innerHTML = '';
                     
@@ -264,26 +287,45 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             return text.replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Delete announcement function
+        // Delete announcement function - use POST + override; parse server text then JSON
         function deleteAnnouncement(id) {
             fetch('../api/announcements.php?action=delete', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', // use POST and X-HTTP-Method-Override so services blocking DELETE still accept it
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-HTTP-Method-Override': 'DELETE'
+                },
+                credentials: 'same-origin',
                 body: JSON.stringify({ id: parseInt(id) })
             })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    alert('Announcement deleted successfully!');
-                    loadAnnouncements();
-                } else {
-                    alert('Error: ' + (result.message || 'Unknown error'));
-                }
-            })
-            .catch(err => {
-                console.error('Delete error:', err);
-                alert('Error deleting announcement: ' + err.message);
-            });
+                .then(res => res.text())
+                .then(text => {
+                    if (isHtmlLoginResponse(text)) {
+                        alert('Session expired or server returned a login page. Redirecting to login.');
+                        window.location.href = 'teacher-login.php';
+                        return;
+                    }
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        // Possibly HTML error page or redirect - show message
+                        const snippet = text && text.length > 200 ? text.substring(0, 200) + '...' : text;
+                        alert('Unexpected server response. Please check your session or server logs. (Server returned HTML or non-JSON content)\n\n' + snippet);
+                        console.error('Unexpected server response (not JSON):', text);
+                        return;
+                    }
+                    if (result.success) {
+                        alert('Announcement deleted successfully!');
+                        loadAnnouncements();
+                    } else {
+                        alert('Error: ' + (result.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Delete error:', err);
+                    alert('Error deleting announcement: ' + err.message);
+                });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -334,20 +376,29 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                 fetch('../api/announcements.php?action=create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(data)
                 })
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return res.json();
-                })
-                .then(result => {
-                    if (result.success) {
-                        alert('Announcement posted successfully!');
-                        hideModal();
-                        form.reset();
-                        loadAnnouncements();
-                    } else {
-                        alert('Error: ' + (result.message || 'Unknown error'));
+                .then(res => res.text())
+                .then(txt => {
+                    if (isHtmlLoginResponse(txt)) {
+                        alert('Session expired or server returned a login page. Redirecting to login.');
+                        window.location.href = 'teacher-login.php';
+                        return;
+                    }
+                    try {
+                        const result = JSON.parse(txt);
+                        if (result.success) {
+                            alert('Announcement posted successfully!');
+                            hideModal();
+                            form.reset();
+                            loadAnnouncements();
+                        } else {
+                            alert('Error: ' + (result.message || 'Unknown error'));
+                        }
+                    } catch (e) {
+                        console.error('Fetch error (non-JSON):', txt);
+                        alert('Unexpected server response when posting announcement. Please check your session or server logs.');
                     }
                 })
                 .catch(err => {
