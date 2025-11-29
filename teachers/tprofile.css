@@ -272,7 +272,7 @@
         gap: 32px;
         /* keep grid centered and limit width so columns align with footer/content */
         max-width: 1200px;
-        margin: 0 auto;
+        /* margin: 0 auto; */
     }
 
     .hero {
@@ -439,7 +439,7 @@
     }
     .card-info .label   {
         font-weight: 500;
-        color: var(--muted);
+        color: #000000;
         font-size: 14px;
     }
     .card-info .value {
@@ -576,7 +576,7 @@
         .badge {
             right: 50%;
             transform: translateX(50%);
-            bottom: -10px;
+            
         }
         .footer-bottom {
             font-size: 12px;
