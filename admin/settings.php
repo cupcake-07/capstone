@@ -174,10 +174,10 @@ $user = getAdminSession();
 
 	/* NEW: Stacked form styles for settings form */
 	.settings-container {
-		padding: 40px;
+		padding: 10px;
 	}
 	.settings-card {
-		max-width: 760px;
+		max-width: 950px;
 		margin: 0 auto;
 		background: #fff;
 		padding: 32px;
