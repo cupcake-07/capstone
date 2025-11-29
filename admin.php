@@ -295,8 +295,14 @@ $user = getAdminSession();
 			<div class="sidebar-foot">Logged in as <strong><?php echo htmlspecialchars($user['name'] ?? 'Admin'); ?></strong></div>
 		</aside>
 
+		<!-- NEW: overlay for mobile sidebar (keeps ARIA) -->
+		<div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
 		<main class="main">
 			<header class="topbar">
+				<!-- NEW: Mobile toggle button inside the topbar. Visible only on small screens. -->
+				<button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
 				<h1>Dashboard</h1>
 				<div class="top-actions">
 					<button id="exportCsv" class="btn-export" type="button" title="Download students & teachers CSV">Export CSV</button>
@@ -450,6 +456,135 @@ $user = getAdminSession();
 	.period-btn.active {
 		background: #4A90E2;
 		color: white;
+	}
+
+	/* Sidebar mobile/off-canvas styles and overlay behavior adapted from AccountBalance.php */
+	.sidebar {
+		transition: transform 0.25s ease;
+	}
+
+	.sidebar-toggle { display: none; }
+	.sidebar-overlay { display: none; }
+
+	@media (max-width: 1300px) {
+		.app {
+			flex-direction: column;
+			min-height: 100vh;
+		}
+
+		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 280px;
+			transform: translateX(-105%);
+			z-index: 2200;
+			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+			flex-direction: column;
+			background: #3d5a80;
+			padding: 0;
+			margin: 0;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			display: flex;
+		}
+
+		body.sidebar-open .sidebar {
+			transform: translateX(0);
+		}
+
+		.sidebar .brand {
+			padding: 16px 12px;
+			border-bottom: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-right: 0;
+			box-sizing: border-box;
+			color: #fff;
+			font-weight: 600;
+			width: 100%;
+		}
+		.sidebar .brand span { display: inline; margin-left: 4px; }
+
+		.sidebar nav {
+			flex-direction: column;
+			gap: 0;
+			overflow: visible;
+			flex: 1 1 auto;
+			padding: 0;
+			width: 100%;
+			margin: 0;
+			display: flex;
+		}
+		.sidebar nav a {
+			padding: 12px 16px;
+			font-size: 0.95rem;
+			white-space: normal;
+			border-radius: 0;
+			display: block;
+			width: 100%;
+			border-bottom: 1px solid rgba(255,255,255,0.05);
+			box-sizing: border-box;
+			color: #fff;
+			text-decoration: none;
+			transition: background 0.12s ease;
+		}
+		.sidebar nav a:hover { background: rgba(0,0,0,0.15); }
+		.sidebar nav a.active { background: rgba(0,0,0,0.2); font-weight: 600; }
+
+		.sidebar .sidebar-foot {
+			padding: 12px 16px;
+			border-top: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-top: auto;
+			color: #fff;
+			font-size: 0.85rem;
+			width: 100%;
+			box-sizing: border-box;
+		}
+
+		.sidebar-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.45);
+			z-index: 2100;
+		}
+		body.sidebar-open .sidebar-overlay { display: block; }
+
+		.main {
+			width: 100%;
+			margin-left: 0;
+			order: 1;
+			margin-top: 8px;
+			box-sizing: border-box;
+		}
+
+		.sidebar-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: transparent;
+			border: 1px solid rgba(0,0,0,0.06);
+			font-size: 1.05rem;
+			cursor: pointer;
+			margin-right: 8px;
+		}
+
+		.topbar {
+			padding: 10px 12px;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+		.topbar h1 { font-size: 1.1rem; margin: 0; }
+
+		/* minor button size adjustments on mobile */
+		.btn-export { padding: 6px 10px; font-size: 0.85rem; }
 	}
 	</style>
 
@@ -691,6 +826,45 @@ $user = getAdminSession();
 		});
 
 		// No client-side fetch required; percentages already applied
+	})();
+
+	// NEW: Sidebar toggle functionality for mobile
+	(function() {
+		const sidebarToggle = document.getElementById('sidebarToggle');
+		const sidebarOverlay = document.getElementById('sidebarOverlay');
+		const sidebar = document.querySelector('.sidebar');
+
+		if (sidebarToggle) {
+			sidebarToggle.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.toggle('sidebar-open');
+			});
+		}
+
+		// Close on overlay click
+		if (sidebarOverlay) {
+			sidebarOverlay.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.remove('sidebar-open');
+			});
+		}
+
+		// Close when a nav link is clicked (useful for mobile)
+		if (sidebar) {
+			const navLinks = sidebar.querySelectorAll('nav a');
+			navLinks.forEach(link => {
+				link.addEventListener('click', function() {
+					document.body.classList.remove('sidebar-open');
+				});
+			});
+		}
+
+		// Close on ESC
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+				document.body.classList.remove('sidebar-open');
+			}
+		});
 	})();
 	</script>
 </body>

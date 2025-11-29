@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buwan ng Wika: Moderno</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. Theme Configuration --- */
+        :root {
+            --midnight-blue: #0f172a;
+            --electric-blue: #3b82f6;
+            --hot-pink: #ec4899;
+            --soft-pink: #fbcfe8;
+            --glass-bg: rgba(15, 23, 42, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-glow: linear-gradient(135deg, var(--electric-blue), var(--hot-pink));
+            --transition: all 0.4s ease-out;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--midnight-blue);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- 2. The New Background Image Treatment --- */
+        .hero-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            /* 
+               IMAGE CHOICE: A high-quality Filipina in traditional dress.
+               BLEND MODE: We use a gradient to tint the photo Blue and Pink 
+               so it matches your theme perfectly.
+            */
+            background: 
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6)),
+                linear-gradient(45deg, rgba(59, 130, 246, 0.3), rgba(236, 72, 153, 0.3)),
+                url('https://images.unsplash.com/photo-1595155823193-c97728639556?q=80&w=2670&auto=format&fit=crop'); /* Filipiniana Texture/Person */
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: normal, overlay, normal;
+        }
+
+        /* Floating particles overlay */
+        .particles {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(var(--electric-blue) 1px, transparent 1px),
+                              radial-gradient(var(--hot-pink) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            opacity: 0.1;
+            z-index: -1;
+            animation: moveParticles 20s linear infinite;
+        }
+
+        @keyframes moveParticles { from { transform: translateY(0); } to { transform: translateY(-50px); } }
+
+        /* --- 3. Navbar --- */
+        .navbar {
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .brand {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            background: linear-gradient(to right, #60a5fa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* --- 4. Hero Section --- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 120px 20px 50px;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(3.5rem, 8vw, 7rem);
+            line-height: 1;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .hero h1 span {
+            display: block;
+            background: linear-gradient(135deg, #fff 40%, var(--hot-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero h1 .highlight {
+            color: var(--electric-blue);
+            -webkit-text-fill-color: var(--electric-blue);
+            text-shadow: 0 0 50px rgba(59, 130, 246, 0.6);
+        }
+
+        .hero p {
+            max-width: 600px;
+            font-size: 1.25rem;
+            color: #e2e8f0;
+            margin-bottom: 40px;
+            line-height: 1.8;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .btn-glow {
+            padding: 16px 45px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            background: linear-gradient(90deg, var(--electric-blue), var(--hot-pink));
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+            transition: var(--transition);
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glow:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(59, 130, 246, 0.6); }
+
+        /* --- 5. Marquee --- */
+        .marquee-wrapper {
+            background: linear-gradient(90deg, var(--electric-blue), var(--hot-pink));
+            padding: 15px 0;
+            overflow: hidden;
+            transform: rotate(-2deg) scale(1.05);
+            margin: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 10;
+        }
+        .marquee-content { display: flex; gap: 50px; white-space: nowrap; animation: scrollText 20s linear infinite; }
+        .marquee-content span { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 1.5rem; text-transform: uppercase; color: white; }
+        @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* --- 6. Content Containers --- */
+        .section-container {
+            max-width: 1200px;
+            margin: 100px auto;
+            padding: 0 24px;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            margin-bottom: 60px;
+            color: white;
+            text-align: center;
+        }
+        
+        .section-title span { color: var(--hot-pink); }
+
+        /* --- EVENTS GRID --- */
+        .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+        
+        .modern-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .modern-card:hover { transform: translateY(-10px); border-color: var(--hot-pink); }
+        .card-img-box { height: 220px; overflow: hidden; }
+        .card-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+        .modern-card:hover .card-img-box img { transform: scale(1.1); }
+        .card-text { padding: 25px; }
+        .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--electric-blue); font-weight: 700; margin-bottom: 10px; display: block; }
+        .card-text h3 { font-family: 'Outfit', sans-serif; font-size: 1.4rem; margin-bottom: 10px; }
+        .card-text p { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; }
+
+        /* --- NEW SECTION: SPEAKERS (Circular) --- */
+        .speakers-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 50px;
+            margin-top: 50px;
+        }
+        .speaker-card { text-align: center; width: 220px; }
+        .speaker-img-wrapper {
+            width: 180px; height: 180px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--electric-blue), var(--hot-pink));
+            position: relative;
+        }
+        .speaker-img {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--midnight-blue);
+        }
+        .speaker-name { font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; margin-bottom: 5px; }
+        .speaker-role { color: var(--hot-pink); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- NEW SECTION: FOOD (Bento Grid) --- */
+        .food-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 250px 250px;
+            gap: 20px;
+        }
+        .food-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .food-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .food-item:hover img { transform: scale(1.1); }
+        
+        .food-item.main { grid-row: 1 / -1; } /* Tall item */
+        
+        .food-overlay {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(15,23,42,0.9), transparent);
+        }
+        .food-title { font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; }
+
+        /* --- FOOTER --- */
+        footer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 80px 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 992px) {
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+            .food-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+            .food-item.main { height: 300px; }
+            .food-item { height: 200px; }
+        }
+        @media (max-width: 600px) {
+            .cards-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BACKGROUND LAYERS -->
+    <div class="hero-bg"></div> <!-- The blended Image -->
+    <div class="particles"></div> <!-- The floating dots -->
+
+    <!-- NAVIGATION -->
+    <nav class="navbar">
+        <a href="#" class="brand">Wika<span style="color:white">2025</span></a>
+        <div style="width: 30px; height: 20px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;">
+            <div style="width: 100%; height: 2px; background: white;"></div>
+            <div style="width: 70%; height: 2px; background: var(--hot-pink); align-self: flex-end;"></div>
+            <div style="width: 100%; height: 2px; background: white;"></div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <p style="color: var(--hot-pink); letter-spacing: 3px; text-transform: uppercase; font-weight: 700; margin-bottom: 15px; border: 1px solid var(--hot-pink); padding: 5px 15px; border-radius: 20px; background: rgba(236, 72, 153, 0.1);">Agosto 1-31, 2025</p>
+        <h1>
+            <span>Filipino:</span>
+            <span class="highlight">Wikang Mapagpalaya</span>
+            <span>ng Kinabukasan</span>
+        </h1>
+        <p>
+            Embrace the fusion of heritage and innovation. A month-long celebration redefining what it means to be Filipino in the digital age.
+        </p>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+            <a href="#events" class="btn-glow">View Schedule</a>
+            <a href="#speakers" style="color: white; text-decoration: none; padding: 16px 30px; border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; font-weight: 600; transition: 0.3s;">Join Community</a>
+        </div>
+    </header>
+
+    <!-- MARQUEE -->
+    <div class="marquee-wrapper">
+        <div class="marquee-content">
+            <span>Sining &bull; Teknolohiya &bull; Kultura &bull; Musika &bull; Sayaw &bull; Panitikan &bull; </span>
+            <span>Sining &bull; Teknolohiya &bull; Kultura &bull; Musika &bull; Sayaw &bull; Panitikan &bull; </span>
+        </div>
+    </div>
+
+    <!-- MAIN EVENTS -->
+    <section id="events" class="section-container">
+        <h2 class="section-title">Mga Tampok na <span>Kaganapan</span></h2>
+        <div class="cards-grid">
+            <!-- Card 1 -->
+            <article class="modern-card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=800&auto=format&fit=crop" alt="Poetry">
+                </div>
+                <div class="card-text">
+                    <span class="tag">Aug 05 &bull; Cultural Center</span>
+                    <h3>Digital Balagtasan</h3>
+                    <p>Poetry meets projection mapping. Watch as spoken word artists battle against a backdrop of reactive AI-generated visuals.</p>
+                </div>
+            </article>
+            <!-- Card 2 -->
+            <article class="modern-card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1560963689-02e03b876404?q=80&w=800&auto=format&fit=crop" alt="Jeepney Art">
+                </div>
+                <div class="card-text">
+                    <span class="tag">Aug 12 &bull; Street Expo</span>
+                    <h3>Neon Jeepney Parade</h3>
+                    <p>The Kings of the Road get a Cyberpunk makeover. Witness the evolution of Filipino transport art under the night lights.</p>
+                </div>
+            </article>
+            <!-- Card 3 -->
+            <article class="modern-card">
+                <div class="card-img-box">
+                    <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=800&auto=format&fit=crop" alt="Surfing">
+                </div>
+                <div class="card-text">
+                    <span class="tag">Aug 20 &bull; La Union</span>
+                    <h3>Alon ng Wika</h3>
+                    <p>A surf and music festival celebrating regional dialects through indie OPM bands and local art installations.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: SPECIAL GUESTS -->
+    <section id="speakers" class="section-container">
+        <h2 class="section-title">Mga <span>Panauhin</span></h2>
+        <p style="text-align: center; color: #94a3b8; max-width: 600px; margin: -40px auto 40px;">Meet the visionaries bridging our past and future.</p>
+        
+        <div class="speakers-grid">
+            <div class="speaker-card">
+                <div class="speaker-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop" alt="Speaker 1" class="speaker-img">
+                </div>
+                <h3 class="speaker-name">Maria Clara V.</h3>
+                <p class="speaker-role">Tech Historian</p>
+            </div>
+
+            <div class="speaker-card">
+                <div class="speaker-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop" alt="Speaker 2" class="speaker-img">
+                </div>
+                <h3 class="speaker-name">Juan K.</h3>
+                <p class="speaker-role">Street Artist</p>
+            </div>
+
+            <div class="speaker-card">
+                <div class="speaker-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=400&auto=format&fit=crop" alt="Speaker 3" class="speaker-img">
+                </div>
+                <h3 class="speaker-name">Diwata R.</h3>
+                <p class="speaker-role">OPM Icon</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: FOOD GALLERY (Lasa ng Kinabukasan) -->
+    <section class="section-container">
+        <h2 class="section-title" style="text-align: left;">Lasa ng <span>Kinabukasan</span></h2>
+        <div class="food-grid">
+            <div class="food-item main">
+                <img src="https://images.unsplash.com/photo-1604626767699-2a912e75e9b8?q=80&w=800&auto=format&fit=crop" alt="Halo Halo">
+                <div class="food-overlay">
+                    <div class="food-title">Neon Halo-Halo Bar</div>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">Interactive dessert mixing station.</p>
+                </div>
+            </div>
+            <div class="food-item">
+                <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?q=80&w=800&auto=format&fit=crop" alt="Sisig">
+                <div class="food-overlay">
+                    <div class="food-title">Fusion Sisig Tacos</div>
+                </div>
+            </div>
+            <div class="food-item">
+                <img src="https://images.unsplash.com/photo-1626202158823-0dfb572a1293?q=80&w=800&auto=format&fit=crop" alt="Kakanin">
+                <div class="food-overlay">
+                    <div class="food-title">Molecular Kakanin</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <h2 style="font-family: 'Outfit'; font-size: 2rem; margin-bottom: 20px;">Tara Na!</h2>
+        <p style="color: #64748b;">© 2025 Buwan ng Wika Committee. Proudly Filipino.</p>
+    </footer>
+
+</body>
+</html>

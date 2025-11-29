@@ -51,13 +51,208 @@ $user = getAdminSession();
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <style>
+            /* ...existing code... */
+
+            /* MOBILE: off-canvas sidebar behavior + overlay (adopted from AccountBalance.php) */
+            .sidebar {
+                transition: transform 0.25s ease;
+            }
+            .sidebar-toggle { display: none; }
+            .sidebar-overlay { display: none; }
+
+            @media (max-width: 1300px) {
+                .app {
+                    flex-direction: column;
+                    min-height: 100vh;
+                }
+                .sidebar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    height: 100vh;
+                    width: 280px;
+                    transform: translateX(-105%);
+                    z-index: 2200;
+                    box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+                    flex-direction: column;
+                    background: #3d5a80;
+                    padding: 0;
+                    margin: 0;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                    display: flex;
+                }
+                body.sidebar-open .sidebar {
+                    transform: translateX(0);
+                }
+                .sidebar .brand {
+                    padding: 16px 12px;
+                    border-bottom: 1px solid rgba(255,255,255,0.1);
+                    flex: 0 0 auto;
+                    margin-right: 0;
+                    box-sizing: border-box;
+                    color: #fff;
+                    font-weight: 600;
+                    width: 100%;
+                }
+                .sidebar nav {
+                    flex-direction: column;
+                    gap: 0;
+                    overflow: visible;
+                    flex: 1 1 auto;
+                    padding: 0;
+                    width: 100%;
+                    margin: 0;
+                    display: flex;
+                }
+                .sidebar nav a {
+                    padding: 12px 16px;
+                    font-size: 0.95rem;
+                    white-space: normal;
+                    border-radius: 0;
+                    display: block;
+                    width: 100%;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                    box-sizing: border-box;
+                    color: #fff;
+                    text-decoration: none;
+                    transition: background 0.12s ease;
+                }
+                .sidebar nav a:hover {
+                    background: rgba(0,0,0,0.15);
+                }
+                .sidebar nav a.active {
+                    background: rgba(0,0,0,0.2);
+                    font-weight: 600;
+                }
+                .sidebar .sidebar-foot {
+                    padding: 12px 16px;
+                    border-top: 1px solid rgba(255,255,255,0.1);
+                    flex: 0 0 auto;
+                    margin-top: auto;
+                    color: #fff;
+                    font-size: 0.85rem;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .sidebar-overlay {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,0.45);
+                    z-index: 2100;
+                }
+                body.sidebar-open .sidebar-overlay {
+                    display: block;
+                }
+
+                .main {
+                    width: 100%;
+                    margin-left: 0;
+                    order: 1;
+                    margin-top: 8px;
+                    box-sizing: border-box;
+                }
+
+                .sidebar-toggle {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 6px 8px;
+                    border-radius: 8px;
+                    background: transparent;
+                    border: 1px solid rgba(0,0,0,0.06);
+                    font-size: 1.05rem;
+                    cursor: pointer;
+                    margin-right: 8px;
+                }
+            }
+
+            /* Smaller devices - favor touch/compact size */
+            @media (max-width: 480px) {
+                .topbar h1 { font-size: 1rem; }
+            }
+
+            /* Make table container scroll horizontally on small screens */
+            .table-responsive { 
+                width: 100%; 
+                overflow-x: auto; 
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Reduce default min width on the filter dropdowns to avoid forced spacing */
+            .filter-dropdown { 
+                min-width: 120px; /* default */
+            }
+
+            /* Make row controls smaller and compact for touch */
+            .topbar { gap: 8px; align-items: center; }
+            .top-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+            /* Improve tiny-screen behavior */
+            @media (max-width: 420px) {
+                .sidebar { width: min(92vw, 280px); } /* avoid big empty areas */
+                .sidebar .brand { padding: 12px; }
+                .topbar { padding: 8px 12px; }
+                .topbar h1 { font-size: 1rem; }
+
+                /* Make the filters inline wrap into two per row; avoid long min-widths */
+                .filters-inline { width: 100%; gap: 8px; }
+                .filter-dropdown { min-width: 0; width: calc(50% - 6px); box-sizing: border-box; }
+
+                /* Reduce padding inside table cells to make better fit */
+                #studentsTable th,
+                #studentsTable td { padding: 8px 10px; font-size: 13px; }
+
+                /* Reduce modal width a bit and control modal content */
+                .edit-modal-content { max-width: 340px; padding: 22px; }
+
+                /* Make sidebar toggle friendly */
+                .sidebar-toggle { padding: 6px 10px; font-size: 1rem; }
+
+                /* Slightly reduce action button sizes */
+                .btn-edit-student, .btn-archive-student { padding: 6px 8px; font-size: 12px; }
+                .btn-export { padding: 7px 10px; font-size: 12px; }
+
+                /* Table becomes scrollable but still responsive */
+                .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            }
+
+            /* Very small screens - avoid blank spaces by hiding less critical columns */
+            @media (max-width: 360px) {
+                .sidebar { width: 92vw; }
+                .filters-inline { gap: 6px; }
+                .filter-dropdown { width: 100%; margin-bottom: 8px; }
+
+                /* Hide email and enrolled date in extremely narrow screens to reduce table width */
+                #studentsTable th.col-email, #studentsTable td:nth-child(3) { display: none; }
+                #studentsTable th.col-enrolled-date, #studentsTable td:nth-child(7) { display: none; }
+
+                /* Collapse the actions a bit and reduce fonts slightly */
+                #studentsTable th,
+                #studentsTable td { padding: 6px 8px; font-size: 12px; }
+                .btn-edit-student, .btn-archive-student { padding: 5px 8px; font-size: 11px; }
+                .toggle-switch { width: 42px; height: 24px; }
+                .toggle-slider::before { height: 18px; width: 18px; left: 3px; }
+            }
+
+            /* ...existing code... */
+        </style>
     </head>
     <body>
         <div class="app">
             <?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
 
+            <!-- Add overlay right after include so it can be used to close the off-canvas sidebar -->
+            <div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
             <main class="main">
                 <header class="topbar">
+                    <!-- Mobile sidebar toggle (visible on small screens) -->
+                    <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
                     <h1>Students Management</h1>
                     <div class="top-actions">
                         <!-- use a direct link to the export endpoint to trigger browser download; pass exclude_archived for safety -->
@@ -92,53 +287,56 @@ $user = getAdminSession();
                             </select>
                         </div>
                     </div>
-                    <table id="studentsTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Grade Level</th>
-                                <th>Section</th>
-                                <th>Enrollment Status</th>
-                                <th>Enrolled Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentsBody">
-                            <?php if (!empty($allStudents)): ?>
-                                <?php foreach ($allStudents as $student):
-                                    $rawGrade = htmlspecialchars($student['grade_level'] ?? '1');
-                                    $displayGrade = htmlspecialchars($gradeLabels[$rawGrade] ?? $rawGrade);
-                                    $displaySection = htmlspecialchars($student['section'] ?? 'A');
-                                    $isArchivedAttr = isset($student['is_archived']) ? 'data-is-archived="' . intval($student['is_archived']) . '"' : 'data-is-archived="0"';
-                                ?>
-                                    <tr <?php echo $isArchivedAttr; ?>>
-                                        <td><?php echo htmlspecialchars($student['id']); ?></td>
-                                        <td><?php echo htmlspecialchars($student['name']); ?></td>
-                                        <td><?php echo htmlspecialchars($student['email']); ?></td>
-                                        <!-- Add data-grade attribute with the raw code so JS filtering matches codes -->
-                                        <td data-grade="<?php echo $rawGrade; ?>"><?php echo $displayGrade; ?></td>
-                                        <td><?php echo $displaySection; ?></td>
-                                        <td>
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" class="enrollment-toggle" data-student-id="<?php echo $student['id']; ?>" <?php echo $student['is_enrolled'] ? 'checked' : ''; ?> />
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($student['enrollment_date'])); ?></td>
-                                        <td>
-                                            <button type="button" class="btn-edit-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>" data-grade="<?php echo $rawGrade; ?>" data-section="<?php echo $displaySection; ?>">Edit</button>
+                    <!-- Make table scrollable on small viewports by wrapping it -->
+                    <div class="table-responsive">
+                        <table id="studentsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th class="col-email">Email</th>
+                                    <th>Grade Level</th>
+                                    <th>Section</th>
+                                    <th>Enrollment Status</th>
+                                    <th class="col-enrolled-date">Enrolled Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsBody">
+                                <?php if (!empty($allStudents)): ?>
+                                    <?php foreach ($allStudents as $student):
+                                        $rawGrade = htmlspecialchars($student['grade_level'] ?? '1');
+                                        $displayGrade = htmlspecialchars($gradeLabels[$rawGrade] ?? $rawGrade);
+                                        $displaySection = htmlspecialchars($student['section'] ?? 'A');
+                                        $isArchivedAttr = isset($student['is_archived']) ? 'data-is-archived="' . intval($student['is_archived']) . '"' : 'data-is-archived="0"';
+                                    ?>
+                                        <tr <?php echo $isArchivedAttr; ?>>
+                                            <td><?php echo htmlspecialchars($student['id']); ?></td>
+                                            <td><?php echo htmlspecialchars($student['name']); ?></td>
+                                            <td><?php echo htmlspecialchars($student['email']); ?></td>
+                                            <!-- Add data-grade attribute with the raw code so JS filtering matches codes -->
+                                            <td data-grade="<?php echo $rawGrade; ?>"><?php echo $displayGrade; ?></td>
+                                            <td><?php echo $displaySection; ?></td>
+                                            <td>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" class="enrollment-toggle" data-student-id="<?php echo $student['id']; ?>" <?php echo $student['is_enrolled'] ? 'checked' : ''; ?> />
+                                                    <span class="toggle-slider"></span>
+                                                </label>
+                                            </td>
+                                            <td><?php echo date('M d, Y', strtotime($student['enrollment_date'])); ?></td>
+                                            <td>
+                                                <button type="button" class="btn-edit-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>" data-grade="<?php echo $rawGrade; ?>" data-section="<?php echo $displaySection; ?>">Edit</button>
 
-                                            <button type="button" class="btn-archive-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>">Archive</button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr><td colspan="8">No students registered yet</td></tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                                <button type="button" class="btn-archive-student" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars($student['name']); ?>">Archive</button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="8">No students registered yet</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
 
                 <footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
@@ -665,6 +863,41 @@ $user = getAdminSession();
                         });
                 });
             });
+
+            (function() {
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const sidebarOverlay = document.getElementById('sidebarOverlay');
+                const sidebar = document.querySelector('.sidebar');
+
+                if (sidebarToggle) {
+                    sidebarToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        document.body.classList.toggle('sidebar-open');
+                    });
+                }
+
+                if (sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        document.body.classList.remove('sidebar-open');
+                    });
+                }
+
+                if (sidebar) {
+                    const navLinks = sidebar.querySelectorAll('nav a');
+                    navLinks.forEach(link => {
+                        link.addEventListener('click', function() {
+                            document.body.classList.remove('sidebar-open');
+                        });
+                    });
+                }
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+                        document.body.classList.remove('sidebar-open');
+                    }
+                });
+            })();
         </script>
     </body>
 </html>
