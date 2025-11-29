@@ -646,13 +646,190 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<style>
+	/* Keep sidebar hidden on desktop mobile toggle default */
+	.sidebar {
+		transition: transform 0.25s ease;
+	}
+	.sidebar-toggle { display: none; } /* hidden on desktop by default */
+
+	/* NEW: full mobile sidebar styles (copied + adapted from AccountBalance.php) */
+	@media (max-width: 1300px) {
+		/* Use column layout on small screens */
+		.app {
+			flex-direction: column;
+			min-height: 100vh;
+		}
+
+		/* Use an off-canvas sidebar at small widths */
+		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 280px;
+			transform: translateX(-105%);
+			z-index: 2200;
+			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+			flex-direction: column;
+			background: #3d5a80;
+			padding: 0;
+			margin: 0;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			display: flex;
+		}
+
+		/* When open, bring it in view */
+		body.sidebar-open .sidebar {
+			transform: translateX(0);
+		}
+
+		/* Sidebar brand and heading */
+		.sidebar .brand {
+			padding: 16px 12px;
+			border-bottom: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-right: 0;
+			box-sizing: border-box;
+			color: #fff;
+			font-weight: 600;
+			width: 100%;
+		}
+		.sidebar .brand span { 
+			display: inline;
+			margin-left: 4px;
+		}
+
+		/* Sidebar nav becomes a column layout */
+		.sidebar nav {
+			flex-direction: column;
+			gap: 0;
+			overflow: visible;
+			flex: 1 1 auto;
+			padding: 0;
+			width: 100%;
+			margin: 0;
+			display: flex;
+		}
+		.sidebar nav a {
+			padding: 12px 16px;
+			font-size: 0.95rem;
+			white-space: normal;
+			border-radius: 0;
+			display: block;
+			width: 100%;
+			border-bottom: 1px solid rgba(255,255,255,0.05);
+			box-sizing: border-box;
+			color: #fff;
+			text-decoration: none;
+			transition: background 0.12s ease;
+		}
+		.sidebar nav a:hover {
+			background: rgba(0,0,0,0.15);
+		}
+		.sidebar nav a.active {
+			background: rgba(0,0,0,0.2);
+			font-weight: 600;
+		}
+
+		/* Sidebar footer for mobile */
+		.sidebar .sidebar-foot {
+			padding: 12px 16px;
+			border-top: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-top: auto;
+			color: #fff;
+			font-size: 0.85rem;
+			width: 100%;
+			box-sizing: border-box;
+		}
+
+		/* Overlay for when sidebar is open */
+		.sidebar-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.45);
+			z-index: 2100;
+		}
+		body.sidebar-open .sidebar-overlay {
+			display: block;
+		}
+
+		/* Hamburger toggle style visible on mobile */
+		.sidebar-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: transparent;
+			border: 1px solid rgba(0,0,0,0.06);
+			font-size: 1.05rem;
+			cursor: pointer;
+			margin-right: 8px;
+		}
+
+		/* Make the topbar wrap - actions stack as needed */
+		.topbar {
+			padding: 10px 12px;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+		.topbar h1 { font-size: 1.1rem; margin: 0; }
+
+		/* Table area, modals and buttons become compact */
+		.btn-download, .sidebar-toggle { font-size: 0.9rem; }
+	}
+
+	/* Accessibility: ensure focus outlines visible */
+	.sidebar nav a:focus, .grade-sort-select:focus, .sidebar-toggle:focus {
+		outline: 2px solid rgba(0, 123, 255, 0.18);
+		outline-offset: 2px;
+	}
+
+	/* Ensure main content aligns with the sidebar on desktop and resets on mobile */
+	.main {
+		/* Desktop layout: leave room for a 280px sidebar */
+		width: calc(100% - 280px);
+		margin-left: 280px;
+		transition: margin-left 0.25s ease, width 0.25s ease;
+		box-sizing: border-box;
+	}
+
+	/* Prevent extra left space on small screens */
+	@media (max-width: 1300px) {
+		/* ...existing mobile styles... */
+
+		/* Reset main content to full width and remove any left margin */
+		.main {
+			width: 100% !important;
+			margin-left: 0 !important;
+		}
+
+		/* Also ensure the app padding doesn't create a left gap */
+		.app {
+			padding-left: 0 !important;
+		}
+	}
+	</style>
 </head>
 <body>
 <div class="app">
 	<?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
 
+	<!-- NEW: overlay for sidebar (behavior same as AccountBalance.php) -->
+	<div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
 	<main class="main">
 		<header class="topbar">
+			<!-- NEW: Add mobile toggle button inside the topbar. Visible only on small screens. -->
+			<button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
 			<h1>Reports</h1>
 		</header>
 
@@ -665,23 +842,25 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 			</div>
 
 			<!-- Fees analytics: allocated vs paid -->
-			<div style="margin-top:18px; display:flex; gap:12px; align-items:stretch; flex-wrap:wrap;">
-				<!-- numeric summary cards -->
-				<div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);min-width:220px;flex:0 0 auto;">
-					<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Allocated Fees</div>
-					<div style="font-size:1.25rem;font-weight:700;">₱<?php echo number_format($allocatedTotal, 2); ?></div>
-				</div>
-				<div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);min-width:220px;flex:0 0 auto;">
-					<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Total Paid</div>
-					<div style="font-size:1.25rem;font-weight:700;">₱<?php echo number_format($totalPaid, 2); ?></div>
-				</div>
-				<div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);min-width:220px;flex:0 0 auto;">
-					<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Not Paid</div>
-					<div style="font-size:1.25rem;font-weight:700; color: <?php echo $allocatedVsPaidBalance > 0 ? '#b21f2d' : '#10b981'; ?>">₱<?php echo number_format($allocatedVsPaidBalance, 2); ?></div>
+			<div style="margin-top:18px;">
+				<div class="summary-row" style="display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; margin-bottom:12px;">
+					<!-- numeric summary cards (now equal-width) -->
+					<div class="summary-card">
+						<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Allocated Fees</div>
+						<div style="font-size:1.25rem;font-weight:700;">₱<?php echo number_format($allocatedTotal, 2); ?></div>
+					</div>
+					<div class="summary-card">
+						<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Total Paid</div>
+						<div style="font-size:1.25rem;font-weight:700;">₱<?php echo number_format($totalPaid, 2); ?></div>
+					</div>
+					<div class="summary-card">
+						<div style="font-size:0.85rem;color:#666;margin-bottom:6px;">Not Paid</div>
+						<div style="font-size:1.25rem;font-weight:700; color: <?php echo $allocatedVsPaidBalance > 0 ? '#b21f2d' : '#10b981'; ?>">₱<?php echo number_format($allocatedVsPaidBalance, 2); ?></div>
+					</div>
 				</div>
 
-				<!-- chart visual: allocated vs paid -->
-				<div class="chart-box" style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:260px; flex:1 1 420px;">
+				<!-- chart visual: allocated vs paid (full width below the stats) -->
+				<div class="chart-box" style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05); min-height:260px; width:100%;">
 					<canvas id="feesChart" style="width:100%; height:220px;"></canvas>
 				</div>
 			</div>
@@ -1059,6 +1238,45 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 			}
 		});
 	})();
+
+	// NEW: Sidebar toggle functionality (copied and adapted from AccountBalance.php)
+	(function() {
+		const sidebarToggle = document.getElementById('sidebarToggle');
+		const sidebarOverlay = document.getElementById('sidebarOverlay');
+		const sidebar = document.querySelector('.sidebar');
+
+		if (sidebarToggle) {
+			sidebarToggle.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.toggle('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking overlay
+		if (sidebarOverlay) {
+			sidebarOverlay.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.remove('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking a nav link (if provided by admin-sidebar.php)
+		if (sidebar) {
+			const navLinks = sidebar.querySelectorAll('nav a');
+			navLinks.forEach(link => {
+				link.addEventListener('click', function() {
+					document.body.classList.remove('sidebar-open');
+				});
+			});
+		}
+
+		// Close sidebar on ESC key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+				document.body.classList.remove('sidebar-open');
+			}
+		});
+	})();
 </script>
 
 <style>
@@ -1118,6 +1336,22 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 	cursor: pointer;
 }
 .btn-download-reports:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.28); transform: translateY(-3px); }
+
+/* Summary row (three equal cards) */
+.summary-row { display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; }
+.summary-card {
+    flex: 1 1 0; /* distribute remaining space equally */
+    min-width: 220px; /* allow stack on narrow screens */
+    background: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .summary-card { min-width: 100%; flex-basis: 100%; }
+}
         </style>
 
 <!-- ...existing scripts like ../js/admin.js if needed ... -->
