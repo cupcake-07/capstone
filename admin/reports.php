@@ -904,7 +904,7 @@ if ($paymentsTableExists && $paymentDateCol && $paymentAmountCol) {
 
 			<!-- NEW: Payer count analytics -->
 			<div style="margin-top:18px;">
-				<h3>Payer Reports</h3>
+				<h3>Ledger Reports</h3>
 				<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:center; margin-bottom:14px;">
 					<div class="stat" style="min-width:140px;">
 						<h4>Daily</h4>
