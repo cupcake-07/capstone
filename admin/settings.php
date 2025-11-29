@@ -102,69 +102,216 @@ $user = getAdminSession();
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+		<style>
+	/* new: mobile/off-canvas sidebar styles and toggle button */
+	.sidebar { transition: transform 0.25s ease; }
+	.sidebar-toggle { display: none; } /* hidden on desktop by default */
+	.sidebar-overlay { display: none; }
+
+	@media (max-width: 1300px) {
+		/* layout adjustments for small screens */
+		.app { flex-direction: column; min-height: 100vh; }
+		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 280px;
+			transform: translateX(-105%);
+			z-index: 2200;
+			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+			flex-direction: column;
+			background: #3d5a80;
+			padding: 0;
+			margin: 0;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			display: flex;
+		}
+		body.sidebar-open .sidebar { transform: translateX(0); }
+
+		.sidebar .brand { padding: 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; width: 100%; }
+
+		.sidebar nav { flex-direction: column; gap: 0; overflow: visible; padding: 0; width: 100%; display:flex; }
+		.sidebar nav a {
+			padding: 12px 16px; font-size: 0.95rem; white-space: normal; border-bottom: 1px solid rgba(255,255,255,0.05);
+			color: #fff; text-decoration: none; display:block;
+		}
+		.sidebar nav a:hover { background: rgba(0,0,0,0.15); }
+		.sidebar nav a.active { background: rgba(0,0,0,0.2); font-weight:600; }
+
+		.sidebar .sidebar-foot { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); color: #fff; width:100%; }
+
+		/* overlay shown when sidebar open */
+		.sidebar-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.45);
+			z-index: 2100;
+		}
+		body.sidebar-open .sidebar-overlay { display: block; }
+
+		/* show the hamburger toggle on mobile */
+		.sidebar-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: transparent;
+			border: 1px solid rgba(0,0,0,0.06);
+			font-size: 1.05rem;
+			cursor: pointer;
+			margin-right: 8px;
+		}
+
+		/* main area full width on small screens */
+		.main { width: 100% !important; margin-left: 0 !important; }
+	}
+	/* focus outline for accessibility */
+	.sidebar nav a:focus, .sidebar-toggle:focus { outline: 2px solid rgba(0, 123, 255, 0.18); outline-offset: 2px; }
+
+	/* NEW: Stacked form styles for settings form */
+	.settings-container {
+		padding: 40px;
+	}
+	.settings-card {
+		max-width: 760px;
+		margin: 0 auto;
+		background: #fff;
+		padding: 32px;
+		border-radius: 12px;
+		box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+		font-size: 16px;
+		box-sizing: border-box;
+	}
+	.settings-card h2 { margin: 0 0 18px 0; font-size: 22px; color: #111; font-weight: 700; }
+	.form-field {
+		display: block;
+		margin-bottom: 18px;
+	}
+	.form-field label {
+		display: block;
+		font-weight: 700;
+		margin-bottom: 8px;
+		font-size: 15px;
+		color: #111827;
+	}
+	.form-field input[type="text"],
+	.form-field input[type="email"],
+	.form-field input[type="tel"],
+	.form-field input[type="number"],
+	.form-field input[type="date"],
+	.form-field select,
+	.form-field textarea {
+		width: 100%;
+		padding: 14px 16px;
+		border: 1px solid #e6e6e6;
+		border-radius: 10px;
+		font-size: 16px;
+		box-sizing: border-box;
+		background: #ffffff;
+		transition: border-color .12s ease, box-shadow .12s ease;
+	}
+	.form-field textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+	.form-field input:focus,
+	.form-field textarea:focus,
+	.form-field select:focus {
+		outline: none;
+		border-color: #2563eb;
+		box-shadow: 0 10px 24px rgba(37,99,235,0.06);
+	}
+	.form-actions {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 12px;
+	}
+	.form-actions .btn-save {
+		background:#2563eb; color:#fff; padding:12px 26px; border-radius:10px; border:none; font-weight:700; font-size:16px;
+		box-shadow: 0 8px 22px rgba(37,99,235,0.06);
+		cursor: pointer;
+	}
+	.form-actions .btn-save:active { transform: translateY(-1px); }
+	/* Ensure buttons not full-width on wider screens */
+	@media (max-width: 640px) {
+		.settings-card { padding: 22px; }
+		.form-actions { justify-content: center; }
+		.form-actions .btn-save { width: 100%; }
+	}
+		</style>
     </head>
     <body>
         <div class="app">
             <?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
  
+ 			<!-- NEW: overlay for closing the mobile sidebar -->
+ 			<div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
             <main class="main">
                 <header class="topbar">
+					<!-- NEW: Add mobile toggle button inside the topbar. Visible only on small screens. -->
+					<button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
                     <h1>System Settings</h1>
                 </header>
                 
                 <!-- REPLACED: dashboard content -> settings form -->
-                <section style="padding:40px;">
-                    <form method="POST" style="max-width:1300px;margin:0 auto;background:#fff;padding:40px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.08);font-size:18px;">
+                <section class="settings-container">
+                    <form method="POST" class="settings-card" id="settingsForm">
                         <input type="hidden" name="action" value="save_settings" />
-                        <h2 style="margin:0 0 22px 0;color:#111;font-size:22px;font-weight:700;">System Settings</h2>
+                        <h2>System Settings</h2>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">School Name</label>
-                                <input name="school_name" value="<?php echo htmlspecialchars($settings['school_name'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Address</label>
-                                <input name="address" value="<?php echo htmlspecialchars($settings['address'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
-                            </div>
+                        <!-- School Name -->
+                        <div class="form-field">
+                            <label for="school_name">School Name</label>
+                            <input id="school_name" name="school_name" type="text" value="<?php echo htmlspecialchars($settings['school_name'] ?? '', ENT_QUOTES); ?>" />
                         </div>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Phone</label>
-                                <input name="phone" value="<?php echo htmlspecialchars($settings['phone'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Email</label>
-                                <input name="email" value="<?php echo htmlspecialchars($settings['email'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
-                            </div>
+                        <!-- Address (use textarea for better spacing) -->
+                        <div class="form-field">
+                            <label for="address">Address</label>
+                            <textarea id="address" name="address"><?php echo htmlspecialchars($settings['address'] ?? '', ENT_QUOTES); ?></textarea>
                         </div>
 
-                        <h3 style="margin-top:12px;margin-bottom:16px;color:#333;font-size:20px;font-weight:700;">Grading Settings</h3>
-
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:22px;">
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Academic Year</label>
-                                <input name="academic_year" value="<?php echo htmlspecialchars($settings['academic_year'] ?? ''); ?>" style="width:100%;padding:16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-weight:700;margin-bottom:8px;font-size:16px;">Current Grading Period</label>
-                                <select name="current_semester" style="width:100%;padding:14px 16px;border:1px solid #e6e6e6;border-radius:8px;font-size:18px;">
-                                    <?php
-                                        // Use 4 quarters for elementary grading
-                                        $periods = ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'];
-                                        $current = $settings['current_semester'] ?? '';
-                                        foreach ($periods as $p) {
-                                            $sel = ($p === $current) ? 'selected' : '';
-                                            echo "<option value=\"" . htmlspecialchars($p) . "\" $sel>" . htmlspecialchars($p) . "</option>";
-                                        }
-                                    ?>
-                                </select>
-                            </div>
+                        <!-- Phone -->
+                        <div class="form-field">
+                            <label for="phone">Phone</label>
+                            <input id="phone" name="phone" type="tel" value="<?php echo htmlspecialchars($settings['phone'] ?? '', ENT_QUOTES); ?>" />
                         </div>
 
-                        <div style="text-align:right;">
-                            <button type="submit" style="background:#2563eb;color:#fff;padding:12px 26px;border-radius:10px;border:none;font-weight:700;font-size:16px;">Save Changes</button>
+                        <!-- Email -->
+                        <div class="form-field">
+                            <label for="email">Email</label>
+                            <input id="email" name="email" type="email" value="<?php echo htmlspecialchars($settings['email'] ?? '', ENT_QUOTES); ?>" />
+                        </div>
+
+                        <h3 style="margin-top:8px; margin-bottom:12px; color:#333; font-size:18px; font-weight:700;">Grading Settings</h3>
+
+                        <!-- Academic Year -->
+                        <div class="form-field">
+                            <label for="academic_year">Academic Year</label>
+                            <input id="academic_year" name="academic_year" type="text" value="<?php echo htmlspecialchars($settings['academic_year'] ?? '', ENT_QUOTES); ?>" placeholder="e.g., 2024-2025" />
+                        </div>
+
+                        <!-- Current Grading Period -->
+                        <div class="form-field">
+                            <label for="current_semester">Current Grading Period</label>
+                            <select id="current_semester" name="current_semester">
+                                <?php
+                                    // Use 4 quarters for elementary grading
+                                    $periods = ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'];
+                                    $current = $settings['current_semester'] ?? '';
+                                    foreach ($periods as $p) {
+                                        $sel = ($p === $current) ? 'selected' : '';
+                                        echo "<option value=\"" . htmlspecialchars($p) . "\" $sel>" . htmlspecialchars($p) . "</option>";
+                                    }
+                                ?>
+                            </select>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save">Save Changes</button>
                         </div>
                     </form>
                 </section>
@@ -172,7 +319,47 @@ $user = getAdminSession();
 
                 <!-- ...existing rest of page (footer etc.) ... -->
             </main>
+        </div>
 
-        <!-- ...existing scripts ... -->
+		<!-- NEW: mobile sidebar toggle JS (keeps logic localized & minimal) -->
+		<script>
+			(function() {
+				const sidebarToggle = document.getElementById('sidebarToggle');
+				const sidebarOverlay = document.getElementById('sidebarOverlay');
+				const sidebar = document.querySelector('.sidebar');
+
+				if (sidebarToggle) {
+					sidebarToggle.addEventListener('click', function(e) {
+						e.preventDefault();
+						document.body.classList.toggle('sidebar-open');
+					});
+				}
+
+				if (sidebarOverlay) {
+					sidebarOverlay.addEventListener('click', function(e) {
+						e.preventDefault();
+						document.body.classList.remove('sidebar-open');
+					});
+				}
+
+				if (sidebar) {
+					const navLinks = sidebar.querySelectorAll('nav a');
+					navLinks.forEach(link => {
+						link.addEventListener('click', function() {
+							document.body.classList.remove('sidebar-open');
+						});
+					});
+				}
+
+				// Close sidebar on ESC
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+						document.body.classList.remove('sidebar-open');
+					}
+				});
+			})();
+		</script>
+
+		<!-- ...existing scripts ... -->
     </body>
 </html>
