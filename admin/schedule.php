@@ -348,14 +348,151 @@ if ($selectedGrade !== 'all' && $selectedSection !== 'all') {
         padding: 6px 10px;
     }
 }
+
+/* Use the same sidebar styling and mobile behavior as AccountBalance.php
+   - Off-canvas for narrower screens
+   - Smooth transform transition
+   - Visible overlay when open
+   - Desktop behavior unchanged (sidebar remains on left)
+*/
+
+/* Keep existing if present: Provide transform transition for consistent animation */
+.sidebar {
+    transition: transform 0.25s ease, box-shadow 0.12s ease;
+}
+
+/* Ensure these controls default to hidden on desktop and visible only on smaller viewports */
+.sidebar-toggle { display: none; }
+.sidebar-overlay { display: none; }
+
+/* For tablets & phones make the sidebar off-canvas and provide an overlay */
+@media (max-width: 1300px) {
+    /* Stack the app vertically and make sidebar off-canvas */
+    .app { flex-direction: column; min-height: 100vh; }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-105%);
+        z-index: 2200;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+        flex-direction: column;
+        background: #3d5a80; /* match AccountBalance */
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        display: flex;
+    }
+
+    /* Show sidebar when the "sidebar-open" class is on body */
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    /* Slightly different brand/heading style on mobile */
+    .sidebar .brand {
+        padding: 16px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        font-weight: 600;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sidebar nav {
+        flex-direction: column;
+        gap: 0;
+        overflow: visible;
+        flex: 1 1 auto;
+        padding: 0;
+        width: 100%;
+        margin: 0;
+        display: flex;
+    }
+
+    .sidebar nav a {
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        white-space: normal;
+        border-radius: 0;
+        display: block;
+        width: 100%;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        box-sizing: border-box;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .sidebar nav a:hover { background: rgba(0,0,0,0.15); }
+    .sidebar nav a.active { background: rgba(0,0,0,0.2); font-weight: 600; }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 2100;
+    }
+    body.sidebar-open .sidebar-overlay { display: block; }
+
+    /* Avoid body scroll behind the sidebar when open */
+    body.sidebar-open {
+        overflow: hidden;
+    }
+
+    /* Toggle button for the topbar */
+    .sidebar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: transparent;
+        border: 1px solid rgba(0,0,0,0.06);
+        font-size: 1.05rem;
+        cursor: pointer;
+        margin-right: 8px;
+        color: #0b1a2b;
+    }
+
+    /* Ensure main content not indented or is full width */
+    .main {
+        width: 100%;
+        margin-left: 0;
+        order: 1;
+        margin-top: 8px;
+        box-sizing: border-box;
+    }
+
+    /* Make the topbar flexible on small screens */
+    .topbar { padding: 10px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+}
+
+/* ...existing styles... */
 </style>
 </head>
 <body>
 <div class="app">
     <?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
 
+    <!-- Overlay needed for off-canvas sidebar -->
+    <div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
     <main class="main">
         <header class="topbar">
+            <!-- Toggle button for mobile sidebar; update aria attributes in JS -->
+            <button
+                id="sidebarToggle"
+                class="sidebar-toggle"
+                aria-expanded="false"
+                aria-controls="navigation"
+                aria-label="Toggle navigation"
+                title="Toggle navigation"
+                type="button">☰</button>
+
             <h1>Class Schedule</h1>
         </header>
 
@@ -816,6 +953,126 @@ document.getElementById('sectionSelect').addEventListener('change', function(){
 });
 
 document.getElementById('year').textContent = new Date().getFullYear();
+
+// --- NEW: Sidebar toggle functionality for mobile (adapted from AccountBalance.php) ---
+(function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.querySelector('.sidebar');
+    const NAV_SELECTOR = 'nav'; // admin-sidebar likely includes <nav> inside as in AccountBalance.php
+
+    // Utility: return first focusable element inside the sidebar nav (for keyboard focus on open)
+    function getFirstSidebarFocus() {
+        if (!sidebar) return null;
+        const link = sidebar.querySelector(NAV_SELECTOR + ' a, ' + NAV_SELECTOR + ' button, ' + NAV_SELECTOR + ' input, ' + NAV_SELECTOR + ' select');
+        return link || sidebar.querySelector('a');
+    }
+
+    // Keep aria-expanded in sync with state and show/hide overlay
+    function setSidebarOpen(open) {
+        if (open) {
+            document.body.classList.add('sidebar-open');
+            if (sidebarToggle) {
+                sidebarToggle.setAttribute('aria-expanded', 'true');
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.setAttribute('aria-hidden', 'false');
+            }
+            // Focus first focusable control within sidebar for a11y
+            const f = getFirstSidebarFocus();
+            if (f && typeof f.focus === 'function') f.focus();
+        } else {
+            document.body.classList.remove('sidebar-open');
+            if (sidebarToggle) {
+                sidebarToggle.setAttribute('aria-expanded', 'false');
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.setAttribute('aria-hidden', 'true');
+            }
+            // return focus to toggle for convenience
+            if (sidebarToggle && typeof sidebarToggle.focus === 'function') sidebarToggle.focus();
+        }
+    }
+
+    // Toggle click
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isOpen = document.body.classList.contains('sidebar-open');
+            setSidebarOpen(!isOpen);
+        });
+    }
+
+    // Overlay click closes sidebar
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', function(e) {
+            e.preventDefault();
+            setSidebarOpen(false);
+        });
+    }
+
+    // If a nav link is clicked, close the sidebar on small screens
+    if (sidebar) {
+        const navLinks = sidebar.querySelectorAll('nav a, nav button');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                // Keep behavior consistent with AccountBalance: hide off-canvas sidebar
+                setSidebarOpen(false);
+            });
+        });
+
+        // Mark the active nav link for "Schedule" if not already
+        const currentUrl = location.pathname.substring(location.pathname.lastIndexOf('/') + 1) || '';
+        // Attempt to mark active link (if admin-sidebar not already setting .active)
+        // This matches the 'schedule.php' page name; fallback to using partial match.
+        navLinks.forEach(link => {
+            try {
+                const target = link.getAttribute('href') || '';
+                if (!target) return;
+                const cleanedTarget = target.replace(/^.*[\\/]/, '');
+                if (cleanedTarget === 'schedule.php' || cleanedTarget.startsWith('schedule')) {
+                    link.classList.add('active');
+                }
+                // Also allow marking by "endsWith" when queries included
+                if (currentUrl && currentUrl === cleanedTarget) {
+                    link.classList.add('active');
+                }
+            } catch (err) {
+                // ignore
+            }
+        });
+    }
+
+    // Close sidebar on ESC (keyboard)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+            setSidebarOpen(false);
+        }
+    });
+
+    // Ensure we clean up the "sidebar-open" state when the window resizes beyond mobile breakpoint
+    function onResize() {
+        if (window.innerWidth > 1300 && document.body.classList.contains('sidebar-open')) {
+            setSidebarOpen(false);
+        }
+    }
+    window.addEventListener('resize', onResize);
+
+    // Accessibility: if the overlay is focused, clicking it should close and refocus toggle button
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab' && e.shiftKey === false) {
+                // prevent focus from going behind the overlay; just keep it simple and close on tab out
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (e.key === 'Escape') {
+                setSidebarOpen(false);
+            }
+        });
+    }
+})();
 </script>
+
 </body>
 </html>
