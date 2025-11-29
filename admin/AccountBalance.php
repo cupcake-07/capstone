@@ -580,9 +580,10 @@ if (!empty($balances)) {
 		font-weight: 700;
 		cursor: pointer;
 	}
+	.btn-manage:hover { background: #0056b3; }
 	.btn-manage:disabled { opacity: .6; cursor: not-allowed; }
 
-	/* Sort by Grade button */
+	/* Details button */
 	.btn-sort {
 		background: #10b981;
 		color: #fff;
@@ -593,7 +594,8 @@ if (!empty($balances)) {
 		cursor: pointer;
 		margin-left: 8px;
 	}
-	.btn-sort.toggle-desc { background: #ef4444; } /* optional color when descending */
+	.btn-sort:hover { background: #059669; }
+	.btn-sort.toggle-desc { background: #ef4444; }
 
 	/* Simple modal styles */
 	.modal-backdrop {
@@ -616,33 +618,24 @@ if (!empty($balances)) {
 	}
 	.modal .row { margin-bottom: 10px; }
 	.modal label { display: block; font-weight:600; margin-bottom: 6px; }
-	.modal input[type='number'] { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+	.modal input[type='number'] { 
+		width: 100%; 
+		padding: 8px; 
+		border-radius: 6px; 
+		border: 1px solid #ccc;
+		font-size: 1rem;
+		box-sizing: border-box;
+	}
+	.modal input[type='number']:focus {
+		outline: none;
+		border-color: #007bff;
+		box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+	}
+
 	.modal .modal-actions { text-align: right; margin-top:10px; }
 	.modal .btn-cancel { background: #f2f2f2; border: 0; padding: 6px 14px; border-radius: 6px; margin-right:8px; cursor:pointer; }
 	.modal .btn-submit { background: #28a745; color: #fff; border: 0; padding: 6px 14px; border-radius: 6px; cursor:pointer; }
 	.alert-inline { color: #b21f2d; font-size: 0.9em; margin-top:6px; }
-
-	/* Grade filter buttons */
-	.grade-filters {
-		display: inline-flex;
-		gap: 8px;
-		align-items: center;
-	}
-	.grade-filter-btn {
-		background: #f3f3f3;
-		color: #222;
-		border: 1px solid #ddd;
-		padding: 6px 10px;
-		border-radius: 6px;
-		cursor: pointer;
-		font-weight: 600;
-	}
-	.grade-filter-btn.active {
-		background: #111827;
-		color: #fff;
-		border-color: #111827;
-	}
-	.grade-filter-btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.12); }
 
 	/* Dropdown select for grade sorting */
 	.grade-sort-select {
@@ -656,59 +649,193 @@ if (!empty($balances)) {
 	}
 	.grade-sort-select[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-	/* Mobile / responsive overrides */
-	@media (max-width: 900px) {
+	/* analytics mini dashboard */
+	.analytics {
+		display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
+	}
+	.analytics .stat {
+		background:#fff; padding:12px; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
+	}
+	.analytics .stat h4 { margin:0; font-size: 0.85rem; color:#666; font-weight:600; }
+	.analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
+	.analytics .stat.red .val { color:#b21f2d; }
+	.analytics .stat.green .val { color:#10b981; }
+
+	/* NEW: Payment For input enhancements */
+	.input-with-icon {
+		position: relative;
+		display: block;
+	}
+	.input-with-icon .icon {
+		position: absolute;
+		left: 10px;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 18px;
+		height: 18px;
+		opacity: 0.7;
+		pointer-events: none;
+		fill: #6b7280;
+	}
+	.input-with-icon input {
+		padding-left: 40px;
+		border: 1px solid #d1d5db;
+		background: #ffffff;
+		border-radius: 8px;
+		height: 38px;
+		box-sizing: border-box;
+		transition: border-color .12s ease, box-shadow .12s ease, transform .12s;
+		width: 100%;
+	}
+	.input-with-icon input::placeholder {
+		color: #9ca3af;
+		font-style: italic;
+	}
+	.input-with-icon input:focus {
+		outline: none;
+		border-color: #2563eb;
+		box-shadow: 0 8px 20px rgba(37,99,235,0.08);
+	}
+
+	.input-helper { 
+		font-size: 0.85rem;
+		color: #6b7280;
+		margin-top: 6px;
+	}
+
+	/* Desktop and default styles */
+	.sidebar {
+		transition: transform 0.25s ease;
+	}
+
+	.sidebar-toggle { display: none; }
+	.sidebar-overlay { display: none; }
+
+	/* Mobile layout - applies at max-width: 1300px */
+	@media (max-width: 1300px) {
 		/* Use column layout on small screens */
 		.app {
 			flex-direction: column;
 			min-height: 100vh;
 		}
 
-		/* Make sidebar sit on top as a horizontal strip that keeps nav accessible */
+		/* Override: Hide the sidebar and show as off-canvas overlay */
 		.sidebar {
-			width: 100%;
-			position: relative;
-			order: 0;
-			flex: 0 0 auto;
-			display: flex;
-			flex-direction: row;
-			align-items: center;
-			gap: 12px;
-			padding: 8px 12px;
-			box-sizing: border-box;
-		}
-		.sidebar .brand {
-			min-width: auto;
-			flex: 0 0 auto;
-			margin-right: 8px;
-		}
-		.sidebar .brand span { display: none; } /* keep brand short on mobile */
-
-		/* Render nav as horizontally scrollable buttons instead of vertical sidebar */
-		.sidebar nav {
-			display: flex;
-			flex-wrap: nowrap;
-			gap: 6px;
-			overflow-x: auto;
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 280px;
+			transform: translateX(-105%);
+			z-index: 2200;
+			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+			flex-direction: column;
+			background: #3d5a80;
+			padding: 0;
+			margin: 0;
+			overflow-y: auto;
 			-webkit-overflow-scrolling: touch;
-			flex: 1 1 auto;
-			padding: 4px 0;
+			display: flex;
+		}
+		
+		/* When open, bring it in view */
+		body.sidebar-open .sidebar {
+			transform: translateX(0);
+		}
+
+		/* Style sidebar brand for mobile */
+		.sidebar .brand {
+			padding: 16px 12px;
+			border-bottom: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-right: 0;
 			box-sizing: border-box;
+			color: #fff;
+			font-weight: 600;
+			width: 100%;
+		}
+		.sidebar .brand span { 
+			display: inline;
+			margin-left: 4px;
+		}
+
+		/* Style sidebar nav for mobile */
+		.sidebar nav {
+			flex-direction: column;
+			gap: 0;
+			overflow: visible;
+			flex: 1 1 auto;
+			padding: 0;
+			width: 100%;
+			margin: 0;
+			display: flex;
 		}
 		.sidebar nav a {
-			padding: 6px 8px;
-			font-size: 0.85rem;
-			white-space: nowrap;
-			border-radius: 6px;
-			display: inline-block;
+			padding: 12px 16px;
+			font-size: 0.95rem;
+			white-space: normal;
+			border-radius: 0;
+			display: block;
+			width: 100%;
+			border-bottom: 1px solid rgba(255,255,255,0.05);
+			box-sizing: border-box;
+			color: #fff;
+			text-decoration: none;
+			transition: background 0.12s ease;
+		}
+		.sidebar nav a:hover {
+			background: rgba(0,0,0,0.15);
+		}
+		.sidebar nav a.active {
+			background: rgba(0,0,0,0.2);
+			font-weight: 600;
 		}
 
-		/* Main content stretches below */
+		/* Style sidebar footer for mobile */
+		.sidebar .sidebar-foot {
+			padding: 12px 16px;
+			border-top: 1px solid rgba(255,255,255,0.1);
+			flex: 0 0 auto;
+			margin-top: auto;
+			color: #fff;
+			font-size: 0.85rem;
+			width: 100%;
+			box-sizing: border-box;
+		}
+
+		/* Overlay for when sidebar is open */
+		.sidebar-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.45);
+			z-index: 2100;
+		}
+		body.sidebar-open .sidebar-overlay {
+			display: block;
+		}
+
+		/* Make main full width when sidebar hidden */
 		.main {
 			width: 100%;
+			margin-left: 0;
 			order: 1;
 			margin-top: 8px;
 			box-sizing: border-box;
+		}
+
+		/* Hamburger toggle style */
+		.sidebar-toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 8px;
+			border-radius: 8px;
+			background: transparent;
+			border: 1px solid rgba(0,0,0,0.06);
+			font-size: 1.05rem;
+			cursor: pointer;
+			margin-right: 8px;
 		}
 
 		/* Make the topbar wrap - actions stack as needed */
@@ -735,7 +862,7 @@ if (!empty($balances)) {
 			-webkit-overflow-scrolling: touch;
 		}
 		.table {
-			min-width: 760px; /* allow horizontal scroll when needed */
+			min-width: 760px;
 			font-size: 0.88rem;
 		}
 		.table thead th, .table tbody td {
@@ -764,7 +891,7 @@ if (!empty($balances)) {
 		.modal .row { margin-bottom: 8px; }
 		.modal input[type='number'] { font-size: 0.95rem; }
 
-		/* Buttons become more compact */
+		/* Buttons become more compact on mobile */
 		.btn-export, .btn-manage, .btn-sort {
 			padding: 6px 10px;
 			font-size: 0.85rem;
@@ -773,178 +900,21 @@ if (!empty($balances)) {
 			padding: 6px 8px;
 			font-size: 0.85rem;
 		}
-	}
 
-	/* Smaller devices - favor touch/compact size */
-	@media (max-width: 480px) {
-		.topbar h1 { font-size: 1rem; }
-		.sidebar nav a { font-size: 0.85rem; padding: 6px 8px; }
-		.table { font-size: 0.82rem; min-width: 680px; }
-		.table thead th, .table tbody td { padding: 5px 6px; }
-		.modal { width: calc(100% - 20px); padding: 16px; }
-		.modal .row { margin-bottom: 6px; }
-	}
-
-	/* Accessibility: ensure focus outlines visible on mobile */
-	@media (max-width: 900px) {
+		/* Accessibility: ensure focus outlines visible on mobile */
 		.sidebar nav a:focus, .grade-sort-select:focus, .btn-sort:focus {
 			outline: 2px solid rgba(0, 123, 255, 0.18);
 			outline-offset: 2px;
 		}
 	}
 
-	/* Mobile sidebar - off-canvas behavior */
-	.sidebar {
-		transition: transform 0.25s ease;
-	}
-	/* Default for desktop keeps existing design; below overrides for small screens */
-	@media (max-width: 900px) {
-		/* Hide the sidebar off-canvas initially */
-		.sidebar {
-			position: fixed;
-			top: 0;
-			left: 0;
-			height: 100vh;
-			width: 280px;
-			transform: translateX(-105%); /* hide */
-			z-index: 2200;
-			box-shadow: 0 6px 24px rgba(0,0,0,0.4);
-		}
-		/* When open, bring it in view */
-		body.sidebar-open .sidebar {
-			transform: translateX(0);
-		}
-
-		/* Overlay for when sidebar is open */
-		.sidebar-overlay {
-			display: none;
-			position: fixed;
-			inset: 0;
-			background: rgba(0,0,0,0.45);
-			z-index: 2100;
-		}
-		body.sidebar-open .sidebar-overlay {
-			display: block;
-		}
-
-		/* Make main full width when sidebar hidden */
-		.main {
-			width: 100%;
-			margin-left: 0;
-		}
-
-		/* Hamburger toggle style */
-		.sidebar-toggle {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			padding: 6px 8px;
-			border-radius: 8px;
-			background: transparent;
-			border: 1px solid rgba(0,0,0,0.06);
-			font-size: 1.05rem;
-			cursor: pointer;
-			margin-right: 8px;
-		}
-		/* Keep it accessible and visible on small screens only */
-		.sidebar-toggle { display: inline-flex; }
-	}
-	@media (min-width: 901px) {
-		.sidebar-toggle { display: none; }
-		.sidebar-overlay { display: none; }
-	}
-
-	/* Mobile nav (mirrors the sidebar links on small screens) */
-	.mobile-nav {
-		display: none;
-	}
-	@media (max-width: 900px) {
-		.mobile-nav {
-			display: flex;
-			gap: 8px;
-			align-items: center;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-			padding: 8px 12px;
-			background: #fff;
-			border-bottom: 1px solid #e8e8e8;
-		}
-		.mobile-nav a {
-			display: inline-block;
-			padding: 6px 10px;
-			border-radius: 6px;
-			background: transparent;
-			color: #222;
-			font-weight: 600;
-			white-space: nowrap;
-			text-decoration: none;
-			border: 1px solid transparent;
-		}
-		.mobile-nav a.active {
-			background: #111827;
-			color: #fff;
-			border-color: #111827;
-		}
-		/* Keep the pagination/space consistent with top actions */
-		.topbar + .mobile-nav { margin-top: 6px; }
-	}
-
-	/* analytics mini dashboard */
-	.analytics {
-		display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;
-	}
-	.analytics .stat {
-		background:#fff; padding:12px; border-radius:8px; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
-	}
-	.analytics .stat h4 { margin:0; font-size: 0.85rem; color:#666; font-weight:600; }
-	.analytics .stat .val { margin-top:6px; font-size:1.25rem; font-weight:800; }
-	.analytics .stat.red .val { color:#b21f2d; }
-	.analytics .stat.green .val { color:#10b981; }
-
-	/* NEW: Payment For input enhancements */
-	.input-with-icon {
-		position: relative;
-		display: block;
-	}
-	.input-with-icon .icon {
-		position: absolute;
-		left: 10px;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 18px;
-		height: 18px;
-		opacity: 0.7;
-		pointer-events: none; /* does not interfere with clicking / focusing the input */
-		fill: #6b7280;
-	}
-	.input-with-icon input {
-		padding-left: 40px; /* leave space for the icon */
-		border: 1px solid #d1d5db;
-		background: #ffffff;
-		border-radius: 8px;
-		height: 38px;
-		box-sizing: border-box;
-		transition: border-color .12s ease, box-shadow .12s ease, transform .12s;
-	}
-	.input-with-icon input::placeholder {
-		color: #9ca3af;
-		font-style: italic;
-	}
-	.input-with-icon input:focus {
-		outline: none;
-		border-color: #2563eb;
-		box-shadow: 0 8px 20px rgba(37,99,235,0.08);
-	}
-
-	/* small helper description under the input */
-	.input-helper { 
-		font-size: 0.85rem;
-		color: #6b7280;
-		margin-top: 6px;
-	}
-
-	/* Make sure the modal modal rows don't shift on smaller screens for icon padding */
+	/* Smaller devices - favor touch/compact size */
 	@media (max-width: 480px) {
+		.topbar h1 { font-size: 1rem; }
+		.table { font-size: 0.82rem; min-width: 680px; }
+		.table thead th, .table tbody td { padding: 5px 6px; }
+		.modal { width: calc(100% - 20px); padding: 16px; }
+		.modal .row { margin-bottom: 6px; }
 		.input-with-icon input {
 			padding-left: 40px;
 			height: 40px;
@@ -1174,14 +1144,6 @@ if (!empty($balances)) {
 				<div id="modalBalance" style="font-weight:700; color:#b21f2d;">—</div>
 			</div>
 
-			<!-- Outstanding Fees Breakdown -->
-			<div class="row">
-				<label>Outstanding Fees Breakdown</label>
-				<div id="modalFeesBreakdown" style="background:#f9f9f9; padding:8px; border-radius:6px; max-height:100px; overflow-y:auto;">
-					—
-				</div>
-			</div>
-
 			<!-- Previous payments history -->
 			<div class="row">
 				<label>Payment History</label>
@@ -1199,7 +1161,14 @@ if (!empty($balances)) {
 			<!-- NEW: Payment Amount -->
 			<div class="row">
 				<label for="modalAmount">Amount to Pay</label>
-				<input id="modalAmount" type="number" min="0" step="0.01" placeholder="Enter amount to pay" />
+				<input 
+					id="modalAmount" 
+					type="number" 
+					min="0" 
+					step="0.01" 
+					placeholder="Enter amount to pay"
+					inputmode="decimal"
+				/>
 			</div>
 
 			<!-- NEW: What payment is for - improved design (keeps same input ID and functionality) -->
@@ -1353,9 +1322,46 @@ if (!empty($balances)) {
 			}
 		});
 	})();
-	</script>
 
-	<script>
+	// NEW: Sidebar toggle functionality for mobile
+	(function() {
+		const sidebarToggle = document.getElementById('sidebarToggle');
+		const sidebarOverlay = document.getElementById('sidebarOverlay');
+		const sidebar = document.querySelector('.sidebar');
+
+		if (sidebarToggle) {
+			sidebarToggle.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.toggle('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking overlay
+		if (sidebarOverlay) {
+			sidebarOverlay.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.remove('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking a nav link
+		if (sidebar) {
+			const navLinks = sidebar.querySelectorAll('nav a');
+			navLinks.forEach(link => {
+				link.addEventListener('click', function() {
+					document.body.classList.remove('sidebar-open');
+				});
+			});
+		}
+
+		// Close sidebar on ESC key
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+				document.body.classList.remove('sidebar-open');
+			}
+		});
+	})();
+
 	// Manage payment modal logic
 	(function() {
 		const modalBackdrop = document.getElementById('manageModalBackdrop');
@@ -1369,7 +1375,6 @@ if (!empty($balances)) {
 		const modalError = document.getElementById('modalError');
 		const modalSubmit = document.getElementById('modalSubmit');
 		const modalCancel = document.getElementById('modalCancel');
-		const modalFeesBreakdown = document.getElementById('modalFeesBreakdown');
 		const modalPaymentsList = document.getElementById('modalPaymentsList');
 
 		let activeStudentId = null;
@@ -1412,7 +1417,6 @@ if (!empty($balances)) {
 			const totalPaidNum = Number(totalPaid || 0);
 			const balanceNum = isFinite(totalFeesNum) ? (totalFeesNum - totalPaidNum) : NaN;
 
-			// Display totals
 			modalTotalFee.textContent = isFinite(totalFeesNum) 
 				? totalFeesNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 				: '—';
@@ -1421,35 +1425,9 @@ if (!empty($balances)) {
 				? balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 				: '—';
 
-			// Set payment date to today
 			const today = new Date().toISOString().split('T')[0];
 			modalPaymentDate.value = today;
 
-			// Display outstanding fees breakdown
-			try {
-				const fees = Array.isArray(feesJson) ? feesJson : [];
-				modalFeesBreakdown.innerHTML = '';
-				if (fees.length === 0) {
-					modalFeesBreakdown.textContent = 'No fees recorded.';
-				} else {
-					const ul = document.createElement('ul');
-					ul.style.margin = '0';
-					ul.style.paddingLeft = '20px';
-					fees.forEach(f => {
-						const li = document.createElement('li');
-						li.style.marginBottom = '4px';
-						li.textContent = (f.title ? f.title : ('Fee #' + f.id)) + ' — ₱' + 
-							Number(f.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-						ul.appendChild(li);
-					});
-					modalFeesBreakdown.appendChild(ul);
-				}
-			} catch (e) {
-				console.error('Failed to populate fees breakdown', e);
-				modalFeesBreakdown.textContent = 'Error loading fees.';
-			}
-
-			// Display payment history in modal
 			try {
 				const payments = Array.isArray(paymentsJson) ? paymentsJson : [];
 				modalPaymentsList.innerHTML = '';
@@ -1470,7 +1448,6 @@ if (!empty($balances)) {
 					payments.forEach(p => {
 						const tr = document.createElement('tr');
 						tr.style.borderBottom = '1px solid #eee';
-						// Only show payment note if it exists and has actual content
 						const paymentFor = (p.note && String(p.note).trim().length > 0) ? String(p.note).trim() : '';
 						tr.innerHTML = '<td style="padding:4px;">' + (p.date || '—') + '</td>' +
 							'<td style="text-align:right;padding:4px;">₱' + 
@@ -1486,7 +1463,6 @@ if (!empty($balances)) {
 				modalPaymentsList.textContent = 'Error loading payments.';
 			}
 
-			// Enable/disable form based on whether total fees is set
 			if (!isFinite(totalFeesNum) || totalFeesNum <= 0) {
 				modalSubmit.disabled = true;
 				modalAmount.disabled = true;
@@ -1538,7 +1514,6 @@ if (!empty($balances)) {
 
 			modalError.style.display = 'none';
 
-			// Validate date
 			const paymentDate = modalPaymentDate.value.trim();
 			if (!paymentDate) {
 				modalError.textContent = 'Please select a payment date.';
@@ -1546,7 +1521,6 @@ if (!empty($balances)) {
 				return;
 			}
 
-			// Validate amount
 			const val = modalAmount.value.trim();
 			if (!val || isNaN(val) || Number(val) <= 0) {
 				modalError.textContent = 'Please enter a valid positive amount.';
@@ -1555,6 +1529,15 @@ if (!empty($balances)) {
 			}
 			const amount = parseFloat(val);
 			const paymentFor = modalPaymentFor.value.trim() || null;
+
+			// Validate amount is not greater than balance
+			const balanceText = modalBalance.textContent;
+			const balanceNum = parseFloat(balanceText.replace(/[^0-9.-]/g, '')) || 0;
+			if (amount > balanceNum && balanceNum > 0) {
+				modalError.textContent = 'Amount cannot exceed outstanding balance (₱' + balanceNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ').';
+				modalError.style.display = 'block';
+				return;
+			}
 
 			modalSubmit.disabled = true;
 			try {
@@ -1572,108 +1555,8 @@ if (!empty($balances)) {
 				const data = await res.json();
 				if (!res.ok) throw new Error(data.message || 'Server error');
 
-				const saved = data.data || {};
-				const savedId = saved.id || null;
-				const savedDate = saved.date || paymentDate;
-				const savedAmount = Number(saved.amount || amount);
-				const savedNote = (saved.note || saved.payment_for || '') .toString();
-
-				// 1) Update modal payments list (create/append first row)
-				(function appendModalPayment(){
-					const existingTbl = modalPaymentsList.querySelector('table');
-					if (existingTbl) {
-						let tb = existingTbl.querySelector('tbody');
-						if (!tb) {
-							tb = document.createElement('tbody');
-							existingTbl.appendChild(tb);
-						}
-						const tr = document.createElement('tr');
-						tr.style.borderBottom = '1px solid #eee';
-						tr.innerHTML = '<td style="padding:4px;">' + (savedDate || '—') + '</td>' +
-							'<td style="text-align:right;padding:4px;">₱' +
-							Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-							'<td style="padding:4px;">' + (savedNote || '—') + '</td>';
-						tb.insertBefore(tr, tb.firstChild);
-					} else {
-						const tbl = document.createElement('table');
-						tbl.style.width = '100%';
-						tbl.style.fontSize = '0.85rem';
-						tbl.style.borderCollapse = 'collapse';
-						tbl.style.margin = '0';
-						const thead = document.createElement('thead');
-						thead.innerHTML = '<tr style="border-bottom:1px solid #ddd;"><th style="text-align:left;padding:4px;">Date</th><th style="text-align:right;padding:4px;">Amount</th><th style="text-align:left;padding:4px;">Payment for:</th></tr>';
-						tbl.appendChild(thead);
-						const tbody = document.createElement('tbody');
-						tbody.innerHTML = '<tr style="border-bottom:1px solid #eee;"><td style="padding:4px;">' + (savedDate || '—') + '</td><td style="text-align:right;padding:4px;">₱' + Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td><td style="padding:4px;">' + (savedNote || '—') + '</td></tr>';
-						tbl.appendChild(tbody);
-						modalPaymentsList.innerHTML = '';
-						modalPaymentsList.appendChild(tbl);
-					}
-				})();
-
-				// 2) Update main table totals (total paid, balance)
-				(function updateTotalsInMainTable(){
-					const totalPaidCell = document.getElementById('total-paid-' + activeStudentId);
-					if (totalPaidCell) {
-						const currentPaid = parseFloat((totalPaidCell.textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const newPaid = currentPaid + savedAmount;
-						totalPaidCell.textContent = newPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-					}
-					const totalFeesCell = document.getElementById('total-fees-' + activeStudentId);
-					const balanceCell = document.getElementById('balance-' + activeStudentId);
-					if (totalFeesCell && balanceCell) {
-						const totalFeesVal = parseFloat((totalFeesCell.textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const totalPaidVal = parseFloat((document.getElementById('total-paid-' + activeStudentId).textContent || '0').replace(/[^\d.-]+/g,"")) || 0;
-						const newBalance = (isNaN(totalFeesVal) || totalFeesVal === 0) ? NaN : (totalFeesVal - totalPaidVal);
-						if (isNaN(newBalance)) {
-							balanceCell.textContent = '—';
-						} else {
-							balanceCell.textContent = newBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-							if (newBalance > 0) {
-								balanceCell.classList.remove('text-success');
-                                balanceCell.classList.add('text-danger');
-							} else {
-								balanceCell.classList.remove('text-danger');
-                                balanceCell.classList.add('text-success');
-							}
-						}
-					}
-				})();
-
-				// 3) Append details-row if visible
-				(function appendToDetails(){
-					const detailsTbl = document.querySelector('#details-row-' + activeStudentId + ' table');
-					if (detailsTbl) {
-						let tbody = detailsTbl.querySelector('tbody');
-						if (!tbody) {
-							tbody = document.createElement('tbody');
-							detailsTbl.appendChild(tbody);
-						}
-						const tr2 = document.createElement('tr');
-						tr2.innerHTML = '<td>' + (savedDate || '—') + '</td>' +
-							'<td class="text-right">₱' + Number(savedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-							'<td>' + (savedNote || '—') + '</td>';
-						tbody.insertBefore(tr2, tbody.firstChild);
-					}
-				})();
-
-				// 4) Update manage button data-payments attribute so it includes the new record (so re-open shows the new payment)
-				(function updateManageButtonDataPayments(){
-					const manageBtn = document.querySelector('.btn-manage[data-student-id="' + activeStudentId + '"]');
-					if (manageBtn) {
-						try {
-							const existingJson = manageBtn.getAttribute('data-payments') || '[]';
-							const arr = JSON.parse(existingJson);
-							// prepend new record
-							arr.unshift({ id: savedId, date: savedDate, amount: savedAmount, note: savedNote });
-							manageBtn.setAttribute('data-payments', JSON.stringify(arr));
-						} catch(e) {
-							console.error('Failed to update manage button payments attribute', e);
-						}
-					}
-				})();
-
 				closeModal();
+				alert('Payment recorded successfully!');
 			} catch (err) {
 				console.error(err);
 				modalError.textContent = err.message || 'Failed to save payment.';
@@ -1692,17 +1575,14 @@ if (!empty($balances)) {
 		function sortTable(criteria) {
 			if (!tbody) return;
 
-			// Explicitly select only the main student rows (avoid details rows)
 			const studentRows = Array.from(tbody.querySelectorAll('tr[id^="student-row-"]'));
 
-			// Sort based on criteria
 			studentRows.sort((a, b) => {
 				let valA, valB;
 				if (criteria === 'grade_asc' || criteria === 'grade_desc') {
 					valA = (a.dataset.grade || '').toLowerCase();
 					valB = (b.dataset.grade || '').toLowerCase();
 				} else {
-					// Default: sort by student name
 					valA = a.cells[1].textContent.trim().toLowerCase();
 					valB = b.cells[1].textContent.trim().toLowerCase();
 				}
@@ -1714,32 +1594,24 @@ if (!empty($balances)) {
 				}
 			});
 
-			// Create a document fragment and append the sorted student rows, followed by their details rows
 			const frag = document.createDocumentFragment();
 			studentRows.forEach((row, index) => {
-				// Update row number
 				if (row.cells && row.cells[0]) row.cells[0].textContent = index + 1;
-
-				// Append student row
 				frag.appendChild(row);
-
-				// Append corresponding details row directly after the student row, and hide it
 				const studentId = row.id.replace('student-row-', '');
 				const detailsRow = document.getElementById('details-row-' + studentId);
 				if (detailsRow) {
-					detailsRow.style.display = 'none'; // ensure it's hidden
+					detailsRow.style.display = 'none';
 					frag.appendChild(detailsRow);
 				}
 			});
 
-			// Replace tbody contents with sorted rows (student + hidden details)
 			tbody.innerHTML = '';
 			tbody.appendChild(frag);
 
-			// Reset all details-toggle buttons to the default "Details" text with count (use stored data-pay-count)
 			document.querySelectorAll('.details-toggle').forEach(btn => {
 				const payCount = btn.getAttribute('data-pay-count') || '0';
-				btn.textContent = 'Details' + (payCount && payCount !== '0' ? ' (' + payCount + ')' : '');
+				btn.textContent = 'Details' + (payCount && payCount !== '0' ? ' (' + payCount + ')' : '' );
 				btn.setAttribute('aria-expanded', 'false');
 			});
 		}
@@ -1751,5 +1623,6 @@ if (!empty($balances)) {
 		}
 	})();
 	</script>
+</head>
 </body>
 </html>
