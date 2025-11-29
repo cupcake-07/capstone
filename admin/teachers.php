@@ -54,8 +54,14 @@ if ($allTeachersResult) {
   <div class="app">
     <?php include __DIR__ . '/../includes/admin-sidebar.php'; ?>
 
+    <!-- Add overlay right after aside -->
+    <div id="sidebarOverlay" class="sidebar-overlay" tabindex="-1" aria-hidden="true"></div>
+
     <main class="main">
       <header class="topbar">
+        <!-- Add mobile toggle button inside the topbar. Visible only on small screens. -->
+        <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation">☰</button>
+
         <h1>Manage Teachers</h1>
         <div class="top-actions">
           <!-- Removed the + Add Teacher button -->
@@ -73,58 +79,62 @@ if ($allTeachersResult) {
             <option value="sections">Sections</option>
           </select>
         </div>
-        <table id="teachersTable">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Subject</th>
-              <th>Phone</th>
-              <th>Grade</th>
-              <th>Sections</th>
-              <th>Hire Date</th>
-              <th>Hired</th>
-              <th>Manage</th>
-            </tr>
-          </thead>
-          <tbody id="teachersBody">
-            <?php if (!empty($allTeachers)): ?>
-              <?php foreach ($allTeachers as $teacher): ?>
-                <tr data-teacher-id="<?php echo htmlspecialchars($teacher['id']); ?>">
-                  <td><?php echo htmlspecialchars($teacher['id']); ?></td>
-                  <td><?php echo htmlspecialchars($teacher['name']); ?></td>
-                  <td><?php echo htmlspecialchars($teacher['email']); ?></td>
-                  <td><?php echo htmlspecialchars($teacher['subject']); ?></td>
-                  <td><?php echo htmlspecialchars($teacher['phone']); ?></td>
-                  <td class="col-grade"><?php echo htmlspecialchars($teacher['grade']); ?></td>
-                  <td class="col-sections"><?php echo htmlspecialchars($teacher['sections']); ?></td>
-                  <td class="col-hiredate"><?php echo $teacher['hire_date'] ? htmlspecialchars($teacher['hire_date']) : '—'; ?></td>
-                  <td class="col-ishired"><?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? 'Yes' : '-'; ?></td>
-                  <td>
-                    <!-- improved manage button with icon -->
-                    <button type="button" class="manage-btn" 
-                      data-id="<?php echo htmlspecialchars($teacher['id']); ?>"
-                      data-name="<?php echo htmlspecialchars($teacher['name']); ?>"
-                      data-grade="<?php echo htmlspecialchars($teacher['grade']); ?>"
-                      data-sections="<?php echo htmlspecialchars($teacher['sections']); ?>"
-                      data-hire-date="<?php echo htmlspecialchars($teacher['hire_date']); ?>"
-                      data-is-hired="<?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? '1' : '0'; ?>"
-                      aria-label="Manage <?php echo htmlspecialchars($teacher['name']); ?>">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M4 20v-1c0-2.21 3.58-4 8-4s8 1.79 8 4v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <tr><td colspan="10" style="text-align: center; padding: 20px;">No teachers found</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+
+        <!-- Wrap table with a responsive container (allows horizontal scrolling on small screens) -->
+        <div class="card-body table-responsive p-0">
+          <table id="teachersTable" class="table" role="table" aria-label="All Teachers">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Subject</th>
+                <th>Phone</th>
+                <th>Grade</th>
+                <th>Sections</th>
+                <th>Hire Date</th>
+                <th>Hired</th>
+                <th>Manage</th>
+              </tr>
+            </thead>
+            <tbody id="teachersBody">
+              <?php if (!empty($allTeachers)): ?>
+                <?php foreach ($allTeachers as $teacher): ?>
+                  <tr data-teacher-id="<?php echo htmlspecialchars($teacher['id']); ?>">
+                    <td><?php echo htmlspecialchars($teacher['id']); ?></td>
+                    <td><?php echo htmlspecialchars($teacher['name']); ?></td>
+                    <td><?php echo htmlspecialchars($teacher['email']); ?></td>
+                    <td><?php echo htmlspecialchars($teacher['subject']); ?></td>
+                    <td><?php echo htmlspecialchars($teacher['phone']); ?></td>
+                    <td class="col-grade"><?php echo htmlspecialchars($teacher['grade']); ?></td>
+                    <td class="col-sections"><?php echo htmlspecialchars($teacher['sections']); ?></td>
+                    <td class="col-hiredate"><?php echo $teacher['hire_date'] ? htmlspecialchars($teacher['hire_date']) : '—'; ?></td>
+                    <td class="col-ishired"><?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? 'Yes' : '-'; ?></td>
+                    <td>
+                      <!-- improved manage button with icon -->
+                      <button type="button" class="manage-btn"
+                        data-id="<?php echo htmlspecialchars($teacher['id']); ?>"
+                        data-name="<?php echo htmlspecialchars($teacher['name']); ?>"
+                        data-grade="<?php echo htmlspecialchars($teacher['grade']); ?>"
+                        data-sections="<?php echo htmlspecialchars($teacher['sections']); ?>"
+                        data-hire-date="<?php echo htmlspecialchars($teacher['hire_date']); ?>"
+                        data-is-hired="<?php echo ($teacher['is_hired'] && $teacher['is_hired'] !== '0') ? '1' : '0'; ?>"
+                        aria-label="Manage <?php echo htmlspecialchars($teacher['name']); ?>">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px;">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M4 20v-1c0-2.21 3.58-4 8-4s8 1.79 8 4v1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr><td colspan="10" style="text-align: center; padding: 20px;">No teachers found</td></tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <footer class="footer">© <span id="year"></span> Schoolwide Management System</footer>
@@ -252,6 +262,156 @@ if ($allTeachersResult) {
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .manage-toast { position: absolute; left: 20px; right:20px; bottom:16px; background:#0f172a; color:#fff; padding:10px 14px; border-radius:8px; text-align:center; font-weight:600; box-shadow:0 8px 24px rgba(2,6,23,0.2); }
+
+    /* Sidebar responsive toggling (Adopted from AccountBalance.php)
+       Only mobile behavior — avoids adjusting other styles. */
+    .sidebar { transition: transform 0.25s ease; }
+    .sidebar-overlay { display: none; }
+
+    .sidebar-toggle { display: none; }
+
+    /* Mobile layout - applies at max-width: 1300px (toggle the sidebar) */
+    @media (max-width: 1300px) {
+      /* Override: Hide the sidebar and show as off-canvas overlay */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-105%);
+        z-index: 2200;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+        flex-direction: column;
+        padding: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        display: flex;
+      }
+
+      /* When open, bring it in view */
+      body.sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      /* Overlay for when sidebar is open */
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 2100;
+      }
+      body.sidebar-open .sidebar-overlay {
+        display: block;
+      }
+
+      /* Show the sidebar toggle in the topbar on mobile */
+      .sidebar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: transparent;
+        border: 1px solid rgba(0,0,0,0.06);
+        font-size: 1.05rem;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+
+      /* Small topbar layout tweaks */
+      .topbar {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .topbar h1 { font-size: 1.1rem; margin: 0; }
+
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+        flex-wrap: wrap;
+      }
+
+      /* REMOVE EXTRA SPACES: make main occupy full width and ensure app stacks so there's no empty left gutter */
+      .app { 
+        flex-direction: column; 
+        min-height: 100vh; 
+      }
+      .main {
+        width: 100%;
+        margin-left: 0;
+        box-sizing: border-box;
+        order: 1;
+      }
+    }
+
+    /* Table base */
+    .data-table .table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px; /* keep columns readable on narrow screens; allows horizontal scroll */
+      font-size: 0.95rem;
+    }
+    .data-table .table thead th, .data-table .table tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+      text-align: left;
+    }
+    .data-table .table thead th {
+      background: #faf7f2;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* responsive wrapper (same as AccountBalance.php pattern) */
+    .card-body.table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 1300px) {
+      .data-table .table {
+        min-width: 760px;
+        font-size: 0.88rem;
+      }
+      .data-table .table thead th, .data-table .table tbody td {
+        padding: 6px 8px;
+        white-space: nowrap;
+      }
+      /* Hide long text and use ellipsis where suitable */
+      .data-table td, .data-table th {
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Allow the table container to take full width */
+      .card-body.table-responsive {
+        margin: 0;
+      }
+
+      /* Reduce table header gap */
+      .data-table h2 { margin-bottom: 10px; }
+    }
+
+    /* Smaller devices - tighter table */
+    @media (max-width: 480px) {
+      .data-table .table {
+        min-width: 680px;
+        font-size: 0.82rem;
+      }
+      .data-table .table thead th, .data-table .table tbody td {
+        padding: 5px 6px;
+      }
+    }
   </style>
 
   <script>
@@ -537,6 +697,45 @@ if ($allTeachersResult) {
 			});
 		});
 	});
+
+	// NEW: Sidebar toggle functionality for mobile (minimal behavior only)
+	(function() {
+		const sidebarToggle = document.getElementById('sidebarToggle');
+		const sidebarOverlay = document.getElementById('sidebarOverlay');
+		const sidebar = document.querySelector('.sidebar');
+
+		if (sidebarToggle) {
+			sidebarToggle.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.toggle('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking overlay
+		if (sidebarOverlay) {
+			sidebarOverlay.addEventListener('click', function(e) {
+				e.preventDefault();
+				document.body.classList.remove('sidebar-open');
+			});
+		}
+
+		// Close sidebar when clicking a nav link (if present in included sidebar)
+		if (sidebar) {
+			const navLinks = sidebar.querySelectorAll('nav a');
+			navLinks.forEach(link => {
+				link.addEventListener('click', function() {
+					document.body.classList.remove('sidebar-open');
+				});
+			});
+		}
+
+		// Close on ESC
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+				document.body.classList.remove('sidebar-open');
+			}
+		});
+	})();
   </script>
 </body>
 </html>
