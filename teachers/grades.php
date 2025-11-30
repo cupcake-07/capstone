@@ -556,6 +556,29 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
   <link rel="stylesheet" href="grades.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Add responsive sidebar styles (adapted from tprofile.php) -->
+  <style>
+    /* Sidebar & overlay responsive behaviour */
+    .hamburger { display: none; background: transparent; border: none; padding: 8px; cursor: pointer; color: #fff; }
+    .hamburger .bars { display:block; width:22px; height: 2px; background:#fff; position:relative; }
+    .hamburger .bars::before, .hamburger .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+    .hamburger .bars::before { top: -7px; }
+    .hamburger .bars::after { top: 7px; }
+
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.0); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 2100; display: none; }
+
+    @media (max-width: 1300px) {
+      .hamburger { display: inline-block; margin-right: 8px; }
+      .side { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; transform: translateX(-110%); transition: transform .25s ease; z-index: 2200; height: 100vh; }
+      body.sidebar-open .side { transform: translateX(0); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+      body.sidebar-open .sidebar-overlay { display:block; opacity: 1; background: rgba(0,0,0,0.35); pointer-events: auto; }
+      .side .nav a { pointer-events: auto; position: relative; z-index: 2201; }
+      .page-wrapper > main { transition: margin-left .25s ease; }
+      .main { min-height: calc(100vh - var(--navbar-height, 56px)); }
+    }
+  </style>
+
 </head>
 <body>
   <!-- NAVBAR -->
@@ -568,6 +591,11 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
       </div>
     </div>
     <div class="navbar-actions">
+      <!-- Add the hamburger toggle button (mobile sidebar) -->
+      <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="bars" aria-hidden="true"></span>
+      </button>
+
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
         <a href="teacher-logout.php" class="logout-btn" title="Logout">
@@ -583,7 +611,8 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
 
   <div class="page-wrapper">
     <!-- SIDEBAR NAVIGATION -->
-    <aside class="side">
+    <!-- Add id "mainSidebar" so the toggle targets this element -->
+    <aside id="mainSidebar" class="side">
       <nav class="nav">
         <a href="teacher.php">Dashboard</a>
         <a href="tprofile.php">Profile</a>
@@ -598,6 +627,9 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
       </nav>
       <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>
+
+    <!-- Sidebar overlay for mobile (click to close) -->
+    <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 
     <!-- MAIN CONTENT -->
     <main class="main">
@@ -1218,6 +1250,67 @@ $nextUrl = $_SERVER['PHP_SELF'] . '?' . http_build_query($baseQsNext);
         }
         submitGradeForm(e);
       });
+
+      // --- Sidebar toggle logic (mobile) adapted from tprofile.php ---
+      (function () {
+          const toggle = document.getElementById('sidebarToggle');
+          const side = document.getElementById('mainSidebar');
+          const overlay = document.getElementById('sidebarOverlay');
+          const navLinks = document.querySelectorAll('.side .nav a');
+
+          if (!toggle || !side || !overlay) return;
+
+          function openSidebar() {
+              document.body.classList.add('sidebar-open');
+              overlay.classList.add('open');
+              overlay.setAttribute('aria-hidden', 'false');
+              toggle.setAttribute('aria-expanded', 'true');
+              document.body.style.overflow = 'hidden';
+          }
+
+          function closeSidebar() {
+              document.body.classList.remove('sidebar-open');
+              overlay.classList.remove('open');
+              overlay.setAttribute('aria-hidden', 'true');
+              toggle.setAttribute('aria-expanded', 'false');
+              document.body.style.overflow = '';
+          }
+
+          toggle.addEventListener('click', function (e) {
+              e.preventDefault();
+              if (document.body.classList.contains('sidebar-open')) {
+                  closeSidebar();
+              } else {
+                  openSidebar();
+              }
+          });
+
+          // Click overlay to close
+          overlay.addEventListener('click', function (e) {
+              e.preventDefault();
+              closeSidebar();
+          });
+
+          // Close sidebar after a nav link is clicked (mobile)
+          navLinks.forEach(a => a.addEventListener('click', function () {
+              if (window.innerWidth <= 1300) closeSidebar();
+          }));
+
+          // On resize, ensure sidebar is closed when switching to large screens
+          window.addEventListener('resize', function () {
+              if (window.innerWidth > 1300) {
+                  closeSidebar();
+              }
+          });
+
+          // Close sidebar on ESC
+          document.addEventListener('keydown', function (e) {
+              if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+                  closeSidebar();
+              }
+          });
+      })();
+      // --- End sidebar logic ---
     });
 
     // submitGradeForm: handle form submission via AJAX
