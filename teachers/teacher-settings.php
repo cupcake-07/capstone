@@ -177,6 +177,17 @@ if ($user_id > 0) {
             --surface: #ffffff;
         }
 
+        /* Hamburger button (hidden on large screens, shown on small) */
+        .hamburger { display: none; background: transparent; border: none; padding: 8px; cursor: pointer; color: #fff; }
+        .hamburger .bars { display:block; width:22px; height: 2px; background:#fff; position:relative; }
+        .hamburger .bars::before, .hamburger .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+        .hamburger .bars::before { top: -7px; }
+        .hamburger .bars::after { top: 7px; }
+
+        /* Overlay defaults */
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.0); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 2100; display: none; }
+        .sidebar-overlay.open { display:block; opacity: 1; pointer-events: auto; }
+
         /* Global inputs / selects / textareas */
         .settings-form-group input[type="text"],
         .settings-form-group input[type="email"],
@@ -358,6 +369,18 @@ if ($user_id > 0) {
             .settings-tabs { overflow-x: auto; }
             .settings-tab-btn { white-space: nowrap; }
         }
+
+        /* Small screens: sidebar slides in/out — match tprofile.php behaviour (900px breakpoint) */
+        @media (max-width: 1300px) {
+            .hamburger { display: inline-block; margin-right: 8px; }
+            /* slide sidebar off-canvas */
+            .side { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; transform: translateX(-110%); transition: transform .25s ease; z-index: 2200; height: 100vh; }
+            body.sidebar-open .side { transform: translateX(0); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+            /* Show overlay behind sidebar but above the main content */
+            body.sidebar-open .sidebar-overlay { display: block; opacity: 1; background: rgba(0,0,0,0.35); pointer-events: auto; }
+            /* Force nav links to receive pointer events and always be on top of overlay */
+            .side .nav a { pointer-events: auto; position: relative; z-index: 2201; }
+        }
     </style>
    
 </head>
@@ -374,6 +397,11 @@ if ($user_id > 0) {
             </div>
         </div>
         <div class="navbar-actions">
+            <!-- Add Hamburger for mobile sidebar toggle (keeps layout and accessibility) -->
+            <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="bars" aria-hidden="true"></span>
+            </button>
+
             <div class="user-menu">
                 <span><?php echo $user_name; ?></span>
                 <a href="teacher-logout.php" class="logout-btn" title="Logout">
@@ -388,7 +416,8 @@ if ($user_id > 0) {
     <!--Main Page Container-->
     <div class="page-wrapper">
         <!--Sidebar-->
-        <aside class="side">
+        <!-- Add an id to the sidebar so toggle can target it -->
+        <aside id="mainSidebar" class="side">
             <nav class="nav">
                 <a href="teacher.php">Dashboard</a>
                 <a href="tprofile.php">Profile</a>
@@ -402,6 +431,9 @@ if ($user_id > 0) {
             </nav>
             <div class="side-foot">Logged in as <strong>Teacher</strong></div>
         </aside>
+
+        <!-- Overlay used to close sidebar on small screens -->
+        <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 
         <!--Main Content-->
         <main class="main">
@@ -486,9 +518,7 @@ if ($user_id > 0) {
                                     </div>
                                     <small id="pwd-help" class="help">At least 6 characters. Use letters, numbers & symbols for a stronger password.</small>
 
-                                    <div id="pwd-strength" class="pwd-strength" aria-hidden="false">
-                                        <div id="pwd-strength-bar" class="pwd-strength-bar"></div>
-                                    </div>
+                                   
                                 </div>
                                 <div class="settings-form-group">
                                     <label for="confirm_password">Confirm Password</label>
@@ -511,49 +541,7 @@ if ($user_id > 0) {
         </main>
 
         <!--Footer-->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>Contact Us</h3>
-                    <p>123 Faith Avenue</p>
-                    <p>Your City, ST 12345</p>
-                    <p>Phone: (555) 123-4567</p>
-                    <p>Email: info@gloriousgod.edu</p>
-                </div>
-                <div class="footer-section">
-                    <h3>Connect With Us</h3>
-                    <div class="social-links">
-                        <a href="#" aria-label="Facebook">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                            </svg>
-                        </a>
-                        <a href="#" aria-label="Instagram">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><circle cx="17.5" cy="6.5" r="1.5"/>
-                            </svg>
-                        </a>
-                        <a href="#" aria-label="Twitter">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2 1.7-1.4 1.2-4-1.2-5.4l-.4-.4a7.9 7.9 0 0 0-1.7-1.1c1.5-1.4 3.7-2 6.5-1.6 3-1.6 5.5-2.8 7.3-3.6 1.8.8 2.6 2.2 2.6 3.6z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h3>System Info</h3>
-                    <p>Schoolwide Management System</p>
-                    <p>Version 1.0.0</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; <span id="year">2025</span> Glorious God Family Christian School. All rights reserved.</p>
-                <div class="footer-links">
-                    <a href="privacy.php">Privacy Policy</a> |
-                    <a href="terms.php">Terms of Service</a>
-                </div>
-            </div>
-        </footer>
+       
     </div>
 
     <script>
@@ -686,6 +674,67 @@ if ($user_id > 0) {
         // Update footer year safely
         const yearEl = document.getElementById('year');
         if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+        // Sidebar toggle logic (mobile) - same behaviour as in tprofile.php
+        (function () {
+            const toggle = document.getElementById('sidebarToggle');
+            const side = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const navLinks = document.querySelectorAll('.side .nav a');
+
+            if (!toggle || !side || !overlay) return;
+
+            function openSidebar() {
+                document.body.classList.add('sidebar-open');
+                overlay.classList.add('open');
+                overlay.setAttribute('aria-hidden', 'false');
+                toggle.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebar() {
+                document.body.classList.remove('sidebar-open');
+                overlay.classList.remove('open');
+                overlay.setAttribute('aria-hidden', 'true');
+                toggle.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (document.body.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            // Click overlay to close
+            overlay.addEventListener('click', function (e) {
+                e.preventDefault();
+                closeSidebar();
+            });
+
+            // Close sidebar after a nav link is clicked (mobile)
+            navLinks.forEach(a => a.addEventListener('click', function () {
+                // match breakpoint: close on small/mid screens
+                if (window.innerWidth <= 900) closeSidebar();
+             }));
+
+            // On resize, ensure sidebar is closed when switching between small/large
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 900) {
+                     closeSidebar();
+                 }
+             });
+
+            // Close on ESC
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                }
+            });
+        })();
     </script>
 </body>
 </html>
