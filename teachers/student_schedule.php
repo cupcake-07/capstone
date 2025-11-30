@@ -349,17 +349,18 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         border-collapse:collapse; 
         margin-top:12px; 
         background:white;
+        table-layout: auto; /* auto layout so it naturally resizes */
     }
     .schedule-table th, .schedule-table td { 
         padding:8px; 
-        border:1px solid #ddd; 
+        /* border:1px solid #ddd;  */
         vertical-align:top; 
         text-align:left;
         border-radius:10px; 
     }
-    .schedule-table th {
+    .schedule-table th { 
         color: #fd4ba7;
-        border: 2px solid #31061cff;
+        
     }
     .day-cell { 
         display:flex;
@@ -385,6 +386,14 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         border:1px solid #e5e5e5; 
         margin-bottom:20px; 
         box-shadow:0 2px 8px rgba(0,0,0,0.04); 
+        box-sizing: border-box; /* make padding included in width calculation */
+        width: 100%;
+        max-width: 1100px;      /* contain content within page area */
+        margin: 0 auto 12px auto;
+        padding: 20px;
+        position: relative;     /* ensure it doesn't float or overlap other items */
+        z-index: 1;             /* keep it above background layers but below modals */
+        overflow: hidden;       /* prevent children from overflowing */
     }
     .schedule-actions h2 { 
         margin:0 0 20px 0; 
@@ -721,6 +730,248 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         .controls label { width:100%; }
         .controls select { width:100%; }
     }
+
+/* --- NEW: Hamburger, overlay, and sidebar slide-in styles (mobile) --- */
+.hamburger { display: none; background: transparent; border: none; padding: 8px; cursor: pointer; color: #fff; }
+.hamburger .bars { display:block; width:22px; height: 2px; background:#fff; position:relative; }
+.hamburger .bars::before, .hamburger .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+.hamburger .bars::before { top: -7px; }
+.hamburger .bars::after { top: 7px; }
+
+/* Overlay defaults */
+.sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.0); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 2100; display: none; }
+.sidebar-overlay.open { display:block; opacity: 1; pointer-events: auto; background: rgba(0,0,0,0.35); }
+
+/* Small screens: sidebar slides in/out */
+@media (max-width: 1300px) {
+    .hamburger { display:inline-block; margin-right: 8px; }
+
+    /* Hide the sidebar offscreen; z-index over main */
+    .side { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; transform: translateX(-110%); transition: transform .25s ease; z-index: 2200; height: 100vh; }
+    body.sidebar-open .side { transform: translateX(0); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+
+    /* When sidebar open show overlay */
+    body.sidebar-open .sidebar-overlay { display:block; opacity:1; pointer-events:auto; }
+
+    /* Ensure nav links are clickable above overlay */
+    .side .nav a { position: relative; z-index: 2201; }
+}
+/* --- END NEW styles --- */
+
+/* --- NEW: stricter mobile stack rules (<=590px) to avoid overlap with outer container --- */
+@media (max-width: 590px) {
+    /* reduce padding and ensure schedule-actions fits inside viewport */
+    .schedule-actions {
+        padding: 12px !important;
+        margin: 10px auto !important;
+        box-sizing: border-box;
+        width: calc(100% - 24px) !important;
+        max-width: none !important;
+        border-radius: 10px;
+    }
+
+    /* stack controls vertically */
+    .controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        justify-content: flex-start !important;
+    }
+
+    /* each control group should take full width and wrap contents */
+    .controls > div {
+        width: 100% !important;
+        display: flex !important;
+        gap: 8px !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+    }
+
+    /* left small info (Total Students) should not shrink into other controls */
+    .controls > div:first-child {
+        justify-content: flex-start !important;
+        gap: 10px !important;
+    }
+
+    /* right controls should be stacked into their own vertical flow on very small screens */
+    .controls > div:last-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    /* make controls full-width for comfortable tap targets */
+    .controls input[type="search"],
+    .controls select {
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+    }
+
+    /* export button: full width under controls */
+    .controls .btn {
+        width: 100% !important;
+        max-width: none !important;
+        justify-content: center;
+        padding: 10px 12px !important;
+    }
+
+    /* ensure table wrapper does not overflow and does scroll horizontally */
+    .table-wrap {
+        padding: 0 6px 6px 6px !important;
+    }
+
+    /* slightly smaller table font on narrow displays to reduce the need to scroll too much */
+    .schedule-table {
+        font-size: 13px !important;
+        min-width: 0 !important; /* allow it to wrap instead of forcing scroll */
+    }
+
+    /* Ensure schedule container keeps clear of the site edges and does not overlap adjacent elements */
+    .schedule-container {
+        padding: 8px !important;
+    }
+}
+/* --- END new mobile rules --- */
+
+/* Desktop/tablet baseline */
+.schedule-table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:12px;
+   
+    table-layout: auto; /* auto layout so it naturally resizes */
+}
+
+
+@media (min-width: 901px) {
+   .schedule-table,
+.schedule-table tr,
+.schedule-table th,
+.schedule-table td {
+    border: 1px solid black;
+}
+
+}
+
+@media (max-width: 900px) {
+    .schedule-table thead  {
+        display:none;
+    }
+}
+
+/* Responsive table for small screens - stacked rows */
+@media (max-width: 900px) {
+    .table-wrap { overflow-x: visible; }
+    .schedule-table, .schedule-table thead, .schedule-table tbody, .schedule-table th, .schedule-table td, .schedule-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    /* Hide the table header on small screens (we will display header label using data-label attribute) */
+    .schedule-table thead { 
+        display: none;
+    }
+
+    
+
+    /* Each row becomes a card */
+    .schedule-table tr {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #000000ff;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+    /* Each cell becomes a flex row with label and value */
+    .schedule-table td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        box-sizing: border-box;
+    }
+    .schedule-table td:last-child { border-bottom: none; }
+
+    .schedule-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #666;
+        flex: 0 0 35%;
+        margin-right: 12px;
+        text-align: left;
+        box-sizing: border-box;
+        white-space: normal;
+    }
+
+    /* Value spacing and wrapping */
+    .schedule-table td .cell-value {
+        display: block;
+        text-align: right;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-all;
+    }
+
+    /* Buttons within cells should wrap nicely; on very small screens we make them full width */
+    .schedule-table td .cell-value button {
+        max-width: 220px;
+        width: auto;
+    }
+    @media (max-width: 420px) {
+        .schedule-table td .cell-value button {
+            width: 100%;
+            max-width: none;
+            box-sizing: border-box;
+            text-align: center;
+        }
+    }
+}
+
+/* Slightly smaller font for very narrow screens */
+@media (max-width: 420px) {
+    .schedule-table td::before { font-size: 12px; }
+    .schedule-table td .cell-value { font-size: 13px; }
+}
+
+/* Preserve horizontal scroll for wide tables on narrow screens to avoid layout breaking */
+.table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure the schedule container respects viewport width and doesn't overflow */
+.schedule-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 10px; /* keep slight padding but not cause overflow */
+    max-width: 100%;
+}
+
+/* small search button styling (matches existing secondary button) */
+.btn-search {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d0d0d0;
+    background: white;
+    color: #1a1a1a;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+}
+.btn-search:hover { background: #f5f5f5; }
+
+/* make search button full-width on mobile in stacked view */
+@media (max-width: 590px) {
+    .btn-search { width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -735,11 +986,16 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         </div>
     </div>
     <div class="navbar-actions">
+        <!-- NEW: Mobile sidebar toggle -->
+        <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="bars" aria-hidden="true"></span>
+        </button>
+
         <div class="user-menu">
             <span><?php echo $user_name ?? 'Teacher'; ?></span>
-            <a href="teacher-logout.php" class="logout-btn" title="Logout"><button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
-            <button type="button" style="background: none; border: none; padding: 8px 16px; color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
-            <img src="logout-btn.png" alt="Logout" style="width:30px; height:30px; vertical-align: middle; margin-right: 8px;">
+            <a href="teacher-logout.php" class="logout-btn" title="Logout">
+            <button type="button" style="background: none; border: none;  color: #fff; cursor: pointer;  transition: background-color 0.3s ease;">
+            <img src="logout-btn.png" alt="Logout" style="width:20px; height:20px;">
           </button>
             </a>
         </div>
@@ -747,7 +1003,8 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
 </nav>
 
 <div class="page-wrapper">
-    <aside class="side">
+    <!-- Add id to sidebar for toggle controls -->
+    <aside id="mainSidebar" class="side">
         <nav class="nav">
             <a href="teacher.php">Dashboard</a>
             <a href="tprofile.php">Profile</a>
@@ -763,6 +1020,9 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
         <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>
 
+    <!-- NEW: Sidebar overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+
     <main class="main">
         <!-- Students list view -->
         <div class="schedule-container">
@@ -775,6 +1035,7 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
                     </div>
                     <div style="display:flex; gap:12px; align-items:center;">
                         <input id="studentSearch" type="search" placeholder="Search by name, grade or section" style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; min-width:220px;">
+                        <button id="studentSearchBtn" type="button" class="btn-search" aria-label="Search">Search</button>
                         <label for="sortSelect" style="margin-left:6px; font-weight:600; font-size:13px;">Sort:</label>
                         <select id="sortSelect" style="padding:8px 10px; border:1px solid #ddd; border-radius:6px; background:#fff; font-size:13px;">
                             <option value="default">Default</option>
@@ -789,27 +1050,28 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
                 </div>
             </div>
 
-            <div style="margin-top:16px;">
+            <div class="table-wrap">
                 <table class="schedule-table" id="studentsTable" style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">ID</th>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Name</th>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Grade</th>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Section</th>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Enrolled</th>
-                            <th style="padding:8px;border:1px solid #e6e6e6;text-align:left;">Schedule</th>
+                            <th style="padding:8px;text-align:left;">ID</th>
+                            <th style="padding:8px;text-align:left;">Name</th>
+                            <th style="padding:8px;text-align:left;">Grade</th>
+                            <th style="padding:8px;text-align:left;">Section</th>
+                            <th style="padding:8px;text-align:left;">Enrolled</th>
+                            <th style="padding:8px;text-align:left;">Schedule</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($students as $st): ?>
                             <tr>
-                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['id']); ?></td>
-                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['student_name']); ?></td>
-                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['grade']); ?></td>
-                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo htmlspecialchars($st['section']); ?></td>
-                                <td style="padding:8px;border:1px solid #f0f0f0;"><?php echo ($st['is_enrolled'] ? 'Yes' : 'No'); ?></td>
-                               <td style="padding:8px;border:1px solid #f0f0f0;">
+                                <td data-label="ID" style="padding:8px;"><span class="cell-value"><?php echo htmlspecialchars($st['id']); ?></span></td>
+                                <td data-label="Name" style="padding:8px;"><span class="cell-value"><?php echo htmlspecialchars($st['student_name']); ?></span></td>
+                                <td data-label="Grade" style="padding:8px;"><span class="cell-value"><?php echo htmlspecialchars($st['grade']); ?></span></td>
+                                <td data-label="Section" style="padding:8px;"><span class="cell-value"><?php echo htmlspecialchars($st['section']); ?></span></td>
+                                <td data-label="Enrolled" style="padding:8px;"><span class="cell-value"><?php echo ($st['is_enrolled'] ? 'Yes' : 'No'); ?></span></td>
+                               <td data-label="Schedule" style="padding:8px;">
+                                   <span class="cell-value" style="display:inline-flex; justify-content:flex-end;">
                                    <?php
                                        $g = trim((string)$st['grade']);
                                        $s = trim((string)$st['section']);
@@ -830,6 +1092,7 @@ $allSchedulesJson = json_encode($allSchedules, JSON_HEX_TAG|JSON_HEX_APOS|JSON_H
                                            echo '<span style="color:#777;font-size:13px;">N/A</span>';
                                        }
                                    ?>
+                                   </span>
                                </td>
                             </tr>
                         <?php endforeach; ?>
@@ -1055,6 +1318,18 @@ document.getElementById('scheduleViewerModal').addEventListener('click', functio
     Array.from(tbody.rows).forEach((row, i) => row.dataset.origOrder = i);
 })();
 
+// helper to determine whether a row is hidden in current UI
+function isRowHidden(row) {
+    if (!row) return true;
+    if (row.style && row.style.display === 'none') return true;
+    try {
+        const cs = getComputedStyle(row);
+        return cs && cs.display === 'none';
+    } catch (e) {
+        return false;
+    }
+}
+
 // helper: extract numeric grade when possible, otherwise return lowercase string
 function parseGradeValue(text) {
     if (!text) return -Infinity;
@@ -1073,14 +1348,14 @@ function cmp(a, b) {
     return a > b ? 1 : -1;
 }
 function compareRowsByGrade(aRow, bRow, asc = true) {
-    const a = parseGradeValue(aRow.cells[2].textContent);
-    const b = parseGradeValue(bRow.cells[2].textContent);
+    const a = parseGradeValue(aRow.cells[2]?.textContent || '');
+    const b = parseGradeValue(bRow.cells[2]?.textContent || '');
     const res = (typeof a === 'number' && typeof b === 'number') ? (a - b) : cmp(String(a), String(b));
     return asc ? res : -res;
 }
 function compareRowsBySection(aRow, bRow, asc = true) {
-    const a = parseSectionValue(aRow.cells[3].textContent);
-    const b = parseSectionValue(bRow.cells[3].textContent);
+    const a = parseSectionValue(aRow.cells[3]?.textContent || '');
+    const b = parseSectionValue(bRow.cells[3]?.textContent || '');
     const res = cmp(a, b);
     return asc ? res : -res;
 }
@@ -1090,66 +1365,103 @@ function compareRowsGradeThenSection(aRow, bRow) {
     return compareRowsBySection(aRow, bRow, true);
 }
 
-// main sorter
+// keep current selected sort (so search re-applies the same order)
+let currentSortOption = 'default';
+
+// main sorter: only re-order visible rows and preserve hidden rows (they appear after)
 function sortStudents(option) {
     const tbody = document.querySelector('#studentsTable tbody');
     if (!tbody) return;
-    const rows = Array.from(tbody.rows);
+    const rows = Array.from(tbody.rows || []);
+
+    // separate visible vs hidden rows
+    const visibleRows = rows.filter(r => !isRowHidden(r));
+    const hiddenRows = rows.filter(r => isRowHidden(r));
 
     let sorted;
     switch(option) {
         case 'grade_asc':
-            sorted = rows.sort((a,b) => compareRowsByGrade(a,b,true));
+            sorted = visibleRows.sort((a,b) => compareRowsByGrade(a,b,true));
             break;
         case 'grade_desc':
-            sorted = rows.sort((a,b) => compareRowsByGrade(a,b,false));
+            sorted = visibleRows.sort((a,b) => compareRowsByGrade(a,b,false));
             break;
         case 'section_asc':
-            sorted = rows.sort((a,b) => compareRowsBySection(a,b,true));
+            sorted = visibleRows.sort((a,b) => compareRowsBySection(a,b,true));
             break;
         case 'section_desc':
-            sorted = rows.sort((a,b) => compareRowsBySection(a,b,false));
+            sorted = visibleRows.sort((a,b) => compareRowsBySection(a,b,false));
             break;
         case 'grade_section':
-            sorted = rows.sort((a,b) => compareRowsGradeThenSection(a,b));
+            sorted = visibleRows.sort((a,b) => compareRowsGradeThenSection(a,b));
             break;
         case 'default':
         default:
-            // restore original DOM order using data-orig-order numeric key
-            sorted = rows.sort((a,b) => (Number(a.dataset.origOrder) || 0) - (Number(b.dataset.origOrder) || 0));
+            // restore original DOM order for visible rows using data-orig-order numeric key
+            sorted = visibleRows.sort((a,b) => (Number(a.dataset.origOrder) || 0) - (Number(b.dataset.origOrder) || 0));
             break;
     }
 
-    // append rows in new order (preserve visibility state)
+    // Sort hidden rows by original order so they remain stable
+    const hiddenSorted = hiddenRows.sort((a,b) => (Number(a.dataset.origOrder) || 0) - (Number(b.dataset.origOrder) || 0));
+
+    // append rows back in new order (visible sorted first, then hidden)
     sorted.forEach(r => tbody.appendChild(r));
+    hiddenSorted.forEach(r => tbody.appendChild(r));
 }
 
-// attach sort select handler
-const sortSelect = document.getElementById('sortSelect');
-if (sortSelect) {
-    sortSelect.addEventListener('change', function(){
-        sortStudents(this.value);
+// keep this function definition if not already present (idempotent)
+function updateActiveMobileButton(option) {
+    const buttons = document.querySelectorAll('.mobile-sort-button');
+    buttons.forEach(b => {
+        if (b.dataset.sort === option) b.classList.add('active');
+        else b.classList.remove('active');
     });
 }
 
-// wire search to not conflict with sorting (search only hides rows)
-document.getElementById('studentSearch').addEventListener('input', function(e){
-    const q = e.target.value.trim().toLowerCase();
-    const tbody = document.querySelector('#studentsTable tbody');
-    Array.from(tbody.rows).forEach(row => {
-        const txt = row.textContent.toLowerCase();
-        row.style.display = txt.indexOf(q) !== -1 ? '' : 'none';
+// Wire mobile sort buttons
+document.addEventListener('DOMContentLoaded', function () {
+    // Ensure current sort option reflects select initial state (or default)
+    const startOpt = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'default';
+    currentSortOption = startOpt || 'default';
+    updateActiveMobileButton(currentSortOption);
+
+    document.querySelectorAll('.mobile-sort-button').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const opt = this.dataset.sort || 'default';
+            currentSortOption = opt;
+            // update select control for consistency
+            const ss = document.getElementById('sortSelect');
+            if (ss) ss.value = opt;
+            // update buttons UI and perform sort
+            updateActiveMobileButton(opt);
+            sortStudents(opt);
+        });
     });
+
+    // Also update mobile active state when sort select changes (desktop user)
+    const ss = document.getElementById('sortSelect');
+    if (ss) {
+        ss.addEventListener('change', function() {
+            const opt = this.value || 'default';
+            currentSortOption = opt;
+            updateActiveMobileButton(opt);
+            sortStudents(opt);
+        });
+    }
 });
 
-// existing export logic (unchanged)
+// ensure search re-applies current sort (already done previously in code)
+// ...existing JS continues...
+
 document.getElementById('exportStudentsBtn').addEventListener('click', function(){
     const rows = [];
     const headers = ['ID','Name','Grade','Section','Enrolled'];
     rows.push(headers);
     const tbody = document.querySelector('#studentsTable tbody');
     Array.from(tbody.rows).forEach(row => {
-        if (row.style.display === 'none') return;
+        if (isRowHidden(row)) return;
         const cols = Array.from(row.cells).map(c => c.textContent.trim());
         rows.push(cols);
     });
@@ -1168,6 +1480,128 @@ document.getElementById('exportStudentsBtn').addEventListener('click', function(
     a.remove();
     URL.revokeObjectURL(url);
 });
+
+// NEW: Sidebar toggle JS (replicates behavior from tprofile.php)
+(function () {
+    const toggle = document.getElementById('sidebarToggle');
+    const side = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const navLinks = document.querySelectorAll('.side .nav a');
+
+    if (!toggle || !side || !overlay) return;
+
+    function openSidebar() {
+        document.body.classList.add('sidebar-open');
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+        toggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        document.body.classList.remove('sidebar-open');
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        toggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (document.body.classList.contains('sidebar-open')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    });
+
+    // Click overlay to close
+    overlay.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeSidebar();
+    });
+
+    // Close sidebar after a nav link is clicked (mobile)
+    navLinks.forEach(a => a.addEventListener('click', function () {
+        if (window.innerWidth <= 1300) closeSidebar(); // keep consistent with tprofile threshold
+    }));
+
+    // On resize, ensure sidebar is closed when switching to big screens
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 1300) {
+            closeSidebar();
+        }
+    });
+
+    // Close sidebar on ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+            closeSidebar();
+        }
+    });
+})();
+
+// wire search to not conflict with sorting (search only hides rows and re-applies current sort)
+(function() {
+    const searchInput = document.getElementById('studentSearch');
+    const searchBtn = document.getElementById('studentSearchBtn');
+    if (!searchInput) return;
+
+    function textOf(node) {
+        if (!node) return '';
+        return String((node.textContent || node.innerText || '')).trim().toLowerCase();
+    }
+
+    function doFilter() {
+        const q = searchInput.value.trim().toLowerCase();
+        const tbody = document.querySelector('#studentsTable tbody');
+        if (!tbody) return;
+
+        Array.from(tbody.rows).forEach(row => {
+            // Prefer using data-label with .cell-value (works in stacked/mobile)
+            const nameNode = row.querySelector('td[data-label="Name"] .cell-value') || row.querySelector('td[data-label="Name"]') || row.cells[1];
+            const gradeNode = row.querySelector('td[data-label="Grade"] .cell-value') || row.querySelector('td[data-label="Grade"]') || row.cells[2];
+            const sectionNode = row.querySelector('td[data-label="Section"] .cell-value') || row.querySelector('td[data-label="Section"]') || row.cells[3];
+            const idNode = row.querySelector('td[data-label="ID"] .cell-value') || row.querySelector('td[data-label="ID"]') || row.cells[0];
+
+            const nameText = textOf(nameNode);
+            const gradeText = textOf(gradeNode);
+            const sectionText = textOf(sectionNode);
+            const idText = textOf(idNode);
+
+            const match = !q || nameText.indexOf(q) !== -1 || gradeText.indexOf(q) !== -1 || sectionText.indexOf(q) !== -1 || idText.indexOf(q) !== -1;
+            row.style.display = match ? '' : 'none';
+        });
+
+        // Re-apply current sorting to keep remaining visible rows in correct order
+        sortStudents(currentSortOption);
+    }
+
+    // main triggers
+    searchInput.addEventListener('input', doFilter);
+    searchInput.addEventListener('search', doFilter);
+
+    // Enter key should apply filter too
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            doFilter();
+        } else if (e.key === 'Escape') {
+            searchInput.value = '';
+            doFilter();
+            searchInput.blur();
+        }
+    });
+
+    // Desktop and mobile: clicking search button applies filter
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            doFilter();
+            // on mobile, keep keyboard visible and focus in the input
+            searchInput.focus();
+        });
+    }
+})();
 </script>
 
 </body>
