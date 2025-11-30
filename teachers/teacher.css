@@ -66,6 +66,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0; /* Prevent the navbar brand from forcing wide layout */
 }
 
 .logo-image {
@@ -75,6 +76,9 @@ body {
 
 .navbar-text {
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .navbar-title {
@@ -138,6 +142,16 @@ body {
     /* Shift content to the right on desktop */
     padding-left: var(--sidebar-width);
     box-sizing: border-box;
+    /* Ensure main content always fits available viewport width,
+       even when the sidebar is transformed offscreen */
+    width: 100%;
+}
+
+/* Prevent images from overflowing on small screens and ensure consistent sizing */
+img, .logo-image, .avatar, .avatar-container img {
+    max-width: 100%;
+    height: auto;
+    display: block;
 }
 
 .side {
@@ -260,16 +274,74 @@ body {
     min-height: calc(100vh - var(--navbar-height) - 100px);
     max-width: 100%;
     box-sizing: border-box;
+    /* Make main area fluid on mobile and reduce padding to avoid overflow */
+    @media (max-width: 900px) {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    /* Prevent layout children from forcing body horizontal overflow */
+    min-width: 0;
+}
+
+/* Improve cards grid responsiveness: automatic column fitting */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* responsive columns */
+    gap: 20px;
+    padding-top: 20px;
+    align-items: start;
+}
+
+/* Ensure cards don't overflow their container */
+.card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: visible; /* allow internal scroll where relevant */
+    word-break: break-word;
+}
+
+/* Avoid the .card content forcing horizontal overflow */
+.card .card-value {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Force the main content container not to overflow horizontally even if children set wide min-widths */
+.page-wrapper > main {
+    min-width: 0;
+}
+
+/* Schedule table wrapper ensures horizontal scroll without expanding page width */
+.schedule-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
+/* Make schedule tables not force a large min-width that expands the page */
+.schedule-table {
+    table-layout: auto;
+    width: 100%;
+    min-width: 0; /* remove rigid min-width to avoid forcing horizontal overflow */
+    max-width: none;
+}
+
+/* Ensure card images scale down nicely on small screens */
+.card img, .card svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Slightly smaller padding for cards on smaller devices */
+@media (max-width: 480px) {
+    .cards { gap: 12px; }
+    .card { padding: 12px; }
 }
 
 .header {
     color: var(--pink);
-}
-.cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding-top: 20px;
 }
 
 /* Make the announcements card span 2 rows and 2 columns */
@@ -406,9 +478,32 @@ body {
         grid-column: span 2;
         grid-row: span 1;
     }
+
+    .main {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    .navbar {
+        padding: 10px 14px;
+    }
 }
 
-@media (max-width: 768px) {
+/* Hide hamburger toggle on desktop by default */
+.hamburger {
+    display: none; /* hidden for wide screens */
+}
+
+/* Prevent the navbar brand from forcing wide layout */
+.navbar-brand {
+    min-width: 0;
+}
+.navbar-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1300px) {
     /* Mobile Breakpoint Overrides */
     :root {
         --sidebar-width: 0px;
@@ -422,14 +517,51 @@ body {
     }
 
     /* Sidebar visibility and layout */
+    /* NOTE: Use transform sliding for sidebar on mobile instead of display:none so it can be toggled */
     .side {
-        position: relative !important;
-        width: 100%;
-        height: auto;
-        top: 0;
-        display: none;
+        position: fixed !important;
+        width: 260px;
+        height: calc(100vh - var(--navbar-height));
+        top: var(--navbar-height);
+        left: 0;
+        transform: translateX(-110%);
+        display: block;
         padding: 15px;
-        overflow-y: visible;
+        overflow-y: auto;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        z-index: 2200;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* When body has .sidebar-open class slide the sidebar into view */
+    body.sidebar-open .side {
+        transform: translateX(0);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    /* Overlay for closing the sidebar */
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
+        z-index: 2100;
+        display: none;
+    }
+    .sidebar-overlay.open {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Keep consistent overlay behavior when using body.sidebar-open */
+    body.sidebar-open .sidebar-overlay {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
     }
 
     /* Page wrapper adjusts for hidden sidebar */
@@ -451,6 +583,34 @@ body {
         padding: 10px 20px;
         height: var(--navbar-height);
         /* FIX: Removed invalid position: flex and unnecessary z-index/top rules */
+    }
+
+    /* Show hamburger only on narrow/medium screens (<=1300px) */
+    .hamburger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        padding: 8px;
+        cursor: pointer;
+        color: #fff;
+        border-radius: 6px;
+        transition: background 0.12s ease, transform 0.12s ease;
+        margin-right: 8px;
+        z-index: 3000;
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.06); transform: translateY(-1px); }
+    .hamburger .bars { display:block; width:20px; height:2px; background: #fff; position:relative; border-radius:2px; }
+    .hamburger .bars::before, .hamburger .bars::after { content:""; position:absolute; left:0; right:0; height:2px; background:#fff; border-radius:2px; }
+    .hamburger .bars::before { top: -6px; }
+    .hamburger .bars::after { top: 6px; }
+
+    /* When body.sidebar-open is used ensure overlay shows */
+    body.sidebar-open .sidebar-overlay {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
     }
 
     /* Card layout for mobile */
@@ -860,38 +1020,97 @@ body {
     }
 }
 
-/* @media (min-width: 360px) {
-    .day-name {
-        font-size: 12px;
-    }
+/* Prevent the navbar brand from forcing wide layout */
+.navbar-brand {
+    min-width: 0;
+}
+.navbar-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-    .calendar-day {
-        padding-block: 4px;
+/* Ensure main content always fits available viewport width,
+   even when the sidebar is transformed offscreen */
+.page-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Make main area fluid on mobile and reduce padding to avoid overflow */
+@media (max-width: 900px) {
+    .main {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+    .navbar {
+        padding: 10px 14px;
     }
 }
 
-@media (min-width: 640px) {
-    .calendar-grid {
-        padding: 32px;
-    }
+/* Schedule table - remove too-large minimum width so table can scale,
+   keep wrapper scroll enabled for wide tables on small devices */
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: auto; /* removed rigid wide min width so it doesn't force overflow */
+    table-layout: auto; /* good defaults; user can scroll horizontally via wrapper */
+}
+.schedule-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-    .calendar-day {
-        padding-block: 12px;
+/* Reduce card paddings on very small screens to avoid horizontal clipping */
+@media (max-width: 480px) {
+    .card {
+        padding: 12px;
+        min-height: auto;
+    }
+    .card .card-value {
+        font-size: 18px;
     }
 }
 
-@media (min-width: 768px) {
-    .calendar-grid {
-        padding: 40px;
-    }
+/* Make sure the body doesn't overflow horizontally due to any element */
+html, body { overflow-x: hidden; }
 
-    .calendar-day {
-        padding-block: 16px;
-    }
+/* Disable transform-based scroll locking if the sidebar is off-screen.
+   Keep sidebar transform sliding intact but ensure main isn't clipped */
+@media (max-width: 1300px) {
+    /* ...existing mobile sidebar code stays the same ... */
 }
 
-@media (min-width: 1280px) {
-    .calendar-day {
-        padding-block: 18px;
-    }
-} */
+/* Utility: single-line ellipsis & multi-line clamps */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Apply safe ellipsis to navbar/section titles and other narrow-line headings */
+.navbar-title,
+.navbar-subtitle,
+.card-title,
+.schedule-peek strong,
+.my-sections .section-link {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Avoid overly long inline content from causing overflow */
+.cards .card-value {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}

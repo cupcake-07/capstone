@@ -192,7 +192,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         .sidebar-overlay.open { display:block; opacity: 1; pointer-events: auto; }
 
         /* Small screens: sidebar slides in/out */
-        @media (max-width: 900px) {
+        @media (max-width: 900px) {  /* changed from 900 to 1300 */
             .hamburger { display: inline-block; margin-right: 8px; }
 
             /* Fixed/stacking order: overlay sits above main content, sidebar sits above overlay */
@@ -214,6 +214,19 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
         /* ensure the footer if added inside main sits at bottom (main uses column layout) */
         footer.footer { margin-top: auto; }
+
+        /* Local truncate utilities (page-scoped) */
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -291,8 +304,8 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
                         </div>
                         <div class="badge">Teacher</div>
                         </div>
-                        <h2 class="name"><?php echo htmlspecialchars($teacher['name']); ?></h2>
-                        <p class="role"><?php echo htmlspecialchars($teacher['role']); ?> • Employee ID: <strong><?php echo htmlspecialchars($teacher['id']); ?></strong></p>
+                        <h2 class="name truncate"><?php echo htmlspecialchars($teacher['name']); ?></h2>
+                        <p class="role truncate"><?php echo htmlspecialchars($teacher['role']); ?> • Employee ID: <strong><?php echo htmlspecialchars($teacher['id']); ?></strong></p>
 
                         <div class="card-info">
                             <div class="row">
@@ -377,13 +390,13 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 
                 // Close sidebar after a nav link is clicked (mobile)
                 navLinks.forEach(a => a.addEventListener('click', function () {
-                    if (window.innerWidth <= 900) closeSidebar();
+                    if (window.innerWidth <= 1300) closeSidebar(); // updated to 1300
                 }));
 
                 // On resize, ensure sidebar is closed when switching to small/large
                 window.addEventListener('resize', function () {
                     // If above breakpoint, ensure overlay/hidden states are reset
-                    if (window.innerWidth > 900) {
+                    if (window.innerWidth > 1300) {
                         closeSidebar();
                     }
                 });

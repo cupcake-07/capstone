@@ -180,7 +180,7 @@ if ($teacherId > 0) {
 				foreach ($sArr as $secItem) {
 					// safe anchor id: grade_section
 					$anchorId = 'sched_' . preg_replace('/[^A-Za-z0-9_-]/', '', $gradeRaw . '_' . $secItem);
-					$sectionsListHtml .= '<li><a href="#' . $anchorId . '" class="section-link">Grade ' . htmlspecialchars($gradeRaw) . ' — Section ' . htmlspecialchars($secItem) . '</a></li>';
+					$sectionsListHtml .= '<li><a href="#' . $anchorId . '" class="section-link truncate">Grade ' . htmlspecialchars($gradeRaw) . ' — Section ' . htmlspecialchars($secItem) . '</a></li>';
 				}
 				$sectionsListHtml .= '</ul>';
 			}
@@ -384,7 +384,7 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
                  $s = '';
              }
 
-             $html = '<div class="schedule-peek" id="sched_' . htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]/', '', $g . '_' . $s)) . '"><strong>Grade ' . htmlspecialchars($g) . ($s !== '' ? ' — Section ' . htmlspecialchars($s) : '') . '</strong>';
+             $html = '<div class="schedule-peek" id="sched_' . htmlspecialchars(preg_replace('/[^A-Za-z0-9_-]/', '', $g . '_' . $s)) . '"><strong class="truncate">Grade ' . htmlspecialchars($g) . ($s !== '' ? ' — Section ' . htmlspecialchars($s) : '') . '</strong>';
              $html .= '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
             // Add 'Room' column so room numbers are displayed as managed by admin/schedule.php
             $html .= '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Room No.</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
@@ -415,45 +415,51 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <style>
-    /* layout: 3 equal cards per row for consistent spacing */
+    /* layout: responsive cards (use auto-fit) */
     .cards {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 20px;
       align-items: start;
+      padding-top: 20px;
     }
 
-    /* ensure cards have a consistent min height and padding */
+    /* ensure cards have a consistent min height and responsive padding */
     .card {
       min-height: 140px;
       padding: 18px;
       box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      word-break: break-word;
     }
 
-    /* make the schedule card appear full-width below the three cards */
+    /* schedule card full-width but responsive */
     .card.schedule-card {
-      grid-column: 1 / -1; /* span all 3 columns */
+      grid-column: 1 / -1;
       min-height: 220px;
     }
 
-    /* limit content height and make scrollable if too tall */
     .card .card-value {
       max-height: 300px;
       overflow: auto;
+      white-space: normal;
     }
 
-    /* schedule table wrapper and table styles */
+    /* schedule table wrapper and table styles - allow horizontal scroll only in wrapper */
     .schedule-table-wrap {
       width: 100%;
-      overflow: auto;
+      overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       border-radius: 4px;
+      box-sizing: border-box;
     }
     .schedule-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
-      min-width: 620px; /* allow horizontal scroll on small screens */
+      min-width: 0; /* avoid forcing page width */
+      table-layout: auto;
     }
     .schedule-table thead th {
       background: #f7f7f9;
@@ -485,7 +491,7 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     @media (max-width: 900px) {
       .cards { grid-template-columns: 1fr; }
       .card.schedule-card { grid-column: auto; }
-      .schedule-table { min-width: 520px; }
+      .schedule-table { min-width: 0; } /* mobile-friendly */
     }
 
     /* NEW: styles for section list on dashboard */
@@ -562,6 +568,18 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
     #announcement-list.scrollable::-webkit-scrollbar { width: 10px; }
     #announcement-list.scrollable::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 6px; }
     #announcement-list.scrollable::-webkit-scrollbar-track { background: transparent; }
+
+    /* NEW: truncation for narrow viewports */
+    .truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Apply truncation to specific elements */
+    .navbar-title, .navbar-subtitle, .card-title, .schedule-peek strong, .section-link {
+      max-width: 100%;
+      /* Adjust max-width as needed for your layout */
+    }
   </style>
 </head>
 <body>
@@ -572,11 +590,17 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
         <img src="g2flogo.png" class="logo-image"/>
       </div>
       <div class="navbar-text">
-        <div class="navbar-title">Glorious God's Family</div>
-        <div class="navbar-subtitle">Christian School</div>
+        <!-- Apply single-line truncation when narrow -->
+        <div class="navbar-title truncate">Glorious God's Family</div>
+        <div class="navbar-subtitle truncate">Christian School</div>
       </div>
     </div>
     <div class="navbar-actions">
+      <!-- NEW: Mobile hamburger toggle so the hidden sidebar can be opened -->
+      <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="bars" aria-hidden="true"></span>
+      </button>
+
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
         <a href="teacher-logout.php" class="logout-btn" title="Logout">
@@ -590,13 +614,12 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
   <!-- MAIN PAGE CONTAINER -->
   <div class="page-wrapper">
-    <!-- SIDEBAR -->
-    <aside class="side">
+    <!-- SIDEBAR (ID added for toggle) -->
+    <aside id="mainSidebar" class="side" aria-hidden="false" role="navigation">
       <nav class="nav">
         <a href="teacher.php">Dashboard</a>
         <a href="tprofile.php">Profile</a>
         <a href="student_schedule.php">Schedule</a>        
-        
         <a href="listofstudents.php">Lists of students</a>
         <a href="grades.php">Grades</a>
         <a href="school_calendar.php">School Calendar</a>
@@ -607,6 +630,9 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
       <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>
 
+    <!-- NEW: Overlay used to close sidebar on small screens (matching tprofile structure) -->
+    <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+
     <!-- MAIN CONTENT -->
     <main class="main">
       <header class="header">
@@ -615,30 +641,30 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
       <section class="cards" id="dashboard">
         <div class="card">
-          <div class="card-title">Advisory Students</div>
+          <div class="card-title truncate">Advisory Students</div>
           <div class="card-value" id="advisorystudents"><?php echo $totalStudents; ?></div>
         </div>
 
         <div class="card">
-          <div class="card-title">Grade level and Advisory</div>
+          <div class="card-title truncate">Grade level and Advisory</div>
           <div class="card-value" id="gradesection">
             <?php echo htmlspecialchars($gradeSectionDisplay); ?>
-            <!-- per-section links were intentionally removed from this card to avoid duplication -->
           </div>
         </div>
+
         <div class="card">
-          <div class="card-title">Subjects Assigned</div>
+          <div class="card-title truncate">Subjects Assigned</div>
           <div class="card-value" id="subjectassigned"><?php echo htmlspecialchars($subjectsAssigned); ?></div>
         </div>
 
         <!-- Schedule card now spans full width below the three equal cards -->
         <div class="card schedule-card">
-          <div class="card-title">Schedule</div>
+          <div class="card-title truncate">Schedule</div>
           <div class="card-value" id="schedule"><?php echo $scheduleDisplay; ?></div>
         </div>
 
         <div class="card">
-          <div class="card-title">Announcements</div>
+          <div class="card-title truncate">Announcements</div>
           <div class="card-value" id="announcements">
             <ul style="list-style:none;padding:0;margin:0;" id="announcement-list">
               <li style="color:#999;font-size:13px;">Loading announcements...</li>
@@ -647,6 +673,92 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
         </div>
       </section>
     </main>
+
+    <!-- ADD: Sidebar toggle script (mobile) - updated behavior pulled from tprofile -->
+    <script>
+      (function () {
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const side = document.getElementById('mainSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const navLinks = document.querySelectorAll('.side .nav a');
+
+        if (!toggleBtn || !side || !overlay) return;
+
+        function openSidebar() {
+            document.body.classList.add('sidebar-open');
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            side.setAttribute('aria-hidden', 'false');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            const firstLink = side.querySelector('.nav a');
+            if (firstLink) firstLink.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            document.body.classList.remove('sidebar-open');
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            side.setAttribute('aria-hidden', 'true');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        }
+
+        // Toggle click
+        toggleBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (document.body.classList.contains('sidebar-open')) closeSidebar(); else openSidebar();
+        }, false);
+
+        // Click overlay closes
+        overlay.addEventListener('click', function (e) {
+            e.preventDefault();
+            closeSidebar();
+        }, false);
+
+        // Close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) closeSidebar();
+        }, false);
+
+        // Close after nav link click (mobile) & add small delay for UX
+        navLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 1300) setTimeout(closeSidebar, 120); // updated to 1300px
+            }, false);
+        });
+
+        // Ensure closed on large resize and reset overflow/in-progress state
+        let resizeTimer;
+        window.addEventListener('resize', function () {
+            window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(function () {
+                // close the sidebar for desktop so body isn't left locked
+                if (window.innerWidth > 1300) {
+                  if (document.body.classList.contains('sidebar-open')) closeSidebar();
+                  document.body.style.overflow = '';
+                } else {
+                  if (!document.body.classList.contains('sidebar-open')) {
+                      overlay.classList.remove('open');
+                      overlay.setAttribute('aria-hidden', 'true');
+                  }
+                }
+            }, 150);
+        }, false);
+
+        // Ensure the sidebar is closed on initial load on small screens to avoid accidental lock state
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.innerWidth <= 1300) {
+                document.body.classList.remove('sidebar-open');
+                overlay.classList.remove('open');
+                overlay.setAttribute('aria-hidden', 'true');
+                side.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                toggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        }, false);
+      })();
+    </script>
 
     <!-- FIXED: Clean footer and scripts -->
     <script>
@@ -704,195 +816,195 @@ if ($teacherLookup !== '' && !empty($allSchedules)) {
 
                   // NEW: Toggle 'scrollable' class when there are more than 4 real announcement items
                   // Consider only real announcement list items (exclude loading/no-results messages)
-                  const nonMsgItems = Array.from(list.querySelectorAll('li')).filter(li => !li.classList.contains('loading-message') && !li.classList.contains('empty-filter-msg'));
-                  if (nonMsgItems.length > 4) {
-                      list.classList.add('scrollable');
-                  } else {
-                      list.classList.remove('scrollable');
-                  }
-
-              })
-              .catch(err => {
-                  console.error('Error loading announcements:', err);
-                  document.getElementById('announcement-list').innerHTML = '<li style="color:#999;font-size:13px;">Error loading announcements.</li>';
-              });
-      }
       
-      // Helper function to escape HTML
-      function escapeHtml(text) {
-          if (!text) return '';
+      // Helper function to escape HTML            const nonMsgItems = Array.from(list.querySelectorAll('li')).filter(li => !li.classList.contains('loading-message') && !li.classList.contains('empty-filter-msg'));
+      function escapeHtml(text) {h > 4) {
+          if (!text) return '';ist.add('scrollable');
           const map = {
-              '&': '&amp;',
+              '&': '&amp;',ist.classList.remove('scrollable');
               '<': '&lt;',
               '>': '&gt;',
               '"': '&quot;',
-              "'": '&#039;'
-          };
-          return text.replace(/[&<>"']/g, m => map[m]);
+              "'": '&#039;'{
+          };rror('Error loading announcements:', err);
+          return text.replace(/[&<>"']/g, m => map[m]);      document.getElementById('announcement-list').innerHTML = '<li style="color:#999;font-size:13px;">Error loading announcements.</li>';
       }
 
-      // Add teacher name accessible in JS (for matching)
+      // Add teacher name accessible in JS (for matching)      
       const TEACHER_LOOKUP = <?php echo json_encode(trim($_SESSION['user_name'] ?? '')); ?>;
       const TEACHER_GRADE = <?php echo $teacherGradeJs ?? 'null'; ?>;
       const TEACHER_SECTIONS = <?php echo $teacherSectionsJs ?? '[]'; ?>;
 
-      // Build HTML schedule from raw schedules JSON (similar to PHP logic)
+      // Build HTML schedule from raw schedules JSON (similar to PHP logic)              '&': '&amp;',
       function buildScheduleHtmlFromJson(jsSchedules) {
           if (!jsSchedules) return '<div>No schedule file.</div>';
           const teacherName = (TEACHER_LOOKUP || '').trim();
-          const teacherId = <?php echo json_encode($teacherId); ?>;
-          const teacherGrade = TEACHER_GRADE;
-          const teacherSections = Array.isArray(TEACHER_SECTIONS) ? TEACHER_SECTIONS : (TEACHER_SECTIONS ? [TEACHER_SECTIONS] : []);
-
+              "'": '&#039;' <?php echo json_encode($teacherId); ?>;
+          };nst teacherGrade = TEACHER_GRADE;
+          return text.replace(/[&<>"']/g, m => map[m]);_SECTIONS) ? TEACHER_SECTIONS : (TEACHER_SECTIONS ? [TEACHER_SECTIONS] : []);> map[m]);
+      }
           if (!teacherName && (!teacherGrade || teacherGrade === '')) return '<div>No schedule available.</div>';
-
+      // Add teacher name accessible in JS (for matching)
+      const TEACHER_LOOKUP = <?php echo json_encode(trim($_SESSION['user_name'] ?? '')); ?>;ION['user_name'] ?? '')); ?>;
+      const TEACHER_GRADE = <?php echo $teacherGradeJs ?? 'null'; ?>;GradeJs ?? 'null'; ?>;
+      const TEACHER_SECTIONS = <?php echo $teacherSectionsJs ?? '[]'; ?>;
+              if (!Array.isArray(sched)) return;
+      // Build HTML schedule from raw schedules JSON (similar to PHP logic)
+      function buildScheduleHtmlFromJson(jsSchedules) {on (e.g. '1_A') and teacher manages section, include entire block      function buildScheduleHtmlFromJson(jsSchedules) {
+          if (!jsSchedules) return '<div>No schedule file.</div>';
+          const teacherName = (TEACHER_LOOKUP || '').trim();
+          const teacherId = <?php echo json_encode($teacherId); ?>;) { echo json_encode($teacherId); ?>;
+          const teacherGrade = TEACHER_GRADE;ctions) {
+          const teacherSections = Array.isArray(TEACHER_SECTIONS) ? TEACHER_SECTIONS : (TEACHER_SECTIONS ? [TEACHER_SECTIONS] : []); (TEACHER_SECTIONS ? [TEACHER_SECTIONS] : []);
+                      }
+          if (!teacherName && (!teacherGrade || teacherGrade === '')) return '<div>No schedule available.</div>'; '<div>No schedule available.</div>';
+                      keyMatchesManaged = true;
           const matches = {};
           Object.keys(jsSchedules).forEach(key => {
               const sched = jsSchedules[key];
-              if (!Array.isArray(sched)) return;
-
-              // If key matches teacher's grade _ section (e.g. '1_A') and teacher manages section, include entire block
-              let keyMatchesManaged = false;
-              if (teacherGrade) {
-                  if (teacherSections && teacherSections.length > 0) {
-                      for (let s of teacherSections) {
-                          if ((teacherGrade + '_' + s) === key) { keyMatchesManaged = true; break; }
-                      }
-                  } else if (String(teacherGrade) === key) {
-                      keyMatchesManaged = true;
-                  }
-              }
-
-              sched.forEach(row => {
+              if (!Array.isArray(sched)) return;  if (!Array.isArray(sched)) return;
                   const rowTeacher = (row.teacher || '').toString().trim();
-                  const rowTeacherId = row.teacher_id ? parseInt(row.teacher_id) : null;
+              // If key matches teacher's grade _ section (e.g. '1_A') and teacher manages section, include entire block entire block
+              let keyMatchesManaged = false;'').toString().trim();
+              if (teacherGrade) {ow.time || '').toString().trim();
+                  if (teacherSections && teacherSections.length > 0) {
+                      for (let s of teacherSections) {rsday','friday'].forEach(day => {                      for (let s of teacherSections) {
+                          if ((teacherGrade + '_' + s) === key) { keyMatchesManaged = true; break; }
+                      }f (!cell || typeof cell !== 'object') { return; }
+                  } else if (String(teacherGrade) === key) {'')).toString().trim();
+                      keyMatchesManaged = true;l.teacher_id ? parseInt(cell.teacher_id) : null;
+                  }
+              }       // match conditions:              }
+                      // 1) teacher id matches (row or cell)
+              sched.forEach(row => {me match (case-insensitive)
+                  const rowTeacher = (row.teacher || '').toString().trim();
+                  const rowTeacherId = row.teacher_id ? parseInt(row.teacher_id) : null;teacher_id) : null;
                   const room = (row.room || '').toString().trim();
-                  const time = (row.time || '').toString().trim();
-
+                  const time = (row.time || '').toString().trim();rId) || (cellTeacherId && cellTeacherId === teacherId)) {| '').toString().trim();
+                          matched = true;
                   ['monday','tuesday','wednesday','thursday','friday'].forEach(day => {
-                      const cell = row[day];
+                      const cell = row[day];acher && teacherName && cellTeacher.localeCompare(teacherName, undefined, {sensitivity: 'accent'}) === 0) {onst cell = row[day];
                       if (!cell || typeof cell !== 'object') { return; }
                       const cellTeacher = ((cell.teacher || '')).toString().trim();
-                      const cellTeacherId = cell.teacher_id ? parseInt(cell.teacher_id) : null;
-
-                      // match conditions:
+                      const cellTeacherId = cell.teacher_id ? parseInt(cell.teacher_id) : null;acher_id ? parseInt(cell.teacher_id) : null;
+                          const tFirst = (teacherName.split(' ')[0] || '').toLowerCase();
+                      // match conditions:' && cellTeacher.toLowerCase().indexOf(tFirst) !== -1) matched = true;
                       // 1) teacher id matches (row or cell)
-                      // 2) exact name match (case-insensitive)
+                      // 2) exact name match (case-insensitive)d = true;/ 2) exact name match (case-insensitive)
                       // 3) partial name match (first name)
-                      // 4) schedule key matches teacher-managed grade/section
+                      // 4) schedule key matches teacher-managed grade/sectione key matches teacher-managed grade/section
                       let matched = false;
-                      if ((rowTeacherId && rowTeacherId === teacherId) || (cellTeacherId && cellTeacherId === teacherId)) {
+                      if ((rowTeacherId && rowTeacherId === teacherId) || (cellTeacherId && cellTeacherId === teacherId)) {herId) || (cellTeacherId && cellTeacherId === teacherId)) {
                           matched = true;
-                      }
+                      }   day: day.charAt(0).toUpperCase() + day.slice(1),
                       if (!matched && cellTeacher && teacherName && cellTeacher.localeCompare(teacherName, undefined, {sensitivity: 'accent'}) === 0) {
                           matched = true;
-                      }
+                      }   subject: (cell.subject || '').toString().trim()
                       if (!matched && cellTeacher && teacherName) {
                           const tFirst = (teacherName.split(' ')[0] || '').toLowerCase();
                           if (tFirst !== '' && cellTeacher.toLowerCase().indexOf(tFirst) !== -1) matched = true;
                       }
                       if (!matched && keyMatchesManaged) matched = true;
-
-                      if (!matched) return;
-
+          if (Object.keys(matches).length === 0) {
+                      if (!matched) return;lable.</div>';
+          }
                       if (!matches[key]) matches[key] = [];
-                      matches[key].push({
-                          day: day.charAt(0).toUpperCase() + day.slice(1),
-                          room: room,
+                      matches[key].push({        matches[key].push({
+                          day: day.charAt(0).toUpperCase() + day.slice(1),se() + day.slice(1),
+                          room: room,[key];
                           time: time,
-                          subject: (cell.subject || '').toString().trim()
-                      });
+                          subject: (cell.subject || '').toString().trim()g().trim()
+                      });= key.split('_', 2);
                   });
               });
-          });
-
-          if (Object.keys(matches).length === 0) {
-              return '<div>No schedule available.</div>';
+          }); let html = '<div class="schedule-peek" id="sched_' + (g + '_' + s).replace(/[^A-Za-z0-9_-]/g, '') + '">';          });
+              html += '<strong class="truncate">Grade ' + escapeHtml(g) + (s ? ' — Section ' + escapeHtml(s) : '') + '</strong>';
+          if (Object.keys(matches).length === 0) {e" style="margin-top:8px;font-size:13px;">';
+              return '<div>No schedule available.</div>';8px;">Day</th><th style="padding:6px 8px;">Room No.</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
           }
-
-          const parts = [];
-          Object.keys(matches).forEach(key => {
-              const entries = matches[key];
-              let g = key, s = '';
-              if (key.indexOf('_') !== -1) {
+              entries.forEach(e => {
+          const parts = [];<tr>'
+          Object.keys(matches).forEach(key => { 8px;vertical-align:top">' + escapeHtml(e.day) + '</td>'orEach(key => {
+              const entries = matches[key];:6px 8px;vertical-align:top">' + (e.room ? escapeHtml(e.room) : '&nbsp;') + '</td>'
+              let g = key, s = '';="padding:6px 8px;vertical-align:top">' + escapeHtml(e.time) + '</td>'
+              if (key.indexOf('_') !== -1) {6px 8px;vertical-align:top">' + (e.subject ? escapeHtml(e.subject) : '&nbsp;') + '</td>'
                   [g, s] = key.split('_', 2);
-              }
+              });
 
-              let html = '<div class="schedule-peek" id="sched_' + (g + '_' + s).replace(/[^A-Za-z0-9_-]/g, '') + '">';
+              let html = '<div class="schedule-peek" id="sched_' + (g + '_' + s).replace(/[^A-Za-z0-9_-]/g, '') + '">';'_' + s).replace(/[^A-Za-z0-9_-]/g, '') + '">';
               html += '<strong>Grade ' + escapeHtml(g) + (s ? ' — Section ' + escapeHtml(s) : '') + '</strong>';
               html += '<table class="schedule-table" style="margin-top:8px;font-size:13px;">';
               html += '<thead><tr><th style="padding:6px 8px;">Day</th><th style="padding:6px 8px;">Room No.</th><th style="padding:6px 8px;">Time</th><th style="padding:6px 8px;">Subject</th></tr></thead><tbody>';
-
+          return parts.join('<br>');
               entries.forEach(e => {
                   html += '<tr>'
-                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.day) + '</td>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.day) + '</td>'="padding:6px 8px;vertical-align:top">' + escapeHtml(e.day) + '</td>'
                       + '<td style="padding:6px 8px;vertical-align:top">' + (e.room ? escapeHtml(e.room) : '&nbsp;') + '</td>'
-                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.time) + '</td>'
-                      + '<td style="padding:6px 8px;vertical-align:top">' + (e.subject ? escapeHtml(e.subject) : '&nbsp;') + '</td>'
-                      + '</tr>';
-              });
-
+                      + '<td style="padding:6px 8px;vertical-align:top">' + escapeHtml(e.time) + '</td>''</td>'
+                      + '<td style="padding:6px 8px;vertical-align:top">' + (e.subject ? escapeHtml(e.subject) : '&nbsp;') + '</td>'ect ? escapeHtml(e.subject) : '&nbsp;') + '</td>'
+                      + '</tr>';{
+              }); if (!response.ok) throw new Error('Network error');
+                  return response.json();
               html += '</tbody></table></div>';
-              parts.push(html);
-          });
-
-          return parts.join('<br>');
-      }
-
-      // Fetch schedules.json and update the schedule card if changed
+              parts.push(html);s.push(html);
+          });     const jsonStr = JSON.stringify(json);
+                  if (jsonStr !== lastScheduleJson) {
+          return parts.join('<br>');on = jsonStr;
+      }               const scheduleHtml = buildScheduleHtmlFromJson(json);
+                      const scheduleEl = document.getElementById('schedule');
+      // Fetch schedules.json and update the schedule card if changedHtml;
       let lastScheduleJson = null;
       function fetchAndUpdateSchedule() {
-          fetch('../data/schedules.json?ts=' + Date.now(), { credentials: 'same-origin' })
-              .then(response => {
+          fetch('../data/schedules.json?ts=' + Date.now(), { credentials: 'same-origin' })me-origin' })
+              .then(response => { schedule if error occurs; log for debugging=> {
                   if (!response.ok) throw new Error('Network error');
                   return response.json();
               })
               .then(json => {
-                  const jsonStr = JSON.stringify(json);
+                  const jsonStr = JSON.stringify(json);     const jsonStr = JSON.stringify(json);
                   if (jsonStr !== lastScheduleJson) {
-                      lastScheduleJson = jsonStr;
-                      const scheduleHtml = buildScheduleHtmlFromJson(json);
+                      lastScheduleJson = jsonStr;tch = jsonStr;
+                      const scheduleHtml = buildScheduleHtmlFromJson(json);;
                       const scheduleEl = document.getElementById('schedule');
                       if (scheduleEl) scheduleEl.innerHTML = scheduleHtml;
-                  }
-              })
-              .catch(err => {
-                  // keep current schedule if error occurs; log for debugging
+                  } year in the footer                  }
+              })){
+              .catch(err => {.getElementById('year');ch(err => {
+                  // keep current schedule if error occurs; log for debuggingfor debugging
                   console.error('Failed to refresh schedule:', err);
-              });
-      }
+              });nnouncements on page load              });
+      } loadAnnouncements();
 
-      // Poll every 20 seconds for updates
-      (function initSchedulePolling(){
+      // Poll every 20 seconds for updates (grade/section links)      // Poll every 20 seconds for updates
+      (function initSchedulePolling(){ck', function(e){
           fetchAndUpdateSchedule(); // initial fetch
-          setInterval(fetchAndUpdateSchedule, 20000);
-      })();
-
+          setInterval(fetchAndUpdateSchedule, 20000);clickedAndUpdateSchedule, 20000);
+      })();hile (t && t !== document) {
+            if (t.matches && t.matches('.section-link')) break;
       // Update the year in the footer
       (function(){
-        var yearEl = document.getElementById('year');
+        var yearEl = document.getElementById('year');document.getElementById('year');
         if (yearEl) yearEl.textContent = new Date().getFullYear();
-
+          var href = t.getAttribute('href');
         // Load announcements on page load
-        loadAnnouncements();
-
+        loadAnnouncements();querySelector(href);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Smooth scroll for section links (grade/section links)
         document.addEventListener('click', function(e){
-          var t = e.target;
+          var t = e.target;t;
           // walk up DOM in case inner span/text was clicked
-          while (t && t !== document) {
+          while (t && t !== document) {cument) {
             if (t.matches && t.matches('.section-link')) break;
-            t = t.parentNode;
-          }
-          if (!t || t === document) return;
+            t = t.parentNode;ument) return;
+          }.preventDefault();
+          if (!t || t === document) return;;
           e.preventDefault();
-          var href = t.getAttribute('href');
-          if (!href) return;
+          var href = t.getAttribute('href');ef);
+          if (!href) return;ntoView({ behavior: 'smooth', block: 'start' });
           var el = document.querySelector(href);
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, false);
       })();
     </script>
-
-  </body>
 </html>
+  </body></html>
