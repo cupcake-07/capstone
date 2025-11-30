@@ -27,7 +27,55 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <link rel="stylesheet" href="announcement.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-        
+    
+    <!-- Sidebar toggle styles: minimal and scoped to avoid touching main css -->
+    <style>
+        /* Ensure full-page layout so we can stretch main content */
+        html, body { height: 100%; min-height: 100%; }
+        body { display: flex; flex-direction: column; }
+
+        /* Keep navbar fixed height/flow */
+        .navbar { flex: 0 0 auto; }
+
+        /* Page wrapper should grow to fill remaining vertical space */
+        .page-wrapper { flex: 1 1 auto; display: flex; align-items: stretch; min-height: 0; }
+
+        /* Sidebar and main column layout */
+        .side { flex: 0 0 260px; display: block; /* default desktop width */ }
+        .main { flex: 1 1 auto; min-height: 0; display:flex; flex-direction: column; overflow: auto; }
+
+        /* MOBILE: show hamburger, hide by default on larger screens */
+        .hamburger { display: none; background: transparent; border: none; padding: 8px; cursor: pointer; color: #fff; }
+        .hamburger .bars { display:block; width:22px; height: 2px; background:#fff; position:relative; }
+        .hamburger .bars::before, .hamburger .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+        .hamburger .bars::before { top: -7px; }
+        .hamburger .bars::after { top: 7px; }
+
+        /* Overlay defaults */
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.0); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 2100; display: none; }
+        .sidebar-overlay.open { display:block; opacity: 1; pointer-events: auto; }
+
+        /* Small screens: sidebar slides in/out */
+        @media (max-width: 1300px) {
+            .hamburger { display: inline-block; margin-right: 8px; }
+
+            /* Fixed/stacking order: overlay sits above main content, sidebar sits above overlay */
+            .side { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; transform: translateX(-110%); transition: transform .25s ease; z-index: 2200; height: 100vh; /* use viewport height on mobile */ }
+            body.sidebar-open .side { transform: translateX(0); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+
+            /* Show overlay behind sidebar but above the main content */
+            body.sidebar-open .sidebar-overlay { display: block; opacity: 1; background: rgba(0,0,0,0.35); pointer-events: auto; }
+
+            /* Force nav links to receive pointer events and always be on top of overlay */
+            .side .nav a { pointer-events: auto; position: relative; z-index: 2201; }
+
+            /* Keep layout of main content usable while sidebar is offscreen */
+            .page-wrapper > main { transition: margin-left .25s ease; }
+
+            /* Main scroll area must fill viewport height minus navbar height */
+            .main { min-height: calc(100vh - var(--navbar-height, 56px)); }
+        }
+    </style>
 </head>
 <body>
     <!--Top Navbar-->
@@ -42,6 +90,11 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             </div>
         </div>
         <div class="navbar-actions">
+            <!-- Mobile hamburger toggle to open/close sidebar -->
+            <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="bars" aria-hidden="true"></span>
+            </button>
+
             <div class="user-menu">
                 <span><?php echo $user_name; ?></span>
                 <a href="teacher-logout.php" class="logout-btn" title="Logout">
@@ -56,7 +109,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     <!--Main Page Container-->
     <div class="page-wrapper">
         <!--Sidebar-->
-        <aside class="side">
+        <aside id="mainSidebar" class="side">
             <nav class="nav">
                 <a href="teacher.php">Dashboard</a>
                 <a href="tprofile.php">Profile</a>
@@ -71,6 +124,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             </nav>
             <div class="side-foot">Logged in as <strong>Teacher</strong></div>
         </aside>
+
+        <!-- Overlay used to close sidebar on small screens -->
+        <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
         
         <!--Main Content-->
         <main class="main">
@@ -173,6 +229,66 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
     </div>
 
     <script>
+        // Sidebar toggle logic (mobile) - use body.sidebar-open
+        (function () {
+            const toggle = document.getElementById('sidebarToggle');
+            const side = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const navLinks = document.querySelectorAll('.side .nav a');
+
+            if (!toggle || !side || !overlay) return;
+
+            function openSidebar() {
+                document.body.classList.add('sidebar-open');
+                overlay.classList.add('open');
+                overlay.setAttribute('aria-hidden', 'false');
+                toggle.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebar() {
+                document.body.classList.remove('sidebar-open');
+                overlay.classList.remove('open');
+                overlay.setAttribute('aria-hidden', 'true');
+                toggle.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (document.body.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            // Click overlay to close
+            overlay.addEventListener('click', function (e) {
+                e.preventDefault();
+                closeSidebar();
+            });
+
+            // Close sidebar after a nav link is clicked (mobile)
+            navLinks.forEach(a => a.addEventListener('click', function () {
+                if (window.innerWidth <= 900) closeSidebar();
+            }));
+
+            // On resize, ensure sidebar is closed when switching to small/large
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 900) {
+                    closeSidebar();
+                }
+            });
+
+            // Close sidebar on ESC
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                }
+            });
+        })();
+
         // Modal handling functions
         function showModal() {
             document.getElementById('announcement-modal').style.display = 'flex';

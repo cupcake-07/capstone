@@ -242,7 +242,7 @@
 
     .announcement-container {
         max-width: 1000px;
-        margin: 0 auto 50px;
+       
         box-shadow: var(--grey);
     }
 
@@ -524,7 +524,7 @@
             .footer { padding: 40px 30px 30px; }
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1300px) {
         :root {
             --sidebar-width: 0px;
         }
