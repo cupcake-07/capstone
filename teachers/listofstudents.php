@@ -1,4 +1,7 @@
 <?php
+// Start output buffering early to avoid headers already sent issues
+if (ob_get_level() === 0) ob_start();
+
 // Use a separate session name for teachers
 $_SESSION_NAME = 'TEACHER_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
@@ -34,6 +37,46 @@ if ($studentsResult) {
         $allStudents[] = $row;
     }
 }
+
+// --- NEW: Server-side CSV export handler (mirrors student_schedule.php approach) ---
+if (isset($_GET['export']) && $_GET['export']) {
+    // Clear any output buffers so headers can be sent safely
+    while (ob_get_level() > 0) { @ob_end_clean(); }
+
+    // If headers are already sent at this point we can't send CSV headers; return JSON for debug
+    if (headers_sent($file, $line)) {
+        header('Content-Type: application/json; charset=UTF-8', true, 500);
+        echo json_encode(['error' => 'Cannot send CSV; headers already sent', 'file' => $file ?? '', 'line' => $line ?? 0]);
+        exit;
+    }
+
+    // Send CSV headers and stream directly (no HTML around this block)
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="students_' . date('Ymd_His') . '.csv"');
+    // Optional debug header (could be removed in production)
+    header('X-Export-Called: 1');
+
+    // Optional BOM for Excel/Windows compatibility
+    echo "\xEF\xBB\xBF";
+
+    $out = fopen('php://output', 'w');
+    // Column labels
+    fputcsv($out, ['ID', 'Name', 'Email', 'Grade', 'Section']);
+
+    foreach ($allStudents as $row) {
+        // Respect archived filter — if column exists and flagged, skip
+        if (isset($row['is_archived']) && intval($row['is_archived']) === 1) continue;
+        $id = $row['id'] ?? '';
+        $name = $row['name'] ?? '';
+        $email = $row['email'] ?? '';
+        $grade = $row['grade_level'] ?? $row['grade'] ?? '';
+        $section = $row['section'] ?? '';
+        fputcsv($out, [$id, $name, $email, $grade, $section]);
+    }
+    fclose($out);
+    exit;
+}
+// --- END NEW export handler ---
 
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
 ?>
@@ -158,7 +201,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       background: white;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
+      overflow: auto; /* allow horizontal scrolling */
       margin-top: 20px;
     }
 
@@ -166,6 +209,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+      min-width: 720px; /* keep structure on larger screens + enable scroll on small */
     }
 
     .students-table thead {
@@ -243,38 +287,88 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       opacity: 0.5;
     }
 
-    @media (max-width: 768px) {
-      .header-section {
-        flex-direction: column;
-      }
+    /* Sidebar toggle styles (adapted from tprofile.php) */
+    html, body { height: 100%; min-height: 100%; }
+    body { display: flex; flex-direction: column; }
+    .navbar { flex: 0 0 auto; }
+    .page-wrapper { flex: 1 1 auto; display: flex; align-items: stretch; min-height: 0; }
+    .side { flex: 0 0 260px; display: block; }
+    .main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
 
-      .search-wrapper {
-        width: 100%;
-      }
+    .hamburger { display: none; background: transparent; border: none; padding: 8px; cursor: pointer; color: #fff; }
+    .hamburger .bars { display:block; width:22px; height: 2px; background:#fff; position:relative; }
+    .hamburger .bars::before, .hamburger .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #fff; }
+    .hamburger .bars::before { top: -7px; }
+    .hamburger .bars::after { top: 7px; }
 
-      .sort-wrapper {
-        width: 100%;
-      }
+    .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.0); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 2100; display: none; }
+    .sidebar-overlay.open { display:block; opacity: 1; pointer-events: auto; }
 
-      .sort-wrapper select {
-        flex: 1;
-      }
+    @media (max-width: 1300px) {
+      .hamburger { display: inline-block; margin-right: 8px; }
 
-      .action-buttons {
-        width: 100%;
-      }
+      .side { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; transform: translateX(-110%); transition: transform .25s ease; z-index: 2200; height: 100vh; }
+      body.sidebar-open .side { transform: translateX(0); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
 
-      .action-buttons button {
-        flex: 1;
-      }
+      body.sidebar-open .sidebar-overlay { display: block; opacity: 1; background: rgba(0,0,0,0.35); pointer-events: auto; }
 
-      .students-table {
-        font-size: 12px;
-      }
+      .side .nav a { pointer-events: auto; position: relative; z-index: 2201; }
+      .page-wrapper > main { transition: margin-left .25s ease; }
 
+      .main { min-height: calc(100vh - var(--navbar-height, 56px)); }
+    }
+
+    /* Fine-tune cells for smaller screens */
+    @media (max-width: 1024px) {
       .students-table th,
       .students-table td {
-        padding: 10px 8px;
+        padding: 12px;
+      }
+    }
+
+    /* Mobile (card-like) layout: hide header, show rows as blocks */
+    @media (max-width: 600px) {
+      .students-table {
+        min-width: 0;
+      }
+      .students-table thead {
+        display: none;
+      }
+      .students-table, .students-table tbody, .students-table tr, .students-table td {
+        display: block;
+        width: 100%;
+      }
+      .students-table tr {
+        margin-bottom: 12px;
+        border-bottom: none;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border-radius: 8px;
+        padding: 10px 12px;
+        border: #000;
+      }
+      .students-table td {
+        padding: 8px 0;
+        text-align: left;
+      }
+      .students-table td::before {
+        content: attr(data-label) ": ";
+        font-weight: 700;
+        color: #222;
+        display: inline-block;
+        width: 110px;
+      }
+
+      /* Badges: keep compact and inline */
+      .grade-badge, .section-badge {
+        display: inline-block;
+        margin-left: 0;
+      }
+
+      /* Make ID bold for clarity */
+      .students-table .id-cell {
+        font-weight: 700;
+        margin-bottom: 4px;
       }
     }
   </style>
@@ -290,6 +384,11 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       </div>
     </div>
     <div class="navbar-actions">
+      <!-- Mobile hamburger toggle to open/close sidebar (added) -->
+      <button id="sidebarToggle" class="hamburger" aria-controls="mainSidebar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="bars" aria-hidden="true"></span>
+      </button>
+
       <div class="user-menu">
         <span><?php echo $user_name; ?></span>
         <a href="teacher-logout.php" class="logout-btn" title="Logout">
@@ -302,7 +401,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
   </nav>
 
   <div class="page-wrapper">
-    <aside class="side">
+    <aside class="side" id="mainSidebar">
       <nav class="nav">
         <a href="teacher.php">Dashboard</a>
         <a href="tprofile.php">Profile</a>
@@ -317,6 +416,9 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
       </nav>
       <div class="side-foot">Logged in as <strong>Teacher</strong></div>
     </aside>
+
+    <!-- Overlay used to close sidebar on small screens (added) -->
+    <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
 
     <main class="main">
       <header class="header">
@@ -358,11 +460,11 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
             <?php if (!empty($allStudents)): ?>
               <?php foreach ($allStudents as $student): ?>
                 <tr data-is-archived="<?php echo isset($student['is_archived']) ? intval($student['is_archived']) : 0; ?>">
-                  <td class="id-cell"><?php echo htmlspecialchars($student['id']); ?></td>
-                  <td class="name-cell" data-name="<?php echo htmlspecialchars($student['name']); ?>"><?php echo htmlspecialchars($student['name']); ?></td>
-                  <td class="email-cell" data-email="<?php echo htmlspecialchars($student['email']); ?>"><?php echo htmlspecialchars($student['email']); ?></td>
-                  <td data-grade="<?php echo htmlspecialchars($student['grade_level'] ?? 'N/A'); ?>"><span class="grade-badge"><?php echo htmlspecialchars($student['grade_level'] ?? 'N/A'); ?></span></td>
-                  <td data-section="<?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?>"><span class="section-badge"><?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?></span></td>
+                  <td class="id-cell" data-label="ID"><?php echo htmlspecialchars($student['id']); ?></td>
+                  <td class="name-cell" data-label="Name" data-name="<?php echo htmlspecialchars($student['name']); ?>"><?php echo htmlspecialchars($student['name']); ?></td>
+                  <td class="email-cell" data-label="Email" data-email="<?php echo htmlspecialchars($student['email']); ?>"><?php echo htmlspecialchars($student['email']); ?></td>
+                  <td data-grade="<?php echo htmlspecialchars($student['grade_level'] ?? 'N/A'); ?>" data-label="Grade"><span class="grade-badge"><?php echo htmlspecialchars($student['grade_level'] ?? 'N/A'); ?></span></td>
+                  <td data-section="<?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?>" data-label="Section"><span class="section-badge"><?php echo htmlspecialchars($student['section'] ?? 'N/A'); ?></span></td>
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
@@ -382,119 +484,234 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
   </div>
 
   <script>
-    let currentSort = 'name';
-    let allDataRows = [];
+/* Consolidated student list script
+   - single definitions only (no duplicate variable declaractions)
+   - guarded event wiring
+   - robust sort/filter/export
+*/
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      // Store all data rows — exclude archived rows from client-side indexing
-      allDataRows = Array.from(document.querySelectorAll('#studentsBody tr')).filter(row => {
-          if (row.querySelector('td[colspan]')) return false;
-          // Use the data attribute to filter archived rows if present
-          const isArchived = row.dataset.isArchived === '1' || row.dataset.isArchived === 'true';
-          return !isArchived;
-      });
-      filterAndSort();
+// Utilities
+function getCellText(row, label, fallbackIndex = null) {
+  if (!row) return '';
+  const node = row.querySelector('td[data-label="' + label + '"] .cell-value') || row.querySelector('td[data-label="' + label + '"]');
+  if (node) return String(node.textContent || '').trim();
+  if (fallbackIndex !== null && row.cells[fallbackIndex]) return String(row.cells[fallbackIndex].textContent || '').trim();
+  return '';
+}
+function isRowHidden(row) {
+  if (!row) return true;
+  if (row.style && row.style.display === 'none') return true;
+  try {
+    const cs = getComputedStyle(row);
+    return cs ? (cs.display === 'none' || cs.visibility === 'hidden') : false;
+  } catch (e) {
+    return (row.style && row.style.display === 'none');
+  }
+}
+function cmp(a, b) { if (a === b) return 0; return a > b ? 1 : -1; }
+function parseGradeValue(text) {
+  if (!text) return -Infinity;
+  const m = String(text).match(/\d+/);
+  if (m) return parseInt(m[0], 10);
+  return String(text).trim().toLowerCase();
+}
+function parseSectionValue(text) { if (!text) return ''; return String(text).trim().toUpperCase(); }
+
+// Comparators using getCellText for safety
+function compareByName(a, b, asc=true) {
+  const A = (getCellText(a,'Name',1)||'').toLowerCase();
+  const B = (getCellText(b,'Name',1)||'').toLowerCase();
+  const r = cmp(A,B); return asc ? r : -r;
+}
+function compareByEmail(a, b, asc=true) {
+  const A = (getCellText(a,'Email',2)||'').toLowerCase();
+  const B = (getCellText(b,'Email',2)||'').toLowerCase();
+  const r = cmp(A,B); return asc ? r : -r;
+}
+function compareByGrade(a, b, asc=true) {
+  const A = parseGradeValue(getCellText(a,'Grade',3));
+  const B = parseGradeValue(getCellText(b,'Grade',3));
+  const r = (typeof A === 'number' && typeof B === 'number') ? (A-B) : cmp(String(A),String(B));
+  return asc ? r : -r;
+}
+function compareBySection(a, b, asc=true) {
+  const A = parseSectionValue(getCellText(a,'Section',4));
+  const B = parseSectionValue(getCellText(b,'Section',4));
+  const r = cmp(A,B); return asc ? r : -r;
+}
+function compareGradeThenSection(a,b) {
+  const g = compareByGrade(a,b,true); if (g !== 0) return g; return compareBySection(a,b,true);
+}
+
+// mark original order
+function markOriginalRowOrder() {
+  const tbody = document.querySelector('#studentsTable tbody');
+  if (!tbody) return;
+  Array.from(tbody.rows).forEach((r,i) => r.dataset.origOrder = i);
+}
+
+// sort visible rows, append hidden ones after to preserve them at bottom
+function sortStudents(option) {
+  const tbody = document.querySelector('#studentsTable tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.rows || []);
+  const visible = rows.filter(r => !isRowHidden(r));
+  const hidden = rows.filter(r => isRowHidden(r));
+  let sorted;
+  switch (String(option)) {
+    case 'grade': case 'grade_asc': sorted = visible.sort((a,b)=>compareByGrade(a,b,true)); break;
+    case 'grade_desc': sorted = visible.sort((a,b)=>compareByGrade(a,b,false)); break;
+    case 'section': case 'section_asc': sorted = visible.sort((a,b)=>compareBySection(a,b,true)); break;
+    case 'section_desc': sorted = visible.sort((a,b)=>compareBySection(a,b,false)); break;
+    case 'email': sorted = visible.sort((a,b)=>compareByEmail(a,b,true)); break;
+    case 'grade_section': sorted = visible.sort((a,b)=>compareGradeThenSection(a,b)); break;
+    case 'default':
+      sorted = visible.sort((a,b) => (Number(a.dataset.origOrder) || 0) - (Number(b.dataset.origOrder) || 0));
+      break;
+    case 'name':
+    default:
+      sorted = visible.sort((a,b)=>compareByName(a,b,true));
+      break;
+  }
+  const hiddenSorted = hidden.sort((a,b)=>(Number(a.dataset.origOrder)||0)-(Number(b.dataset.origOrder)||0));
+  sorted.forEach(r => tbody.appendChild(r));
+  hiddenSorted.forEach(r => tbody.appendChild(r));
+}
+
+// filter rows and reapply current sort
+function doFilter() {
+  const searchInput = document.getElementById('searchInput');
+  const q = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+  const tbody = document.querySelector('#studentsTable tbody');
+  if (!tbody) return;
+  Array.from(tbody.rows).forEach(row => {
+    if (row.querySelector('td[colspan]')) { row.style.display = ''; return; } // empty-state
+    const idText = (getCellText(row,'ID',0)||'').toLowerCase();
+    const nameText = (getCellText(row,'Name',1)||'').toLowerCase();
+    const emailText = (getCellText(row,'Email',2)||'').toLowerCase();
+    const gradeText = (getCellText(row,'Grade',3)||'').toLowerCase();
+    const sectionText = (getCellText(row,'Section',4)||'').toLowerCase();
+    const match = !q || idText.includes(q) || nameText.includes(q) || emailText.includes(q) || gradeText.includes(q) || sectionText.includes(q);
+    row.style.display = match ? '' : 'none';
+  });
+
+  // reapply sorting (get current sort select)
+  const ss = document.getElementById('sortSelect');
+  const currentOpt = ss ? ss.value : 'name';
+  sortStudents(currentOpt);
+}
+
+// mobile button visual update (safe no-op)
+function updateActiveMobileButton(option) {
+  const buttons = document.querySelectorAll('.mobile-sort-button');
+  if (!buttons || buttons.length === 0) return;
+  buttons.forEach(b => {
+    if (b.dataset.sort === String(option)) b.classList.add('active'); else b.classList.remove('active');
+  });
+}
+
+// reliably open export in new tab using form to avoid popup blockers; fallback to fetch is handled in click handler
+function openExportInNewTab(url) {
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = url;
+  form.target = '_blank';
+  form.style.display = 'none';
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'export';
+  input.value = '1';
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+}
+
+// Guarded wiring and initialization
+document.addEventListener('DOMContentLoaded', function () {
+  markOriginalRowOrder();
+
+  // wire search
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', doFilter);
+    searchInput.addEventListener('search', doFilter);
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { this.value = ''; doFilter(); this.blur(); }
     });
+  }
 
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-      filterAndSort();
+  // sort select
+  const sortSelect = document.getElementById('sortSelect');
+  if (sortSelect) {
+    // ensure default is applied
+    const startOpt = sortSelect.value || 'name';
+    sortStudents(startOpt);
+    sortSelect.addEventListener('change', function () {
+      const opt = this.value || 'name';
+      updateActiveMobileButton(opt);
+      sortStudents(opt);
     });
+  }
 
-    // Sort functionality
-    document.getElementById('sortSelect').addEventListener('change', function(e) {
-      currentSort = e.target.value;
-      filterAndSort();
-    });
-
-    // Clear search
-    document.getElementById('clearSearch').addEventListener('click', function() {
-      document.getElementById('searchInput').value = '';
-      filterAndSort();
-    });
-
-    function filterAndSort() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-
-      // Filter rows based on search term
-      const filteredRows = allDataRows.filter(row => {
-        const text = row.textContent.toLowerCase();
-        return searchTerm === '' || text.includes(searchTerm);
-      });
-
-      // Sort rows
-      filteredRows.sort((a, b) => {
-        let aValue, bValue;
-        
-        switch(currentSort) {
-          case 'grade':
-            aValue = a.querySelector('td[data-grade]').dataset.grade.toLowerCase();
-            bValue = b.querySelector('td[data-grade]').dataset.grade.toLowerCase();
-            break;
-          case 'section':
-            aValue = a.querySelector('td[data-section]').dataset.section.toLowerCase();
-            bValue = b.querySelector('td[data-section]').dataset.section.toLowerCase();
-            break;
-          case 'email':
-            aValue = a.querySelector('td[data-email]').dataset.email.toLowerCase();
-            bValue = b.querySelector('td[data-email]').dataset.email.toLowerCase();
-            break;
-          case 'name':
-          default:
-            aValue = a.querySelector('td[data-name]').dataset.name.toLowerCase();
-            bValue = b.querySelector('td[data-name]').dataset.name.toLowerCase();
-        }
-        
-        return aValue.localeCompare(bValue);
-      });
-
-      // Update display: ensure we don't display archived rows
-      const tbody = document.getElementById('studentsBody');
-      tbody.innerHTML = '';
-      
-      if (filteredRows.length === 0) {
-        // Show empty state only if search found nothing
-        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">📭</div><div>No students found</div></div></td></tr>';
-      } else {
-        // Show filtered and sorted results
-        filteredRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
+  // export button: open same page with ?export=1 to trigger server CSV; fallback to fetch then blob
+  const exportBtn = document.getElementById('exportBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      const exportUrl = window.location.pathname; // listofstudents.php
+      // try form (reliable)
+      try {
+        openExportInNewTab(exportUrl);
+        return;
+      } catch (err) {
+        console.warn('form open failed:', err);
       }
-    }
-
-    // Export CSV: ensure archived rows are not included
-    document.getElementById('exportBtn').addEventListener('click', function() {
+      // fallback: fetch blob
+      try {
+        const resp = await fetch(exportUrl + '?export=1', { credentials: 'same-origin' });
+        if (!resp.ok) throw new Error('Export failed ' + resp.status);
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'students_' + Date.now() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      } catch (err) {
+        console.warn('Fetch export failed - doing DOM fallback', err);
+      }
+      // DOM fallback
       const table = document.getElementById('studentsTable');
-      let csv = [];
-      
-      const headers = [];
-      table.querySelectorAll('thead th').forEach(th => {
-        headers.push('"' + th.textContent + '"');
-      });
-      csv.push(headers.join(','));
-      
+      const rows = [];
+      const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+      rows.push(headers);
       document.querySelectorAll('#studentsBody tr').forEach(tr => {
-        // skip empty state & skip archived rows
         if (tr.querySelector('td[colspan]')) return;
         const isArchived = tr.dataset.isArchived === '1' || tr.dataset.isArchived === 'true';
         if (isArchived) return;
-
-        const row = [];
-        tr.querySelectorAll('td').forEach(td => {
-          row.push('"' + td.textContent.replace(/"/g, '""') + '"');
-        });
-        csv.push(row.join(','));
+        const vals = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+        rows.push(vals);
       });
-      
-      const csvContent = csv.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'students_' + new Date().getTime() + '.csv';
-      a.click();
-      window.URL.revokeObjectURL(url);
+      if (rows.length <= 1) { alert('No students to export.'); return; }
+      const csv = rows.map(r => r.map(c => '"' + c.replace(/"/g, '""') + '"').join(',')).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'students_' + Date.now() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
     });
+  }
+
+  // wire mobile sort buttons if present
+  document.querySelectorAll('.mobile-sort-button').forEach(btn => btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    const opt = this.dataset.sort || 'name';
+    const ss = document.getElementById('sortSelect');
+    if (ss) ss.value = opt;
+    updateActiveMobileButton(opt);
+    sortStudents(opt);
+  }));
+
+  // initial filter so UI shows search+sort state
+  doFilter();
+});
   </script>
 </body>
 </html>
