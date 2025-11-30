@@ -167,7 +167,7 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? 'Teacher');
         }
 
         /* Small screens: card becomes fluid/margins are reduced for padding */
-        @media (max-width: 900px) {
+        @media (max-width: 1200px) {
             .hero {
                 margin: 0 12px;
                 max-width: none;
