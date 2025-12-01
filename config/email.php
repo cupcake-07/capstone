@@ -3,14 +3,38 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
- require __DIR__ . '/../vendor/autoload.php';
-//  var_dump($_POST);
-// die();
+require __DIR__ . '/../vendor/autoload.php';
 
+session_start();
+
+// Display success or error message
+if (isset($_SESSION['email_sent'])) {
+    echo '<div style="background-color: #d4edda; color: #155724; padding: 30px; margin: 30px auto; border-radius: 8px; border: 2px solid #c3e6cb; text-align: center; max-width: 500px; font-size: 18px;">
+        <strong style="font-size: 24px;">✓ Success!</strong><br><br> Password reset email has been sent to your inbox. Please check your email for the reset link.
+        <br><br>
+        <button onclick="history.back()" style="background-color: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">← Go Back</button>
+    </div>';
+    unset($_SESSION['email_sent']);
+}
+
+if (isset($_SESSION['email_error'])) {
+    echo '<div style="background-color: #f8d7da; color: #721c24; padding: 30px; margin: 30px auto; border-radius: 8px; border: 2px solid #f5c6cb; text-align: center; max-width: 500px; font-size: 18px;">
+        <strong style="font-size: 24px;">✗ Error!</strong><br><br> Failed to send email. Please try again later.
+        <br><br>
+        <button onclick="history.back()" style="background-color: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">← Go Back</button>
+    </div>';
+    unset($_SESSION['email_error']);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reset_email = $_POST['reset_email'];
-    sendPasswordResetEmail($reset_email);
+    if (sendPasswordResetEmail($reset_email)) {
+        $_SESSION['email_sent'] = true;
+    } else {
+        $_SESSION['email_error'] = true;
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit();
 }
 
 function sendPasswordResetEmail($recipientEmail) {
