@@ -17,15 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($password)) {
         $error = 'Email and password are required';
     } else {
-        $result = $conn->query("SELECT id, name, email, password FROM admins WHERE email = '$email' LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name, email, password FROM admins WHERE email = ? LIMIT 1");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
             if (password_verify($password, $user['password'])) {
+                session_regenerate_id(true);
                 $_SESSION['admin_id'] = $user['id'];
                 $_SESSION['admin_type'] = 'admin';
                 $_SESSION['admin_name'] = $user['name'];
                 
+                session_write_close();
                 header('Location: admin.php');
                 exit;
             } else {
@@ -34,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error = 'Invalid email or password';
         }
+        $stmt->close();
     }
 }
 ?>
@@ -168,11 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn-login">Login as Admin</button>
             </form>
 
-            <div class="demo-info">
-                <strong>Demo Admin Credentials:</strong>
-                Email: admin@capstone.com<br>
-                Password: admin123
-            </div>
+            
         </div>
     </body>
 </html>

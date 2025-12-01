@@ -1,6 +1,5 @@
 <?php
 // Ensure session cookie usable across /capstone and its subfolders
-// Using an array works on PHP 7.3+; fallback to older signature if required
 $cookieParams = [
     'lifetime' => 0,
     'path' => '/capstone',
@@ -15,43 +14,28 @@ if (PHP_VERSION_ID >= 70300) {
     session_set_cookie_params($cookieParams['lifetime'], $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure'], $cookieParams['httponly']);
 }
 
-// Keep using existing session name if your other pages rely on it
+// STUDENT-SPECIFIC session name - MUST be set before session_start()
 $_SESSION_NAME = 'STUDENT_SESSION';
 if (session_status() === PHP_SESSION_NONE) {
     session_name($_SESSION_NAME);
     session_start();
 }
 
-// Handle Logout - for any session type
+// Handle Logout - ONLY clear student session data
 if (isset($_GET['logout'])) {
     unset($_SESSION['user_id']);
     unset($_SESSION['user_type']);
     unset($_SESSION['user_name']);
     unset($_SESSION['user_email']);
+    // Do NOT call session_destroy() - this keeps student session active but logged out
+    // Do NOT clear cookies - this maintains session isolation
     header('Location: /capstone/login.php');
     exit;
 }
 
-// Previously we auto-redirected logged-in users to their dashboards here.
-// Remove that auto-redirect so login.php remains the starting point for all users.
-// Instead, just detect logged-in state and compute dashboard link.
-
-$already_logged_in = false;
-$dashboard_link = '';
-if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
-    $already_logged_in = true;
-    $role = $_SESSION['user_type'];
-    if ($role === 'admin') {
-        $dashboard_link = '/capstone/admin.php';
-    } elseif ($role === 'teacher') {
-        $dashboard_link = '/capstone/teachers/teacher.php';
-    } else {
-        $dashboard_link = '/capstone/student.php';
-    }
-}
+// Removed: $already_logged_in detection
 
 require_once 'config/database.php';
-require_once 'config/email.php';
 
 $error_message = '';
 $flash_success = $_SESSION['flash_success'] ?? '';
@@ -146,7 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login']) && empty($er
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_email'] = $user['email'];
             
-            // Ensure session data saved before sending redirect
             session_write_close();
 
             if ($user_role === 'admin') {
@@ -332,12 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     <div class="form-container sign-up-container">
         <form method="POST">
             <h1 class="signin">Sign Up</h1>
-            
-            <div class="role-tabs">
-                <button type="button" class="role-tab active" data-role="student" onclick="selectSignupRole('student')">Student</button>
-                <button type="button" class="role-tab" data-role="teacher" onclick="selectSignupRole('teacher')">Teacher</button>
-                <button type="button" class="role-tab" data-role="admin" onclick="selectSignupRole('admin')">Admin</button>
-            </div>
+        
             <input type="hidden" name="role" id="signupRole" value="student"/>
 
             <?php if ($error_message && isset($_POST['signup'])): ?>
@@ -364,13 +342,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         <form method="POST">
             <h1 class="login">Log In</h1>
             
-            <?php if ($already_logged_in): ?>
-                <div class="message-box success-message">
-                    You are already logged in as <?php echo htmlspecialchars(ucfirst($_SESSION['user_type'])); ?>.<br>
-                    <a href="<?php echo htmlspecialchars($dashboard_link); ?>" style="color: #155724; text-decoration: underline;">Go to Dashboard</a>
-                </div>
-            <?php else: ?>
-            
+
+
             <input type="hidden" name="role" id="loginRole" value="student"/>
 
             <?php if ($flash_success): ?>
@@ -410,8 +383,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             <div class="forgot-pwd-link">
                 <a onclick="openForgotPasswordModal()">Forgot Password?</a>
             </div>
-            <?php endif; ?>
+
+            <!-- Bottom Navigation Links -->
+            <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0; font-size: 13px;">
+                <a href="/capstone/teachers/teacher-login.php" style="color: #667eea; text-decoration: none; font-weight: 600; margin: 0 6px;">Login as Teacher</a>
+               
+            </div>
         </form>
+
+        <!-- Quick login links for teacher/admin -->
+        
     </div>
     
     <div class="overlay-container" id="overlayCon">
@@ -451,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             <h2>Reset Password</h2>
             <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
         </div>
-        <form method="POST" class="modal-form">
+        <form method="POST" class="modal-form" action="config/email.php">
             <div class="infield">
                 <input type="email" placeholder="Enter your email" name="reset_email" required/>
             </div>

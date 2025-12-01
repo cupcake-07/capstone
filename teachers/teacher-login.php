@@ -11,21 +11,27 @@ require_once __DIR__ . '/../config/database.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
+    $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
     if (empty($email) || empty($password)) {
         $error = 'Email and password are required';
     } else {
-        $result = $conn->query("SELECT id, name, email, password FROM teachers WHERE email = '$email' LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name, email, password FROM teachers WHERE email = ? LIMIT 1");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
             if (password_verify($password, $user['password'])) {
+                session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_type'] = 'teacher';
                 $_SESSION['user_name'] = $user['name'];
+                $_SESSION['user_email'] = $user['email'];
                 
+                session_write_close();
                 header('Location: teacher.php');
                 exit;
             } else {
@@ -34,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error = 'Invalid email or password';
         }
+        $stmt->close();
     }
 }
 ?>
@@ -271,17 +278,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn-login">Login as Teacher</button>
             </form>
 
-            <div class="info-box">
-                <strong>New to the system?</strong>
-                Create an account to get started with grade management and classroom coordination.
-            </div>
+            
 
             <div class="auth-links">
                 <p>Don't have an account?</p>
                 <a href="teacher-register.php">Create Teacher Account</a>
                 <p style="margin-top: 16px;">
-                    <a href="../login.php">Login as Student</a> | 
-                    <a href="../admin-login.php">Login as Admin</a>
+                    <a href="../login.php">Login as Student</a> 
+                   
                 </p>
             </div>
         </div>

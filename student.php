@@ -591,7 +591,7 @@ function isGradeProvided($gradeVal) {
     return !in_array($g, $sentinels, true);
 }
 
-const FIXED_TOTAL_FEE = 15000.00;
+const FIXED_TOTAL_FEE = 0.00;
 
 // Determine student's grade (already available as $gradeKey)
 $studentGrade = $gradeKey; // Use the raw grade key from earlier

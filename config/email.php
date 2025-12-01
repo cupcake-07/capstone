@@ -1,28 +1,60 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
 
-function sendPasswordResetEmail($studentEmail, $resetToken) {
-    $resetLink = 'http://localhost/capstone/reset_password.php?token=' . $resetToken;
+ require __DIR__ . '/../vendor/autoload.php';
+//  var_dump($_POST);
+// die();
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $reset_email = $_POST['reset_email'];
+    sendPasswordResetEmail($reset_email);
+}
+
+function sendPasswordResetEmail($recipientEmail) {
+    $mail = new PHPMailer(true);
+    $encodedEmail = base64_encode($recipientEmail);
+    $resetLink = "http://localhost/capstone/reset.php?token={$encodedEmail}";
+
     
-    $subject = 'Password Reset Request - Glorious Gods Family School';
-    $htmlBody = "
-    <html>
-    <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-        <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-            <h2 style='color: #667eea;'>Password Reset Request</h2>
-            <p>You requested a password reset for your account.</p>
-            <p>Click the button below to reset your password:</p>
-            <p><a href='$resetLink' style='background-color: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;'>Reset Password</a></p>
+    try {
+        // SMTP Configuration
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'rambonanzakalis@gmail.com'; // Replace with your Gmail
+        $mail->Password = 'mrwp tfru ksmg jvqq';      // Replace with your App Password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+        
+        // Email Details
+        $mail->setFrom('rambonanzakalis@gmail.com', 'Glorious God\'s Family School');
+        $mail->addAddress($recipientEmail);
+        $mail->isHTML(true);
+        $mail->Subject = 'Password Reset Request';
+        
+        // $resetLink = 'http://localhost/capstone/reset_password.php?token=' . $resetToken . '&email=' . urlencode($recipientEmail);
+        
+         $mail->Body = "
+          <h2>Password Reset Request</h2>
+            <p>Click the link below to reset your password:</p>
+          <a href='{$resetLink}' style='background-color: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;'>Reset Password</a>
             <p>This link expires in 24 hours.</p>
-        </div>
-    </body>
-    </html>
-    ";
-    
-    // Change 'From' email here - use your desired Gmail
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: different.email@gmail.com\r\n"; // Change this to send from different Gmail
-    
-    return mail($studentEmail, $subject, $htmlBody, $headers);
+            <p>If you didn't request this, ignore this email.</p>
+         ";
+
+
+        
+        
+            
+        
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email send failed: " . $mail->ErrorInfo);
+        return false;
+    }
 }
 ?>
