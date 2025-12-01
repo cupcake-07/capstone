@@ -79,17 +79,136 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password</title>
     <style>
-        body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f4f4f4; font-family: Arial, sans-serif; }
-        .card { background:#fff; padding:28px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.08); width:100%; max-width:420px; }
-        h1 { margin:0 0 18px 0; font-size:20px; color:#111; text-align:center; }
-        .message { padding:12px; border-radius:6px; margin-bottom:16px; text-align:center; }
-        .error { background:#fff3f3; color:#7a1414; border:1px solid #f3caca; }
-        .success { background:#f3fff3; color:#145a14; border:1px solid #c3e6cb; }
-        .infield { margin-bottom:12px; }
-        input[type="password"], input[type="text"], input[type="email"] { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:14px; box-sizing:border-box; }
-        button { width:100%; padding:12px; background:#111; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer; }
-        .back { margin-top:12px; text-align:center; }
-        .back a { color:#111; text-decoration:none; }
+        :root {
+            --blue: #2b7cff;
+            --pink: #ff4da6;
+            --bg-start: #eaf4ff;
+            --bg-end: #fff2f9;
+            --card-bg: #ffffff;
+            --text: #0f1723;
+            --muted: #6b7280;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 28px;
+            font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.99));
+            padding: 36px;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 10px 30px rgba(17, 24, 39, 0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,77,166,0.07);
+            position: relative;
+            overflow: visible;
+        }
+
+        /* subtle top accent without modifying HTML */
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: -18px;
+            width: 72px;
+            height: 6px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--blue), var(--pink));
+            box-shadow: 0 6px 18px rgba(43,124,255,0.08), 0 6px 18px rgba(255,77,166,0.06);
+        }
+
+        h1 {
+            margin: 0 0 18px;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text);
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        .error {
+            background: linear-gradient(180deg, rgba(255,77,166,0.06), rgba(255,77,166,0.03));
+            color: #8b1034;
+            border: 1px solid rgba(255,77,166,0.14);
+        }
+
+        .success {
+            background: linear-gradient(180deg, rgba(43,124,255,0.06), rgba(43,124,255,0.03));
+            color: #0f3c78;
+            border: 1px solid rgba(43,124,255,0.14);
+        }
+
+        .infield { margin-bottom: 14px; }
+
+        input[type="password"], input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid rgba(15, 23, 36, 0.08);
+            border-radius: 10px;
+            font-size: 15px;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+            transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+            box-shadow: 0 6px 16px rgba(17, 24, 39, 0.03);
+        }
+
+        input::placeholder { color: #9ca3af; }
+
+        input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 8px 30px rgba(43,124,255,0.08), 0 2px 6px rgba(255,77,166,0.03);
+            transform: translateY(-1px);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(90deg, var(--blue), var(--pink));
+            cursor: pointer;
+            box-shadow: 0 8px 26px rgba(43,124,255,0.14);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            letter-spacing: 0.2px;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(43,124,255,0.16); }
+
+        button:active { transform: translateY(-1px); }
+
+        .back { margin-top: 18px; text-align: center; font-size: 14px; }
+        .back a { color: var(--blue); text-decoration: none; font-weight: 600; }
+        .back a:hover { color: var(--pink); }
+
+        @media (max-width: 480px) {
+            .card { padding: 22px; }
+            input, button { padding: 12px; }
+        }
     </style>
 </head>
 <body>

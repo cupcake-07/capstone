@@ -6,6 +6,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Debug: Log what's in session (remove after testing)
+error_log("Session data: user_id=" . ($_SESSION['user_id'] ?? 'NOT SET') . ", user_type=" . ($_SESSION['user_type'] ?? 'NOT SET'));
+
+// Redirect to login if not logged in
+if (empty($_SESSION['user_id']) || empty($_SESSION['user_type']) || $_SESSION['user_type'] !== 'student') {
+    error_log("Redirect to login: user_id=" . ($_SESSION['user_id'] ?? 'empty') . ", user_type=" . ($_SESSION['user_type'] ?? 'empty'));
+    header('Location: /login.php', true, 302);
+    exit;
+}
+
+// SET userId here - BEFORE any database operations
+$userId = intval($_SESSION['user_id']);
+
 require_once 'config/database.php';
 
 // --- ADD: canonical grade label helpers (must be defined before any usage) ----
@@ -67,14 +80,6 @@ if (!function_exists('getEnrollmentColumn')) {
     }
 }
 // -------------------------------------------------------------------------
-
-// Redirect to login if not logged in
-if (empty($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
-$userId = intval($_SESSION['user_id']);
 
 // --- ADDED: determine avatar column & build fields for SELECT ---------------
 $avatarColumn = columnExists($conn, 'students', 'avatar') ? 'avatar' : null;
@@ -229,7 +234,7 @@ if ($stmt = $conn->prepare("SELECT {$selectFields} FROM students WHERE id = ? LI
 if (!$user) {
     session_unset();
     session_destroy();
-    header('Location: login.php');
+    header('Location: /login.php');
     exit;
 }
 

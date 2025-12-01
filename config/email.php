@@ -4,6 +4,7 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
 require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/otp.php';
 
 session_start();
 
@@ -26,18 +27,58 @@ if (isset($_SESSION['email_error'])) {
     unset($_SESSION['email_error']);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $reset_email = $_POST['reset_email'];
-    if (sendPasswordResetEmail($reset_email)) {
-        $_SESSION['email_sent'] = true;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password'])) {
+    $reset_email = strtolower(trim($_POST['reset_email'] ?? ''));
+    
+    if (empty($reset_email)) {
+        $_SESSION['email_error'] = 'Email is required.';
     } else {
-        $_SESSION['email_error'] = true;
+        require_once 'database.php';
+        
+        $user_role = null;
+        $table = null;
+        $tables = ['students' => 'student', 'teachers' => 'teacher', 'admins' => 'admin'];
+        
+        foreach ($tables as $tbl => $role_name) {
+            $stmt = $conn->prepare("SELECT id FROM $tbl WHERE email = ? LIMIT 1");
+            $stmt->bind_param('s', $reset_email);
+            $stmt->execute();
+            $stmt->store_result();
+            
+            if ($stmt->num_rows > 0) {
+                $table = $tbl;
+                $user_role = $role_name;
+                $stmt->close();
+                break;
+            }
+            $stmt->close();
+        }
+        
+        if ($table && $user_role) {
+            $reset_token = bin2hex(random_bytes(32));
+            $token_hash = hash('sha256', $reset_token);
+            $expiry = date('Y-m-d H:i:s', time() + (24 * 60 * 60));
+            
+            $upd = $conn->prepare("UPDATE $table SET reset_token = ?, reset_token_expiry = ? WHERE email = ?");
+            $upd->bind_param('sss', $token_hash, $expiry, $reset_email);
+            
+            if ($upd->execute()) {
+                sendPasswordResetEmail($reset_email, $reset_token);
+                $_SESSION['email_sent'] = true;
+            } else {
+                $_SESSION['email_error'] = true;
+            }
+            $upd->close();
+        } else {
+            $_SESSION['email_sent'] = true; // Security: don't reveal if email exists
+        }
     }
-    header('Location: ' . $_SERVER['REQUEST_URI']);
-    exit();
+    
+    header('Location: ../login.php');
+    exit;
 }
 
-function sendPasswordResetEmail($recipientEmail) {
+function sendPasswordResetEmail($recipientEmail, $resetToken) {
     $mail = new PHPMailer(true);
     $encodedEmail = base64_encode($recipientEmail);
     $resetLink = "http://localhost/capstone/reset.php?token={$encodedEmail}";

@@ -22,6 +22,6 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // Redirect to teacher login page
-header('Location: /capstone/teachers/teacher-login.php');
+header('Location: /teachers/teacher-login.php');
 exit;
 ?>
