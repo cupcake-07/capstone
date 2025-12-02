@@ -507,7 +507,7 @@
                         </button>
                         
                         <button class="album-thumb" data-src="Images/school19.jpg" aria-label="Open image 5" role="listitem">
-                            <img src="Images/school19_thumb.jpg" onerror="this.src='Images/school19.jpg'" alt="Event 5">
+                            <a href="filmshow.php"><img src="Images/school19_thumb.jpg" onerror="this.src='Images/school19.jpg'" alt="Event 5"></a>
                         </button>
                         <button class="album-thumb" data-src="Images/schoolgrad.jpg" aria-label="Open image 6" role="listitem">
                             <img src="Images/schoolgrad.jpg" onerror="this.src='Images/schoolgrad.jpg'" alt="Event 6">
