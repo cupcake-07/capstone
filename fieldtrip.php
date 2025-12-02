@@ -65,17 +65,6 @@
             }
         }
 
-        @keyframes scaleIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
         /* --- HEADER --- */
         header {
             text-align: center;
@@ -184,6 +173,7 @@
             background: linear-gradient(to top, rgba(11, 13, 23, 0.95), transparent);
             
             transform: translateY(0); /* Always visible now, cleaner look */
+            max-height: 50%;
         }
 
         .card-title {

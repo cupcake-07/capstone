@@ -500,7 +500,7 @@
                             <a href="fieldtrip.php"><img src="Images/fieldtrip.jpg" onerror="this.src='Images/fieldtrip.jpg'" alt="Event 1"></a>
                         </button>
                         <button class="album-thumb" data-src="Images/foundation day.jpg" aria-label="Open image 2" role="listitem">
-                            <img src="Images/foundation day.jpg" onerror="this.src='Images/foundation day.jpg'" alt="Event 2">
+                            <a href="foundationday.php"><img src="Images/foundation day.jpg" onerror="this.src='Images/foundation day.jpg'" alt="Event 2"></a>
                         </button>
                         <button class="album-thumb" data-src="Images/yearend.jpg" aria-label="Open image 3" role="listitem">
                             <img src="Images/yearend.jpg" onerror="this.src='Images/yearend.jpg'" alt="Event 3">
