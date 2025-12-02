@@ -1507,6 +1507,7 @@ ul {
   margin-bottom: var(--space-md);
   padding: 0;
   width: 100%;
+  margin-top:-25px;
 }
 
 /* Last field (buttons) gets special treatment */
@@ -2273,22 +2274,22 @@ ul {
 }
 @keyframes show {
 	0% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school7.jpg) center/cover no-repeat fixed;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school7.jpg) center/cover no-repeat fixed;
 	}
 	20% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school1.jpg) center/cover no-repeat fixed;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school1.jpg) center/cover no-repeat fixed;
 	}
 	40% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school2.jpg) center/cover no-repeat fixed;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school2.jpg) center/cover no-repeat fixed;
 	}
 	60% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school3.jpg) center/cover no-repeat fixed;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school3.jpg) center/cover no-repeat fixed;
 	}
 	80% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school4.jpg) center/cover no-repeat;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school4.jpg) center/cover no-repeat;
 	}
 	100% {
-		background: linear-gradient(rgba(12, 112, 154, .6), rgba(163, 48, 157, 0.8)) center/cover no-repeat fixed, url(Images/school5.jpg) center/cover no-repeat;
+		background: linear-gradient(rgba(12, 112, 154, .6), rgba(37, 2, 36, 0.8)) center/cover no-repeat fixed, url(Images/school5.jpg) center/cover no-repeat;
 	}
 }
 @keyframes Zooming {
