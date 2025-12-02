@@ -497,7 +497,7 @@
                            <a href="buwanwika.php"><img src="Images/school18_thumb.jpg" onerror="this.src='Images/school18.jpg'" alt="Event 4"></a>
                         </button>
                         <button class="album-thumb active" data-src="Images/fieldtrip.jpg" aria-label="Open image 1" role="listitem">
-                            <img src="Images/fieldtrip.jpg" onerror="this.src='Images/fieldtrip.jpg'" alt="Event 1">
+                            <a href="fieldtrip.php"><img src="Images/fieldtrip.jpg" onerror="this.src='Images/fieldtrip.jpg'" alt="Event 1"></a>
                         </button>
                         <button class="album-thumb" data-src="Images/foundation day.jpg" aria-label="Open image 2" role="listitem">
                             <img src="Images/foundation day.jpg" onerror="this.src='Images/foundation day.jpg'" alt="Event 2">
