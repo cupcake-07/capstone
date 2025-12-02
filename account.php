@@ -180,7 +180,7 @@ function isGradeProvided($gradeVal) {
     return !in_array($g, $sentinels, true);
 }
 
-if (!defined('FIXED_TOTAL_FEE')) define('FIXED_TOTAL_FEE', 15000.00);
+if (!defined('FIXED_TOTAL_FEE')) define('FIXED_TOTAL_FEE', 0.00);
 
 // Compute total fee based on grade, fallback to FIXED_TOTAL_FEE
 $mappedFee = getFeeForGrade($studentGrade, $gradeFeeMap);

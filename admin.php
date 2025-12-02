@@ -284,6 +284,7 @@ $user = getAdminSession();
 			<div class="brand">Glorious God's Family<span>Christian School</span></div>
 			<nav>
 				<a class="active" href="admin.php">Dashboard</a>
+				<a class="" href="admin/inquiries.php">Inquiries</a>
 				<a href="admin/students.php">Students</a>
 				<a href="admin/schedule.php">Schedule</a>
 				<a href="admin/teachers.php">Teachers</a>

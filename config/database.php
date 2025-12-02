@@ -77,6 +77,38 @@ if ($check_columns->num_rows === 0) {
     }
 }
 
+// Check and add reset_token columns to teachers table if they don't exist
+$checkCol = $conn->query("SHOW COLUMNS FROM teachers LIKE 'reset_token'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE teachers ADD COLUMN reset_token VARCHAR(255) NULL DEFAULT NULL");
+}
+
+$checkCol = $conn->query("SHOW COLUMNS FROM teachers LIKE 'reset_token_expiry'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE teachers ADD COLUMN reset_token_expiry DATETIME NULL DEFAULT NULL");
+}
+
+// Similar checks for students and admins tables
+$checkCol = $conn->query("SHOW COLUMNS FROM students LIKE 'reset_token'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE students ADD COLUMN reset_token VARCHAR(255) NULL DEFAULT NULL");
+}
+
+$checkCol = $conn->query("SHOW COLUMNS FROM students LIKE 'reset_token_expiry'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE students ADD COLUMN reset_token_expiry DATETIME NULL DEFAULT NULL");
+}
+
+$checkCol = $conn->query("SHOW COLUMNS FROM admins LIKE 'reset_token'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE admins ADD COLUMN reset_token VARCHAR(255) NULL DEFAULT NULL");
+}
+
+$checkCol = $conn->query("SHOW COLUMNS FROM admins LIKE 'reset_token_expiry'");
+if (!$checkCol || $checkCol->num_rows === 0) {
+    $conn->query("ALTER TABLE admins ADD COLUMN reset_token_expiry DATETIME NULL DEFAULT NULL");
+}
+
 // Create tables if they don't exist
 $tables_sql = "
 

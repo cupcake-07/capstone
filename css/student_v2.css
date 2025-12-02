@@ -963,114 +963,208 @@ body {
 }
 
 @media (max-width: 768px) {
-    .navbar {
-        padding: 10px 12px;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        position: sticky; /* remains sticky */
-    }
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
 
-    .navbar-brand {
-        justify-content: center;
-        width: auto;
-        min-width: 0;
-    }
+  .main {
+    margin-left: 0;
+    padding: 16px;
+  }
 
-    .nav-brand-logo {
-        /* slightly smaller logo on very small devices */
-        height: 34px;
-        width: 34px;
-    }
+  .navbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
 
-    .navbar-actions {
-        width: auto;
-        flex-direction: column;
-        align-items: center;
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: transparent;
-        /* ensure actions remain above brand if overlapping */
-        z-index: 12;
-    }
+  .navbar-brand {
+    gap: 8px;
+  }
 
-    /* Ensure the navbar-brand content remains centered and not overlapped */
-    .navbar-text {
-        text-align: center;
-        white-space: normal; /* allow wrapping if necessary only on small screens */
-        max-width: calc(
-            100vw - 108px
-        ); /* account for actions and logo widths */
-    }
+  .navbar-brand img {
+    height: 32px !important;
+    margin-left: 0 !important;
+  }
 
-    /* remove divider and extra padding that create space on small screens */
-    .user-menu {
-        border-left: none;
-        padding-left: 0;
-    }
+  .navbar-title {
+    font-size: 16px;
+  }
 
-    .search {
-        width: 100%;
-    }
+  .navbar-subtitle {
+    font-size: 12px;
+  }
 
-    .main {
-        padding: 10px 12px; /* reduce main padding on very small screens */
-    }
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
 
-    .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
+  .card {
+    border-radius: 8px;
+    padding: 12px;
+  }
 
-    /* ensure grid continues to collapse and cards fill width */
-    .profile-grid {
-        gap: 12px;
-        grid-template-columns: 1fr;
-    }
+  .card-head {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
 
-    .hero {
-        gap: 12px;
-        align-items: center; /* center avatar & text */
-    }
+  .card-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
 
-    /* slightly reduce avatar footprint on very small phones */
-    .avatar-container {
-        width: clamp(92px, 34vw, 180px);
-    }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 
-    .avatar {
-        border: 6px solid rgba(218, 218, 24, 0.12);
-    }
+  .schedule-table {
+    font-size: 13px;
+  }
 
-    .name {
-        font-size: 20px;
-    }
+  .schedule-table thead {
+    display: none;
+  }
 
-    .card.small-grid {
-        grid-template-columns: 1fr;
-    }
+  .schedule-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #fafafa;
+  }
 
-    .quick-buttons {
-        flex-direction: row;
-    }
+  .schedule-table td {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
 
-    .quick-buttons .btn {
-        flex: 1;
-        min-width: 40%;
-    }
+  .schedule-table td:last-child {
+    border-bottom: none;
+  }
 
-    .grades-table {
-        font-size: 12px;
-        table-layout: fixed; /* improves mobile layout for tables */
-        word-break: break-word;
-    }
+  .schedule-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
 
-    .grades-table th,
-    .grades-table td {
-        padding: 8px;
-        overflow-wrap: anywhere;
-    }
+  .schedule-table td.time-slot::before {
+    content: "Time";
+  }
+
+  .schedule-table th:nth-child(1)::before { content: "Room"; }
+  .schedule-table th:nth-child(3)::before { content: "Monday"; }
+  .schedule-table th:nth-child(4)::before { content: "Tuesday"; }
+  .schedule-table th:nth-child(5)::before { content: "Wednesday"; }
+  .schedule-table th:nth-child(6)::before { content: "Thursday"; }
+  .schedule-table th:nth-child(7)::before { content: "Friday"; }
+
+  .schedule-table td:first-child::before { content: "Room"; }
+  .schedule-table td:nth-child(2)::before { content: "Time"; }
+
+  .class-cell {
+    padding: 8px;
+    background: #fff;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  .schedule-day {
+    margin-bottom: 16px;
+  }
+
+  .schedule-day h4 {
+    margin: 12px 0 8px 0 !important;
+    font-size: 14px;
+  }
+
+  .schedule-item {
+    padding: 10px !important;
+    margin-bottom: 8px;
+    background: #fafafa;
+    border-radius: 6px;
+  }
+
+  .item-time {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .item-detail {
+    font-size: 12px;
+  }
+
+  .footer {
+    padding: 12px;
+    font-size: 12px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    margin: 12px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 10px;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .tab-btn {
+    width: 100%;
+  }
+
+  .schedule-table {
+    font-size: 12px;
+  }
+
+  .class-cell {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .schedule-item {
+    padding: 8px !important;
+  }
+
+  .header h1 {
+    font-size: 18px;
+  }
+
+  .navbar-brand {
+    gap: 6px;
+  }
+
+  .navbar-brand img {
+    height: 28px !important;
+  }
+
+  .navbar-title {
+    font-size: 14px;
+  }
+
+  .navbar-subtitle {
+    font-size: 11px;
+  }
 }

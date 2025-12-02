@@ -11,11 +11,5 @@
         "name": "sample",
         "email": "sample1@gmail.com",
         "message": "can yo"
-    },
-    {
-        "timestamp": "2025-11-23T15:48:40+01:00",
-        "name": "qw",
-        "email": "q@gmail.com",
-        "message": "qw"
     }
 ]

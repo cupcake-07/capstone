@@ -209,10 +209,11 @@ if ($displaySched && is_array($displaySched)) {
         $room = htmlspecialchars($r['room'] ?? '');
         $time = htmlspecialchars($r['time'] ?? '');
         echo "<tr>\n";
-        echo "<td>" . $room . "</td>\n";
-        echo "<td class=\"time-slot\">" . $time . "</td>\n";
-        foreach (['monday','tuesday','wednesday','thursday','friday'] as $d) {
-            $entry = $r[$d] ?? ['teacher'=>'','subject'=>''];
+        echo "<td data-label=\"Room\">" . $room . "</td>\n";
+        echo "<td data-label=\"Time\" class=\"time-slot\">" . $time . "</td>\n";
+        $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday', 'thursday' => 'Thursday', 'friday' => 'Friday'];
+        foreach ($days as $dkey => $dlabel) {
+            $entry = $r[$dkey] ?? ['teacher'=>'','subject'=>''];
             $subject = htmlspecialchars($entry['subject'] ?? '');
             $teacher = htmlspecialchars($entry['teacher'] ?? '');
             $cell = '';
@@ -220,7 +221,7 @@ if ($displaySched && is_array($displaySched)) {
             elseif ($subject) $cell = "<div class=\"class-cell\">{$subject}</div>";
             elseif ($teacher) $cell = "<div class=\"class-cell\">{$teacher}</div>";
             else $cell = "<div class=\"class-cell\">-</div>";
-            echo "<td>{$cell}</td>\n";
+            echo "<td data-label=\"" . htmlspecialchars($dlabel) . "\">{$cell}</td>\n";
         }
         echo "</tr>\n";
     }

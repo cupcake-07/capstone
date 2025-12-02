@@ -1,8 +1,8 @@
 <?php
-// Ensure session cookie usable across entire htdocs root
+// Ensure session cookie usable across /capstone and its subfolders
 $cookieParams = [
     'lifetime' => 0,
-    'path' => '/',
+    'path' => '/capstone',
     'domain' => $_SERVER['HTTP_HOST'],
     'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     'httponly' => true,
@@ -29,14 +29,13 @@ if (isset($_GET['logout'])) {
     unset($_SESSION['user_email']);
     // Do NOT call session_destroy() - this keeps student session active but logged out
     // Do NOT clear cookies - this maintains session isolation
-    header('Location: /login.php');
+    header('Location: /capstone/login.php');
     exit;
 }
 
 // Removed: $already_logged_in detection
 
 require_once 'config/database.php';
-require_once 'config/otp.php';
 
 $error_message = '';
 $flash_success = $_SESSION['flash_success'] ?? '';
@@ -125,99 +124,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login']) && empty($er
         }
         
         if ($user && password_verify($password, $user['password'])) {
-            // Generate and send OTP instead of immediately logging in
-            $otp_code = generateOTP($email, $conn);
-            $otp_sent = sendOTPEmail($email, $otp_code);
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_type'] = $user_role;
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
             
-            if ($otp_sent) {
-                $_SESSION['pending_user_id'] = $user['id'];
-                $_SESSION['pending_user_type'] = $user_role;
-                $_SESSION['pending_user_name'] = $user['name'];
-                $_SESSION['pending_user_email'] = $user['email'];
-                $_SESSION['otp_email'] = $email;
-                $_SESSION['otp_sent'] = true; // Flag to show modal
-                
-                $_SESSION['flash_success'] = 'OTP sent to your email. Please verify.';
-                header('Location: login.php');
-                exit;
+            session_write_close();
+
+            if ($user_role === 'admin') {
+                header('Location: /capstone/admin.php');
+            } elseif ($user_role === 'teacher') {
+                header('Location: /capstone/teachers/teacher.php');
             } else {
-                $error_message = 'Failed to send OTP. Please try again.';
+                header('Location: /student.php');
             }
+            exit;
         } else {
             $error_message = 'Invalid email or password.';
-        }
-    }
-}
-
-// Handle OTP Verification
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['verify_otp'])) {
-    $otp_input = trim($_POST['otp_code'] ?? '');
-    $otp_email = $_SESSION['otp_email'] ?? '';
-    
-    error_log("=== OTP VERIFICATION ATTEMPT ===");
-    error_log("OTP Input: {$otp_input}");
-    error_log("OTP Email from Session: {$otp_email}");
-    error_log("Pending User ID: " . ($_SESSION['pending_user_id'] ?? 'NOT SET'));
-    
-    if (empty($otp_input) || empty($otp_email)) {
-        $error_message = 'OTP verification failed - empty input.';
-        error_log("OTP verification failed: empty inputs");
-    } else {
-        // Verify OTP from database
-        $verification_result = verifyOTP($otp_email, $otp_input, $conn);
-        error_log("Verification result: " . ($verification_result ? 'TRUE' : 'FALSE'));
-        
-        if ($verification_result) {
-            error_log("OTP verified! Setting session variables...");
-            
-            // OTP is valid - set session variables
-            $_SESSION['user_id'] = $_SESSION['pending_user_id'] ?? null;
-            $_SESSION['user_type'] = $_SESSION['pending_user_type'] ?? null;
-            $_SESSION['user_name'] = $_SESSION['pending_user_name'] ?? null;
-            $_SESSION['user_email'] = $_SESSION['pending_user_email'] ?? null;
-            
-            error_log("Session after OTP: user_id=" . ($_SESSION['user_id'] ?? 'NULL') . ", user_type=" . ($_SESSION['user_type'] ?? 'NULL'));
-            
-            // Verify all required session data was set
-            if (empty($_SESSION['user_id']) || empty($_SESSION['user_type'])) {
-                $error_message = 'Session error - failed to set user data.';
-                error_log("CRITICAL: Session data not set! user_id=" . ($_SESSION['user_id'] ?? 'empty') . ", user_type=" . ($_SESSION['user_type'] ?? 'empty'));
-            } else {
-                error_log("Session data confirmed. Cleaning up temp variables...");
-                
-                // Clean up temporary OTP session variables
-                unset($_SESSION['pending_user_id']);
-                unset($_SESSION['pending_user_type']);
-                unset($_SESSION['pending_user_name']);
-                unset($_SESSION['pending_user_email']);
-                unset($_SESSION['otp_email']);
-                unset($_SESSION['otp_sent']);
-                unset($_SESSION['flash_success']);
-                
-                // Regenerate session ID for security
-                session_regenerate_id(true);
-                
-                $userType = $_SESSION['user_type'];
-                error_log("OTP verified successfully. Redirecting user_type={$userType}");
-                
-                // Redirect based on user type
-                if ($userType === 'admin') {
-                    error_log("Redirecting to admin.php");
-                    header('Location: /admin.php');
-                    exit;
-                } elseif ($userType === 'teacher') {
-                    error_log("Redirecting to teacher.php");
-                    header('Location: /teachers/teacher.php');
-                    exit;
-                } else {
-                    error_log("Redirecting to student.php");
-                    header('Location: /student.php');
-                    exit;
-                }
-            }
-        } else {
-            $error_message = 'Invalid or expired OTP. Please try again.';
-            error_log("OTP verification failed");
         }
     }
 }
@@ -260,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forgot_password']) &&
             
             if ($upd->execute()) {
                 sendPasswordResetEmail($reset_email, $reset_token);
-                $_SESSION['flash_success'] = 'Password reset link sent to your email!';
-                $_SESSION['reset_link'] = 'http://localhost/reset_password.php?token=' . $reset_token . '&email=' . urlencode($reset_email) . '&role=' . urlencode($user_role);
+                $_SESSION['flash_success'] = 'Password reset link generated!';
+                $_SESSION['reset_link'] = 'http://localhost/capstone/reset_password.php?token=' . $reset_token . '&email=' . urlencode($reset_email) . '&role=' . urlencode($user_role);
                 $_SESSION['reset_email'] = $reset_email;
                 $_SESSION['reset_role'] = $user_role;
                 header('Location: login.php');
@@ -429,7 +353,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                     $reset_email_display = $reset_email_session;
                     $reset_role = $_SESSION['reset_role'] ?? 'student';
                 ?>
-                   
+                    <div class="message-box success-message" style="padding: 15px;">
+                        <strong>✓ Reset Link Generated:</strong><br><br>
+                        <button type="button" onclick="openResetPasswordModal('<?php echo htmlspecialchars($token); ?>','<?php echo htmlspecialchars($reset_email_display); ?>','<?php echo htmlspecialchars($reset_role); ?>')" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: auto;">
+                            Click Here to Reset Password
+                        </button>
+                    </div>
                 <?php endif; ?>
                 <?php 
                 unset($_SESSION['flash_success']);
@@ -451,7 +380,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                 <label></label>
             </div>
             <button type="submit" name="login" value="1">Log In</button>
-
             <div class="forgot-pwd-link">
                 <a onclick="openForgotPasswordModal()">Forgot Password?</a>
             </div>
@@ -462,6 +390,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
                
             </div>
         </form>
+
+        <!-- Quick login links for teacher/admin -->
+        
     </div>
     
     <div class="overlay-container" id="overlayCon">
@@ -494,33 +425,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
     </div>
 </div>
 
-<!-- OTP Verification Modal (appears only after email is sent) -->
-<div id="otpModal" class="reset-modal">
-    <div class="reset-modal-content">
-        <div class="reset-modal-header">
-            <h2>Verify OTP</h2>
-            <button class="reset-close-btn" onclick="closeOTPModal()" style="display: none;">&times;</button>
-        </div>
-        <form method="POST" class="reset-modal-form">
-            <?php if ($error_message && isset($_POST['verify_otp'])): ?>
-                <div class="message-box error-message" style="margin-bottom: 15px;"><?php echo htmlspecialchars($error_message); ?></div>
-            <?php endif; ?>
-            <p style="color: white; text-align: center; margin-bottom: 15px; font-size: 15px;">Enter the 6-digit OTP sent to your email</p>
-            
-            <!-- Timer Display -->
-            <div style="text-align: center; margin-bottom: 20px; background-color: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 6px;">
-                <p style="color: #b0b0b0; margin: 0 0 8px 0; font-size: 13px;">Time Remaining:</p>
-                <p style="color: #ffd700; font-weight: bold; font-size: 28px; margin: 0;" id="otpTimer">5:00</p>
-            </div>
-            
-            <div class="infield">
-                <input type="text" placeholder="Enter 6-digit OTP" name="otp_code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required autofocus/>
-            </div>
-            <button type="submit" name="verify_otp" value="1" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-weight: 600;">Verify OTP & Login</button>
-        </form>
-    </div>
-</div>
-
 <!-- Forgot Password Modal -->
 <div id="forgotPasswordModal" class="modal">
     <div class="modal-content">
@@ -528,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
             <h2>Reset Password</h2>
             <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
         </div>
-        <form method="POST" class="modal-form">
+        <form method="POST" class="modal-form" action="config/email.php">
             <div class="infield">
                 <input type="email" placeholder="Enter your email" name="reset_email" required/>
             </div>
@@ -612,71 +516,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && empty($er
         document.getElementById('resetRoleInput').value = '';
     }
 
-    function closeOTPModal() {
-        document.getElementById('otpModal').classList.remove('active');
-    }
-
-    // Show OTP modal automatically ONLY if OTP was successfully sent
-    <?php if (isset($_SESSION['otp_sent']) && $_SESSION['otp_sent'] === true): ?>
-        window.addEventListener('load', function() {
-            const otpModal = document.getElementById('otpModal');
-            if (otpModal) {
-                otpModal.classList.add('active');
-                startOTPTimer();
-                // Focus on input field
-                const otpInput = document.querySelector('#otpModal input[name="otp_code"]');
-                if (otpInput) {
-                    setTimeout(() => otpInput.focus(), 100);
-                }
-            }
-        });
-    <?php 
-        unset($_SESSION['otp_sent']); // Clear the flag after showing modal
-    ?>
-    <?php endif; ?>
-
-    // OTP Timer countdown (5 minutes)
-    function startOTPTimer() {
-        let timeLeft = 300; // 5 minutes in seconds
-        const timerDisplay = document.getElementById('otpTimer');
-        
-        const timerInterval = setInterval(function() {
-            timeLeft--;
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            
-            if (timerDisplay) {
-                timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                if (timerDisplay) {
-                    timerDisplay.textContent = 'Expired';
-                    timerDisplay.style.color = '#ff6b6b';
-                }
-                // Disable submit button
-                const submitBtn = document.querySelector('#otpModal button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.5';
-                    submitBtn.textContent = 'OTP Expired - Please Login Again';
-                }
-            }
-        }, 1000);
-    }
-
     window.onclick = function(event) {
         const forgotModal = document.getElementById('forgotPasswordModal');
         const resetModal = document.getElementById('resetPasswordModal');
-        const otpModal = document.getElementById('otpModal');
         if (event.target == forgotModal) {
             forgotModal.classList.remove('active');
         } else if (event.target == resetModal) {
             resetModal.classList.remove('active');
-        } else if (event.target == otpModal) {
-            // Prevent closing OTP modal by clicking outside
-            return;
         }
     }
 </script>
