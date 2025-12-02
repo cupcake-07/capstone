@@ -42,7 +42,7 @@
         }
         a {
             text-decoration: none;
-            color: var(--white);
+            color: var(--black);
         }
         
         ::-webkit-scrollbar {
@@ -123,6 +123,7 @@
             line-height: 20px;
             border: 1px solid var(--grey);
             transition: .4s;
+            color: var(--black);
         }
         .side-link a:hover {
             border: 0;
@@ -356,7 +357,7 @@
 
         .album-cta {
             background-color: var(--blue);
-            color: var(--white);
+            color: var(--black);
             padding: 1rem;
             border-radius: 4px;
             text-align: center;
@@ -447,6 +448,8 @@
                 font-size: 14px;
                 text-align: center;
             }
+            
+              
         }
 
     </style>
@@ -518,12 +521,12 @@
                 <aside class="album-right" aria-label="Achievements">
                     <h3>Events</h3>
                     <ul>
-                        <li><strong>Buwan ng Wika (August 2017)</strong> — Celebrating Buwan ng wika.</li>
-                        <li><strong>Field Trip (February 2019)</strong> — Students participated in a hands-on educational tour to explore nature and history firsthand.</li>
-                        <li><strong>Foundation Day (March 2020)</strong> — Promoting teamwork and healthy lifestyles through athletic competitions and wellness activities.</li>
-                        <li><strong>Year-end Party (December 2022)</strong> — Celebrated student achievements with games,  food, and awards recognizing.</li>
-                        <li><strong>Film Showing(Dec 2024)</strong> — Memorable Film Showing</li>
-                        <li><strong>8th moving up and commencement Exercise</strong> - celebrating student's achievements, recognized successful completion completion, and formally marked the transistion to their next academic level,</li>
+                        <a href="buwanwika.php"><li><strong>Buwan ng Wika (August 2017)</strong> — Celebrating Buwan ng wika.</li></a>
+                        <a href="fieldtrip.php"><li><strong>Field Trip (February 2019)</strong> — Students participated in a hands-on educational tour to explore nature and history firsthand.</li></a>
+                        <a href="foundationday.php"><li><strong>Foundation Day (March 2020)</strong> — Promoting teamwork and healthy lifestyles through athletic competitions and wellness activities.</li></a>
+                        <a href="yearend.php"><li><strong>Year-end Party (December 2022)</strong> — Celebrated student achievements with games,  food, and awards recognizing.</li></a>
+                        <a href="filmshow.php"><li><strong>Film Showing(Dec 2024)</strong> — Memorable Film Showing</li></a>
+                        <a href="graduation.php"><li><strong>8th moving up and commencement Exercise</strong> - celebrating student's achievements, recognized successful completion completion, and formally marked the transistion to their next academic level,</li></a>
                     </ul>
                    
                 </aside>
