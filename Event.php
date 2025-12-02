@@ -39,6 +39,7 @@
             font-size: 16px;
             color: var(--lblack);
             line-height: 1.6;
+            background: linear-gradient(var(--blue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
         }
         a {
             text-decoration: none;
@@ -189,7 +190,7 @@
         }
         .header .nav .menu ul li a {
             /* changed: use solid black for maximum readability */
-            color: var(--black);
+            color: #ffffff;
             padding: 22px 6px;
             transition: .4s;
             border-bottom: 2px solid transparent;
@@ -202,8 +203,8 @@
 
         /* --- ALBUM SECTION (replaces modal) --- */
         .album-section {
-            background-color: var(--Dwhite);
-            background: linear-gradient(var(--blue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
+            background-color: transparent;
+            background: none;
             padding: 5rem 10%;
         }
 
@@ -214,11 +215,12 @@
 
         .album-header {
             background: linear-gradient(90deg, #ffffff46, #3d85f8a1, #fd4ba793, #ffffff50);
-            color: var(--black);
+            color: #ffffff;
             padding: 2rem;
             text-align: center;
             border-radius: 15px;
             margin-bottom: 3rem;
+            font-family: montserrat, sans-serif;
         }
 
         .album-title {
@@ -424,7 +426,7 @@
             .header .nav .menu ul li a {
                 padding: 8px 10px;
                 display: inline-block;
-                color: var(--black); /* keep color consistent */
+                color: var(--white); /* keep color consistent */
             }
         }
 
@@ -449,7 +451,55 @@
                 text-align: center;
             }
             
-              
+            .welcome {
+                display: none;
+            }
+        }
+
+        /* Page Load Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .page-load-fade {
+            animation: fadeIn 0.8s ease-in-out forwards;
+            opacity: 1;
+        }
+
+        .page-load-slide {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 1;
+        }
+
+        .album-section.page-load-slide {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .album-header.page-load-slide {
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .album-body.page-load-slide {
+            animation-delay: 0.6s;
+            opacity: 0;
         }
 
     </style>
@@ -534,6 +584,18 @@
         </div>
     </section>
     <script type="text/javascript">
+        // Page load animation trigger
+        window.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-load-fade');
+            const albumSection = document.querySelector('.album-section');
+            const albumHeader = document.querySelector('.album-header');
+            const albumBody = document.querySelector('.album-body');
+            
+            if(albumSection) albumSection.classList.add('page-load-slide');
+            if(albumHeader) albumHeader.classList.add('page-load-slide');
+            if(albumBody) albumBody.classList.add('page-load-slide');
+        });
+
         function cancel() {
             const topEl = document.getElementById("top");
             if (topEl) {
@@ -548,6 +610,7 @@
                 navTopEl.classList.toggle("sticky", window.scrollY > 250);
             }
         });
+
         // Album thumbnail gallery
         (function() {
             const previewImg = document.getElementById('albumPreviewImg');
