@@ -46,6 +46,7 @@
             position: relative;
             color: var(--text-light);
             clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+            animation: slideInLeft 0.8s ease-out;
         }
 
         .hero-content h1 {
@@ -77,6 +78,7 @@
             border-radius: 15px;
             border-left: 5px solid var(--pink);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
         }
 
         .about h2 {
@@ -124,6 +126,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
             background-color: #eee;
+            animation: fadeInUp 0.6s ease-out;
         }
 
         .bento-item:hover {
@@ -185,6 +188,57 @@
         footer p span {
             color: var(--pink);
             font-weight: bold;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .bento-item:nth-child(1) { animation-delay: 0.6s; }
+        .bento-item:nth-child(2) { animation-delay: 0.7s; }
+        .bento-item:nth-child(3) { animation-delay: 0.8s; }
+        .bento-item:nth-child(4) { animation-delay: 0.9s; }
+        .bento-item:nth-child(5) { animation-delay: 1s; }
+        .bento-item:nth-child(6) { animation-delay: 1.1s; }
+        .bento-item:nth-child(7) { animation-delay: 1.2s; }
+        .bento-item:nth-child(8) { animation-delay: 1.3s; }
+
+        /* --- GO BACK BUTTON --- */
+        .btn-back {
+            display: inline-block;
+            margin-right: 20px;
+            padding: 10px 20px;
+            background: var(--pink);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s ease, transform 0.2s ease;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-back:hover {
+            background: var(--blue);
+            transform: translateX(-5px);
         }
 
         /* --- RESPONSIVE DESIGN --- */
@@ -298,7 +352,8 @@
     </div>
 
     <footer>
-        Glorious God's Family Christian School &copy; 2025
+        <a href="javascript:history.back()" class="btn-back">← Go Back</a>
+        <p>Glorious God's Family Christian School &copy; 2025</p>
     </footer>
 
 </body>
