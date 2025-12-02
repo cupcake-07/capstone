@@ -40,6 +40,7 @@
             color: var(--lblack);
             line-height: 1.6;
             background: linear-gradient(var(--blue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
+            background-attachment: fixed;
         }
         a {
             text-decoration: none;
@@ -285,19 +286,22 @@
             justify-content: center;
             align-items: center;
             height: 100px;
-            transition: all 0.3s;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+            will-change: transform;
+            transform-origin: center center;
+        }
+
+        .album-thumb:hover {
+            border-color: var(--lyellow);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+            transform: scale(1.18);
         }
 
         .album-thumb img {
             max-width: 100%;
             max-height: 100%;
             object-fit: cover;
-            transition: transform 0.3s;
-        }
-
-        .album-thumb:hover {
-            border-color: var(--lyellow);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
         .album-thumb:hover img {
@@ -443,12 +447,28 @@
             .header .nav .menu ul li {
                 width: 100%;
                 margin: 4px 0;
+                text-align: center;
             }
             .header .nav .menu ul li a {
-                width: 100%;
+                width: auto;
                 padding: 10px;
                 font-size: 14px;
                 text-align: center;
+                display: inline-block;
+            }
+
+            /* Mobile navigation centering overrides */
+            .header .nav .menu {
+                margin: 8px 0 0 0 !important;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .header .nav .menu ul {
+                width: auto;
+                align-items: center;
+                justify-content: center;
+                padding-left: 0;
             }
             
             .welcome {

@@ -38,6 +38,7 @@
             color: #ffffffff;
             line-height: 1.6;
             background: linear-gradient(var(--lblue), var(--purple)) center/cover no-repeat fixed, url(Images/school13.jpg) center/cover no-repeat fixed;
+            background-attachment: fixed;
         }
         a {
             text-decoration: none;
@@ -242,12 +243,13 @@
             padding: 20px 12px;
             text-align: center;
             cursor: pointer;
-            transition: .3s;
-            transform: scale(1);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+            will-change: transform;
+            transform-origin: center center;
         }
         .career-section .sect .box:hover {
-            transform: scale(1.09);
-            box-shadow: inset .5px 1px 5px var(--grey);
+            transform: scale(1.18);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
         }
         .career-section .sect .box .icon,
         .how .box .icon {
@@ -318,12 +320,14 @@
             overflow: hidden;
             cursor: pointer;
             box-shadow: 0 0 7px rgba(0, 0, 0, .5);
-            transition: .5s;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+            will-change: transform;
+            transform-origin: center center;
         }
         .skill-section .skill-box:hover {
-            transform: scale(.94);
+            transform: scale(1.18);
             background: linear-gradient(30deg, navy, var(--lblue));
-            box-shadow: 0 0 10px rgba(0, 0, 0, .6);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
         .skill-section .skill-box h2 {
             border: 0;
@@ -597,12 +601,28 @@
             .header .nav .menu ul li {
                 width: 100%;
                 margin: 4px 0;
+                text-align: center; /* ensure centered text */
             }
             .header .nav .menu ul li a {
-                width: 100%;
+                width: auto;
                 padding: 10px;
                 font-size: 14px;
                 text-align: center;
+                display: inline-block; /* center inside their li */
+            }
+
+            /* Mobile navigation centering overrides */
+            .header .nav .menu {
+                margin: 8px 0 0 0 !important;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .header .nav .menu ul {
+                width: auto;
+                align-items: center;
+                justify-content: center;
+                padding-left: 0;
             }
             .welcome {
                 display: none;
