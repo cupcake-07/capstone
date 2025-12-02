@@ -203,10 +203,10 @@
         .row-span-2 { grid-row: span 2; }
 
         .back-button {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
+            bottom: auto;
+            left: auto;
+            transform: none;
             background-color: rgba(0, 242, 255, 0.1);
             border: 1px solid var(--neon-blue);
             color: var(--neon-blue);
@@ -219,6 +219,7 @@
             text-decoration: none;
             display: inline-block;
             z-index: 100;
+            margin-top: 30px;
         }
 
         .back-button:hover {
@@ -314,7 +315,9 @@
         </div>
     </div>
 
-    <a href="javascript:history.back()" class="back-button">← Back</a>
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="javascript:history.back()" class="back-button">← Back</a>
+    </div>
 
 </body>
 </html>

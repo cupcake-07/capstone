@@ -503,7 +503,7 @@
                             <a href="foundationday.php"><img src="Images/foundation day.jpg" onerror="this.src='Images/foundation day.jpg'" alt="Event 2"></a>
                         </button>
                         <button class="album-thumb" data-src="Images/yearend.jpg" aria-label="Open image 3" role="listitem">
-                            <img src="Images/yearend.jpg" onerror="this.src='Images/yearend.jpg'" alt="Event 3">
+                            <a href="yearend.php"><img src="Images/yearend.jpg" onerror="this.src='Images/yearend.jpg'" alt="Event 3"></a>
                         </button>
                         
                         <button class="album-thumb" data-src="Images/school19.jpg" aria-label="Open image 5" role="listitem">
