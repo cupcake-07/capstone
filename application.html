@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application - G2F Admission Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --black: #000;
+            --lblack: #222;
+            --white: #fff;
+            --Dwhite: #f5f5f5;
+            --lyellow: #ebf4b6;
+            --grey: #708090;
+            --blue: #3d85f8;
+            --pink: #fd4ba7;
+            --lpurple: #d8b3ff;
+            --lblue: #1a8fcc;
+            --purple: #a3309dcc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header .nav {
+            height: 70px;
+            background: linear-gradient(180deg, var(--blue) 0%, var(--pink) 100%);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 50px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header .nav .logo img {
+            height: 50px;
+            width: auto;
+        }
+        
+        .application-form {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: calc(100vh - 70px);
+            padding: 40px 20px;
+        }
+
+        .form-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        /* Progress Tracker */
+        .progress-tracker {
+            display: flex;
+            justify-content: space-between;
+            padding: 30px 40px;
+            background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+            position: relative;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid var(--white);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--white);
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .progress-step.active .step-circle {
+            background: var(--white);
+            color: var(--blue);
+            transform: scale(1.1);
+        }
+
+        .progress-step.completed .step-circle {
+            background: var(--lyellow);
+            color: var(--blue);
+        }
+
+        .progress-step.completed .step-circle::after {
+            content: '✓';
+            font-size: 24px;
+        }
+
+        .step-label {
+            color: var(--white);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 55px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            z-index: 1;
+        }
+
+        .progress-line-fill {
+            height: 100%;
+            background: var(--lyellow);
+            transition: width 0.4s ease;
+        }
+
+        /* Form Content */
+        .form-content {
+            padding: 40px;
+        }
+
+        .form-page {
+            display: none;
+        }
+
+        .form-page.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            color: var(--blue);
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--lpurple);
+        }
+
+        .photo-upload {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--Dwhite);
+            border-radius: 8px;
+        }
+
+        .photo-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--blue);
+            margin: 0 auto 15px;
+            overflow: hidden;
+            background: var(--white);
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--blue);
+            color: var(--white);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: var(--lblue);
+            transform: translateY(-2px);
+        }
+
+        .photo-input {
+            display: none;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--lblack);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group .required {
+            color: var(--pink);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+
+        .checkbox-inline {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 15px;
+        }
+
+        .checkbox-inline input {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        /* Navigation Buttons */
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 30px 40px;
+            border-top: 2px solid var(--Dwhite);
+            background: var(--white);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-prev {
+            background: var(--grey);
+            color: var(--white);
+        }
+
+        .btn-prev:hover {
+            background: #5a6a7a;
+            transform: translateX(-3px);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--blue) 0%, var(--purple) 100%);
+            color: var(--white);
+        }
+
+        .btn-next:hover {
+            transform: translateX(3px);
+            box-shadow: 0 5px 15px rgba(61, 133, 248, 0.4);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+            color: var(--white);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 75, 167, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .form-content {
+                padding: 20px;
+            }
+
+            .progress-tracker {
+                padding: 20px 15px;
+            }
+
+            .step-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .step-label {
+                font-size: 11px;
+            }
+
+            .form-navigation {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav">
+            <div class="logo">
+                <img src="Images/g2flogo.png" alt="G2F Logo"/>
+            </div> 
+        </div>
+    </header>
+
+    <section class="application-form">
+        <div class="form-container">
+            <!-- Progress Tracker -->
+            <div class="progress-tracker">
+                <div class="progress-line">
+                    <div class="progress-line-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Education</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Address</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Parents</div>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="applicationForm">
+                <div class="form-content">
+                    <!-- Page 1: Personal Information -->
+                    <div class="form-page active" data-page="1">
+                        <h2 class="page-title">Personal Information</h2>
+
+                        <div class="photo-upload">
+                            <div class="photo-preview">
+                                <img id="photoPreview" src="Images/default-photo.png" alt="Applicant Photo">
+                            </div>
+                            <label for="photoInput" class="upload-btn">
+                                <i class="fa fa-camera"></i> Upload Photo
+                            </label>
+                            <input type="file" id="photoInput" class="photo-input" accept="image/*">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstname">First Name <span class="required">*</span></label>
+                                <input type="text" id="firstname" name="firstname" placeholder="Enter first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="middlename">Middle Name</label>
+                                <input type="text" id="middlename" name="middlename" placeholder="Enter middle name">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="nomiddlename"> Not Applicable
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lastname">Last Name <span class="required">*</span></label>
+                                <input type="text" id="lastname" name="lastname" placeholder="Enter last name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="suffix">Suffix</label>
+                                <input type="text" id="suffix" name="suffix" placeholder="Jr., Sr., III">
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="nosuffix"> Not Applicable
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateofbirth">Date of Birth <span class="required">*</span></label>
+                                <input type="date" id="dateofbirth" name="dateofbirth" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="placeofbirth">Place of Birth <span class="required">*</span></label>
+                                <input type="text" id="placeofbirth" name="placeofbirth" placeholder="City, Province" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sexatbirth">Sex at Birth <span class="required">*</span></label>
+                                <select id="sexatbirth" name="sexatbirth" required>
+                                    <option value="" disabled selected>Select sex at birth</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactnumber">Contact Number <span class="required">*</span></label>
+                                <input type="tel" id="contactnumber" name="contactnumber" placeholder="+63 XXX XXX XXXX" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="religion">Religion <span class="required">*</span></label>
+                                <input type="text" id="religion" name="religion" placeholder="Enter religion" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nationality">Nationality <span class="required">*</span></label>
+                                <input type="text" id="nationality" name="nationality" placeholder="Enter nationality" required>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Page 2: Education Information -->
+                    <div class="form-page" data-page="2">
+                        <h2 class="page-title">Education Information</h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="typeofstudent"> Type of Student <span class="required">*</span></label>
+                                <select id="typeofstudent" name="typeofstudent" required>
+                                    <option value="" disabled selected>Select type of student</option>
+                                    <option value="transferee">Transferee</option>
+                                    <option value="new">New</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="previousschool">Name of Previous School: <span class="required">*</span></label>
+                                <input type="text" id="previousschool" name="previousschool" placeholder="Enter last school attended" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="previouslevel">Previous Level: <span class="required">*</span></label>
+                                <select id="currentlevel" name="currentlevel" required>
+                                    <option value="" disabled selected>Select current level</option>
+                                    <option value="kinder 1">Kinder 1</option>
+                                    <option value="kinder 2">Kinder 2</option>
+                                    <option value="grade 1">Grade 1</option>
+                                    <option value="grade 2">Grade 2</option>
+                                    <option value="grade 3">Grade 3</option>
+                                    <option value="grade 4">Grade 4</option>
+                                    <option value="grade 5">Grade 5</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="currentlevel">Current Level for this school Year: <span class="required">*</span></label>
+                                <select id="currentlevel" name="currentlevel" required>
+                                    <option value="" disabled selected>Select current level</option>
+                                    <option value="kinder 1">Kinder 1</option>
+                                    <option value="kinder 2">Kinder 2</option>
+                                    <option value="grade 1">Grade 1</option>
+                                    <option value="grade 2">Grade 2</option>
+                                    <option value="grade 3">Grade 3</option>
+                                    <option value="grade 4">Grade 4</option>
+                                    <option value="grade 5">Grade 5</option>
+                                    <option value="grade 6">Grade 6</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Page 3: Address Information -->
+                    <div class="form-page" data-page="3">
+                        <h2 class="page-title">Address Information</h2>
+
+                        <div class="form-group">
+                            <label for="blocklotstreet">Block/Lot/Street <span class="required">*</span></label>
+                            <input type="text" id="blocklotstreet" name="blocklotstreet" placeholder="Enter block/lot/street" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="barangay">Barangay <span class="required">*</span></label>
+                                <input type="text" id="barangay" name="barangay" placeholder="Enter barangay" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="citymunicipality">City/Municipality <span class="required">*</span></label>
+                                <input type="text" id="citymunicipality" name="citymunicipality" placeholder="Enter city/municipality" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="province">Province <span class="required">*</span></label>
+                                <input type="text" id="province" name="province" placeholder="Enter province" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="zipcode">ZIP Code <span class="required">*</span></label>
+                                <input type="text" id="zipcode" name="zipcode" placeholder="Enter ZIP code" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Page 4: Parents Information -->
+                    <div class="form-page" data-page="4">
+                        <h2 class="page-title">Parents Information</h2>
+
+                        <h3 style="color: var(--blue); margin-bottom: 15px; font-size: 18px;">Mother's Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="mothersfirstname">First Name <span class="required">*</span></label>
+                                <input type="text" id="mothersfirstname" name="mothersfirstname" placeholder="Mother's first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="mothersmiddlename">Middle Name</label>
+                                <input type="text" id="mothersmiddlename" name="mothersmiddlename" placeholder="Mother's middle name">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="motherslastname">Last Name (Maiden) <span class="required">*</span></label>
+                                <input type="text" id="motherslastname" name="motherslastname" placeholder="Mother's maiden name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="mothersoccupation">Occupation</label>
+                                <input type="text" id="mothersoccupation" name="mothersoccupation" placeholder="Mother's occupation">
+                            </div>
+                            <div class="form-group">
+                                <label for="motherscontact">Contact Number</label>
+                                <input type="tel" id="motherscontact" name="motherscontact" placeholder="+63 XXX XXX XXXX">
+                            </div>
+                            <div class="form-group">
+                                <label for="mothersemail">Email</label>
+                                <input type="email" id="mothersemail" name="mothersemail" placeholder="Mother's email address">
+                            </div>
+                        </div>
+
+                        <h3 style="color: var(--blue); margin: 25px 0 15px; font-size: 18px;">Father's Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fatherfirstname">First Name <span class="required">*</span></label>
+                                <input type="text" id="fatherfirstname" name="fatherfirstname" placeholder="Father's first name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fathermiddlename">Middle Name</label>
+                                <input type="text" id="fathermiddlename" name="fathermiddlename" placeholder="Father's middle name">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fatherslastname">Last Name <span class="required">*</span></label>
+                                <input type="text" id="fatherslastname" name="fatherslastname" placeholder="Father's last name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fathersoccupation">Occupation</label>
+                                <input type="text" id="fathersoccupation" name="fathersoccupation" placeholder="Father's occupation">
+                            </div>
+                            <div class="form-group">
+                                <label for="fatherscontact">Contact Number</label>
+                                <input type="tel" id="fatherscontact" name="fatherscontact" placeholder="+63 XXX XXX XXXX">
+                            </div>
+                            <div class="form-group">
+                                <label for="fathersemail">Email</label>
+                                <input type="email" id="fathersemail" name="fathersemail" placeholder="Father's email address">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <h3 style="color: var(--blue); margin-bottom: 15px; font-size: 18px;">Guardian's Information</h3>
+                            <div class="form-group">
+                                <label for="guardianname">Guardian's Name <span class="required">*</span></label>
+                                <input type="text" id="guardianname" name="guardianname" placeholder="Enter guardian's name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="guardiancontact">Guardian's Contact Number</label>
+                                <input type="tel" id="guardiancontact" name="guardiancontact" placeholder="+63 XXX XXX XXXX">
+                            </div>
+                            <div class="form-group">
+                                <label for="guardiansrelation">guardian's relation to student:</label>
+                                <input type="text" id="guardiansrelation" name="guardiansrelation" placeholder="Enter guardian's relation to student">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 5: Review -->
+                    <div class="form-page" data-page="5">
+                        <h2 class="page-title">Review Your Information</h2>
+                        <div id="reviewContent" style="background: var(--Dwhite); padding: 20px; border-radius: 8px; line-height: 1.8;">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="form-navigation">
+                    <button type="button" class="btn btn-prev" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-next" id="nextBtn" onclick="changeStep(1)">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </button>
+                    <button type="submit" class="btn btn-submit" id="submitBtn" style="display: none;">
+                        <i class="fa fa-check"></i> Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        // Photo upload preview
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Navigation
+        function changeStep(direction) {
+            const currentPage = document.querySelector('.form-page.active');
+            
+            // Validate current page before moving forward
+            if (direction === 1 && !validatePage(currentStep)) {
+                return;
+            }
+
+            currentStep += direction;
+
+            if (currentStep < 1) currentStep = 1;
+            if (currentStep > totalSteps) currentStep = totalSteps;
+
+            // Update pages
+            document.querySelectorAll('.form-page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.querySelector(`.form-page[data-page="${currentStep}"]`).classList.add('active');
+
+            // Update progress tracker
+            updateProgressTracker();
+
+            // Update buttons
+            updateButtons();
+
+            // If on review page, populate review content
+            if (currentStep === 5) {
+                populateReview();
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateProgressTracker() {
+            const steps = document.querySelectorAll('.progress-step');
+            steps.forEach((step, index) => {
+                const stepNum = index + 1;
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                } else if (stepNum === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+
+            // Update progress line
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+            nextBtn.style.display = currentStep === totalSteps ? 'none' : 'block';
+            submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
+        }
+
+        function validatePage(step) {
+            const currentPage = document.querySelector(`.form-page[data-page="${step}"]`);
+            const requiredInputs = currentPage.querySelectorAll('input[required], select[required]');
+            
+            for (let input of requiredInputs) {
+                if (!input.value.trim()) {
+                    input.focus();
+                    alert('Please fill in all required fields before proceeding.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function populateReview() {
+            const form = document.getElementById('applicationForm');
+            const formData = new FormData(form);
+            let reviewHTML = '<h3 style="color: var(--blue); margin-bottom: 15px;">Personal Information</h3>';
+
+            reviewHTML += `
+                <p><strong>Name:</strong> ${formData.get('firstname') || ''} ${formData.get('middlename') || ''} ${formData.get('lastname') || ''} ${formData.get('suffix') || ''}</p>
+                <p><strong>Date of Birth:</strong> ${formData.get('dateofbirth') || ''}</p>
+                <p><strong>Place of Birth:</strong> ${formData.get('placeofbirth') || ''}</p>
+                <p><strong>Sex:</strong> ${formData.get('sexatbirth') || ''}</p>
+                <p><strong>Contact:</strong> ${formData.get('contactnumber') || ''}</p>
+                <p><strong>Religion:</strong> ${formData.get('religion') || ''}</p>
+                <p><strong>Nationality:</strong> ${formData.get('nationality') || ''}</p>
+
+                <h3 style="color: var(--blue); margin: 20px 0 15px;">Education Information</h3>
+                <p><strong>Type of Student:</strong> ${formData.get('typeofstudent') || ''}</p>
+                <p><strong>Previous School:</strong> ${formData.get('previousschool') || ''}</p>
+                <p><strong>Previous Level:</strong> ${formData.get('previouslevel') || ''}</p>
+                <p><strong>Current Level:</strong> ${formData.get('currentlevel') || ''}</p>
+
+                <h3 style="color: var(--blue); margin: 20px 0 15px;">Address Information</h3>
+                <p><strong>Address:</strong> ${formData.get('blocklotstreet') || ''}, ${formData.get('barangay') || ''}, ${formData.get('citymunicipality') || ''}, ${formData.get('province') || ''} ${formData.get('zipcode') || ''}</p>
+
+                <h3 style="color: var(--blue); margin: 20px 0 15px;">Parents / Guardian Information</h3>
+                <p><strong>Mother:</strong> ${formData.get('mothersfirstname') || ''} ${formData.get('mothersmiddlename') || ''} ${formData.get('motherslastname') || ''}</p>
+                <p><strong>Mother's Contact:</strong> ${formData.get('motherscontact') || ''} | <strong>Email:</strong> ${formData.get('mothersemail') || ''}</p>
+                <p><strong>Father:</strong> ${formData.get('fatherfirstname') || ''} ${formData.get('fathermiddlename') || ''} ${formData.get('fatherslastname') || ''}</p>
+                <p><strong>Father's Contact:</strong> ${formData.get('fatherscontact') || ''} | <strong>Email:</strong> ${formData.get('fathersemail') || ''}</p>
+                <p><strong>Guardian:</strong> ${formData.get('guardianname') || ''} (<em>${formData.get('guardiansrelation') || 'relation not specified'}</em>)</p>
+                <p><strong>Guardian's Contact:</strong> ${formData.get('guardiancontact') || ''}</p>
+            `;
+
+            document.getElementById('reviewContent').innerHTML = reviewHTML;
+        }
+
+        // Form submission
+        document.getElementById('applicationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validatePage(currentStep)) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            console.log('Application submitted:', Object.fromEntries(formData));
+            
+            alert('🎉 Application submitted successfully! Thank you for applying to G2F Admission Portal.');
+            
+            // Optionally redirect or reset
+            // window.location.href = 'success.html';
+        });
+
+        // Checkbox handlers for "Not Applicable"
+        document.getElementById('nomiddlename')?.addEventListener('change', function() {
+            document.getElementById('middlename').disabled = this.checked;
+            if (this.checked) document.getElementById('middlename').value = '';
+        });
+
+        document.getElementById('nosuffix')?.addEventListener('change', function() {
+            document.getElementById('suffix').disabled = this.checked;
+            if (this.checked) document.getElementById('suffix').value = '';
+        });
+    </script>
+</body>
+</html>
